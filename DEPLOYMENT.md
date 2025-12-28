@@ -67,72 +67,54 @@ BASESCAN_API_KEY=your_basescan_api_key_here
 
 **IMPORTANT**: Add `.env` to `.gitignore`!
 
-### 3. Create Deployment Script
+### 3. Recommended: Deploy the Factory (once per network)
 
-Create `scripts/deploy.ts`:
+Create `scripts/deployFactory.ts` (already added in this repo):
 
 ```typescript
 import { ethers } from "hardhat";
 
 async function main() {
-  console.log("Deploying SpendGuard contracts to Base Sepolia...");
+  console.log("Deploying VaultFactory to Base Sepolia...");
 
-  // Get deployer account
   const [deployer] = await ethers.getSigners();
-  console.log("Deploying with account:", deployer.address);
-  console.log("Account balance:", (await ethers.provider.getBalance(deployer.address)).toString());
+  const network = await ethers.provider.getNetwork();
+  console.log("Network:", network.chainId);
+  console.log("Deployer:", deployer.address);
+  console.log("Balance:", (await ethers.provider.getBalance(deployer.address)).toString());
 
-  // Deploy GuardianSBT
-  console.log("\n1. Deploying GuardianSBT...");
-  const GuardianSBT = await ethers.getContractFactory("GuardianSBT");
-  const guardianSBT = await GuardianSBT.deploy();
-  await guardianSBT.waitForDeployment();
-  const guardianSBTAddress = await guardianSBT.getAddress();
-  console.log("✅ GuardianSBT deployed to:", guardianSBTAddress);
+  const VaultFactory = await ethers.getContractFactory("VaultFactory");
+  const factory = await VaultFactory.deploy();
+  await factory.waitForDeployment();
+  const factoryAddress = await factory.getAddress();
+  console.log("✅ VaultFactory deployed:", factoryAddress);
 
-  // Deploy SpendVault with quorum of 2
-  console.log("\n2. Deploying SpendVault...");
-  const SpendVault = await ethers.getContractFactory("SpendVault");
-  const spendVault = await SpendVault.deploy(
-    guardianSBTAddress,
-    2 // Quorum: 2 of 3 guardians required
-  );
-  await spendVault.waitForDeployment();
-  const spendVaultAddress = await spendVault.getAddress();
-  console.log("✅ SpendVault deployed to:", spendVaultAddress);
-
-  // Summary
-  console.log("\n📋 Deployment Summary:");
-  console.log("====================");
-  console.log("GuardianSBT:", guardianSBTAddress);
-  console.log("SpendVault:", spendVaultAddress);
-  console.log("\n⚠️  IMPORTANT: Update lib/contracts.ts with these addresses!");
+  console.log("\nNext: Update lib/contracts.ts -> CONTRACTS_BASE_SEPOLIA.VaultFactory =", factoryAddress);
 }
 
-main()
-  .then(() => process.exit(0))
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
 ```
 
 ### 4. Deploy Contracts
 
 ```bash
-npx hardhat run scripts/deploy.ts --network baseSepolia
+npx hardhat run scripts/deployFactory.ts --network baseSepolia
 ```
 
 ### 5. Update Frontend Configuration
 
-After deployment, update `lib/contracts.ts`:
+After deployment, update `lib/contracts.ts` with the factory address:
 
 ```typescript
 export const CONTRACTS_BASE_SEPOLIA = {
-  GuardianSBT: '0xYOUR_GUARDIAN_SBT_ADDRESS',
-  SpendVault: '0xYOUR_SPEND_VAULT_ADDRESS',
+  VaultFactory: '0xYOUR_FACTORY_ADDRESS',
 } as const;
 ```
+
+Then use the frontend (or a script) to call `createVault(quorum)` to create your own `GuardianSBT` + `SpendVault`. Ownership of both is transferred to you automatically.
 
 ### 6. Verify Contracts (Optional but Recommended)
 
@@ -177,23 +159,20 @@ Run:
 npx hardhat run scripts/addGuardians.ts --network baseSepolia
 ```
 
-### 2. Test Deposit
+### 2. Test Deposit (ETH)
 
 ```typescript
 import { ethers } from "hardhat";
 
 async function main() {
   const spendVaultAddress = "YOUR_SPEND_VAULT_ADDRESS";
-  const SpendVault = await ethers.getContractAt("SpendVault", spendVaultAddress);
 
-  // Deposit 0.01 ETH
-  const tx = await SpendVault.deposit(
-    ethers.ZeroAddress, // ETH
-    ethers.parseEther("0.01"),
-    { value: ethers.parseEther("0.01") }
-  );
+  // Send 0.01 ETH directly to the vault (handled by receive())
+  const [sender] = await ethers.getSigners();
+  const tx = await sender.sendTransaction({ to: spendVaultAddress, value: ethers.parseEther("0.01") });
   await tx.wait();
 
+  const SpendVault = await ethers.getContractAt("SpendVault", spendVaultAddress);
   const balance = await SpendVault.getETHBalance();
   console.log("Vault balance:", ethers.formatEther(balance), "ETH");
 }

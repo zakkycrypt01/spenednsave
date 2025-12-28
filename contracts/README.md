@@ -20,7 +20,25 @@ This directory contains the Solidity smart contracts for the SpendGuard applicat
 - `burn(uint256 tokenId)`: Remove a guardian
 - `isGuardian(address account)`: Check if an address is a guardian
 
-### 2. SpendVault.sol
+### 2. VaultFactory.sol
+**Purpose**: One-per-network factory to create per-user vaults and guardian tokens
+
+**Key Features**:
+- Single deployment per network; users create their own vault/token via the factory
+- Transfers ownership of newly created contracts to the user
+- Tracks user vault and guardian token addresses
+
+**Functions**:
+- `createVault(uint256 quorum)`: Deploy `GuardianSBT` + `SpendVault` for caller, set quorum, transfer ownership
+- `getUserContracts(address user)`: Return `(guardianToken, vault)` for a user
+- `hasVault(address user)`: Check if the user already created a vault
+- `getTotalVaults()`: Total number of vaults created
+- `getVaultByIndex(uint256 index)`: Enumerate created vaults
+
+**Events**:
+- `VaultCreated(owner, guardianToken, vault, quorum)`
+
+### 3. SpendVault.sol
 **Purpose**: Multi-signature treasury vault with guardian-based approvals
 
 **Key Features**:
@@ -48,6 +66,12 @@ This directory contains the Solidity smart contracts for the SpendGuard applicat
 - `executeEmergencyUnlock(address token)`: Withdraw after timelock
 - `cancelEmergencyUnlock()`: Cancel pending unlock
 
+**Views**:
+- `getETHBalance()`: Current ETH balance
+- `getTokenBalance(address token)`: ERC-20 balance for a token
+- `getDomainSeparator()`: EIP-712 domain separator
+- `getEmergencyUnlockTimeRemaining()`: Seconds remaining until unlock (0 if none/past)
+
 ## Deployment
 
 ### Prerequisites
@@ -58,25 +82,39 @@ npm install @openzeppelin/contracts
 
 ### Deployment Steps
 
-1. **Deploy GuardianSBT**:
-```solidity
-const GuardianSBT = await ethers.getContractFactory("GuardianSBT");
-const guardianSBT = await GuardianSBT.deploy();
-await guardianSBT.deployed();
+1. **Recommended: Deploy VaultFactory (once per network)**
+```javascript
+const VaultFactory = await ethers.getContractFactory("VaultFactory");
+const factory = await VaultFactory.deploy();
+await factory.waitForDeployment();
+const factoryAddress = await factory.getAddress();
+
+// For a user to create their vault + guardian token
+const tx = await factory.createVault(2); // quorum = 2
+await tx.wait();
+const [guardianTokenAddress, vaultAddress] = await factory.getUserContracts(userAddress);
 ```
 
-2. **Deploy SpendVault**:
-```solidity
+2. **Direct deploy (optional)**
+```javascript
+// GuardianSBT
+const GuardianSBT = await ethers.getContractFactory("GuardianSBT");
+const guardianSBT = await GuardianSBT.deploy();
+await guardianSBT.waitForDeployment();
+const guardianSBTAddress = await guardianSBT.getAddress();
+
+// SpendVault
 const SpendVault = await ethers.getContractFactory("SpendVault");
 const spendVault = await SpendVault.deploy(
-    guardianSBT.address,  // Guardian token address
-    2                      // Quorum (e.g., 2 of 3 guardians)
+  guardianSBTAddress,  // Guardian token address
+  2                    // Quorum (e.g., 2 of 3 guardians)
 );
-await spendVault.deployed();
+await spendVault.waitForDeployment();
+const vaultAddress = await spendVault.getAddress();
 ```
 
 3. **Add Guardians**:
-```solidity
+```javascript
 await guardianSBT.mint("0xGuardian1Address");
 await guardianSBT.mint("0xGuardian2Address");
 await guardianSBT.mint("0xGuardian3Address");
@@ -112,7 +150,8 @@ await guardianSBT.mint("0xGuardian3Address");
 const domain = {
   name: "SpendGuard",
   version: "1",
-  chainId: await signer.getChainId(),
+  // ethers v6: get chainId from provider
+  chainId: (await signer.provider.getNetwork()).chainId,
   verifyingContract: vaultAddress
 };
 
@@ -128,13 +167,14 @@ const types = {
 
 const value = {
   token: tokenAddress,
-  amount: ethers.utils.parseEther("100"),
+  amount: ethers.parseEther("100"),
   recipient: recipientAddress,
   nonce: await vault.nonce(),
   reason: "Emergency medical expenses"
 };
 
-const signature = await signer._signTypedData(domain, types, value);
+// ethers v6
+const signature = await signer.signTypedData(domain, types, value);
 ```
 
 ## Security Considerations
@@ -189,7 +229,7 @@ describe("SpendGuard", function () {
         guardian2.address,
         0
       )
-    ).to.be.revertedWith("GuardianSBT: token is soulbound");
+    ).to.be.revertedWith("GuardianSBT: token is soulbound and cannot be transferred");
   });
 
   it("Should accept ETH deposits", async function () {

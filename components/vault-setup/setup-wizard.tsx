@@ -3,14 +3,22 @@
 import { Step1Details } from "./steps/step-1-details";
 import { Step2Guardians } from "./steps/step-2-guardians";
 import { Step3Review } from "./steps/step-3-review";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
+import { useAccount } from "wagmi";
+import { useCreateVault, useUserContracts } from "@/lib/hooks/useContracts";
 
 export function SetupWizard() {
+    const { address } = useAccount();
+    const { createVault, isPending, isConfirming, isSuccess, error } = useCreateVault();
+    const { data: userContracts } = useUserContracts(address as any);
+
     const [step, setStep] = useState(1);
     const [isDeployed, setIsDeployed] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [deployedVaultAddress, setDeployedVaultAddress] = useState<string | null>(null);
+    const [deployedGuardianTokenAddress, setDeployedGuardianTokenAddress] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -32,19 +40,30 @@ export function SetupWizard() {
     }
 
     const handleDeploy = async () => {
-        // Simulate deployment
-        setStep(4); // Move to deployment loading state
-
-        // Simulate loading steps
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Deploying contract...
-        await new Promise(resolve => setTimeout(resolve, 1500)); // Verifying...
-
-        setIsDeployed(true);
-        setShowSuccess(true);
+        if (!address) return;
+        setStep(4); // show deployment progress
+        try {
+            // Use factory to create a vault with the chosen threshold (quorum)
+            await createVault(formData.threshold);
+        } catch (e) {
+            // Stay on progress view but you could surface error
+            console.error(e);
+        }
     };
 
+    // After tx success, read back user contracts from factory and show success
+    useEffect(() => {
+        if (isSuccess && userContracts && Array.isArray(userContracts)) {
+            const [guardianToken, vault] = userContracts as any;
+            setDeployedGuardianTokenAddress(guardianToken as string);
+            setDeployedVaultAddress(vault as string);
+            setIsDeployed(true);
+            setShowSuccess(true);
+        }
+    }, [isSuccess, userContracts]);
+
     if (showSuccess) {
-        return <SuccessView vaultName={formData.name} />;
+        return <SuccessView vaultName={formData.name} vaultAddress={deployedVaultAddress} />;
     }
 
     if (step === 4) {
@@ -139,7 +158,7 @@ function DeploymentProgressView() {
     )
 }
 
-function SuccessView({ vaultName }: { vaultName: string }) {
+function SuccessView({ vaultName, vaultAddress }: { vaultName: string; vaultAddress?: string | null }) {
     return (
         <div className="w-full max-w-2xl mx-auto py-8 px-4 flex flex-col items-center text-center animate-in fade-in zoom-in duration-500">
             <div className="size-24 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500 mb-6 border border-emerald-500/20 shadow-[0_0_30px_rgba(16,185,129,0.2)]">
@@ -157,7 +176,7 @@ function SuccessView({ vaultName }: { vaultName: string }) {
                     </div>
                     <div className="text-left">
                         <p className="text-sm text-slate-500 font-medium">Vault Address</p>
-                        <p className="text-white font-mono text-sm">0x71C...39A2</p>
+                        <p className="text-white font-mono text-sm">{vaultAddress ? vaultAddress : "Pending..."}</p>
                     </div>
                     <button className="ml-auto text-slate-400 hover:text-white">
                         <span className="material-symbols-outlined text-lg">content_copy</span>

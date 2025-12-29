@@ -1,9 +1,10 @@
 "use client";
 
 import { Users, Lock, CreditCard, ArrowRight, ShieldCheck } from "lucide-react";
-import { useAccount } from "wagmi";
+import { useAccount, useWatchContractEvent } from "wagmi";
 import { useDepositETH, useVaultETHBalance, useUserContracts, useVaultQuorum } from "@/lib/hooks/useContracts";
-import { formatEther } from "viem";
+import { SpendVaultABI } from "@/lib/abis/SpendVault";
+import { formatEther, type Address } from "viem";
 import { useState, useEffect } from "react";
 
 export function DashboardSaverView() {
@@ -16,6 +17,26 @@ export function DashboardSaverView() {
     const { data: quorum } = useVaultQuorum(vaultAddress);
     const [depositAmount, setDepositAmount] = useState("0.01");
     const [showDepositModal, setShowDepositModal] = useState(false);
+    const [activities, setActivities] = useState<any[]>([]);
+
+    // Watch for Deposited events
+    useWatchContractEvent({
+        address: vaultAddress as Address,
+        abi: SpendVaultABI,
+        eventName: 'Deposited',
+        enabled: !!vaultAddress,
+        onLogs(logs) {
+            const newActivities = logs.map(log => ({
+                type: 'deposit',
+                from: log.args.from,
+                amount: log.args.amount,
+                token: log.args.token,
+                blockNumber: log.blockNumber,
+                timestamp: Date.now(),
+            }));
+            setActivities(prev => [...newActivities, ...prev].slice(0, 10)); // Keep last 10
+        },
+    });
 
     // Refetch balance after successful deposit
     useEffect(() => {
@@ -125,13 +146,41 @@ export function DashboardSaverView() {
                         <button className="text-primary text-sm font-medium hover:text-primary-hover">View All</button>
                     </div>
 
-                    <div className="bg-surface-dark border border-surface-border rounded-2xl p-8 text-center">
-                        <div className="size-16 rounded-full bg-surface-border/50 flex items-center justify-center text-slate-500 mx-auto mb-4">
-                            <CreditCard size={24} />
+                    {activities.length === 0 ? (
+                        <div className="bg-surface-dark border border-surface-border rounded-2xl p-8 text-center">
+                            <div className="size-16 rounded-full bg-surface-border/50 flex items-center justify-center text-slate-500 mx-auto mb-4">
+                                <CreditCard size={24} />
+                            </div>
+                            <p className="text-slate-400 text-sm">No recent activity</p>
+                            <p className="text-slate-500 text-xs mt-2">Your transactions will appear here</p>
                         </div>
-                        <p className="text-slate-400 text-sm">No recent activity</p>
-                        <p className="text-slate-500 text-xs mt-2">Your transactions will appear here</p>
-                    </div>
+                    ) : (
+                        <div className="bg-surface-dark border border-surface-border rounded-2xl overflow-hidden divide-y divide-surface-border">
+                            {activities.map((activity, i) => {
+                                const isDeposit = activity.type === 'deposit';
+                                const amount = activity.amount ? formatEther(activity.amount) : '0';
+                                const timeAgo = Math.floor((Date.now() - activity.timestamp) / 1000);
+                                const timeString = timeAgo < 60 ? 'Just now' : 
+                                                 timeAgo < 3600 ? `${Math.floor(timeAgo / 60)}m ago` :
+                                                 `${Math.floor(timeAgo / 3600)}h ago`;
+                                
+                                return (
+                                    <div key={`${activity.blockNumber}-${i}`} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                                <CreditCard size={18} />
+                                            </div>
+                                            <div>
+                                                <p className="text-white font-medium">Deposit</p>
+                                                <p className="text-slate-500 text-xs">{timeString}</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-emerald-400 font-medium">+{parseFloat(amount).toFixed(4)} ETH</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </section>
 
                 {/* Quick Actions / Guardians */}

@@ -3,6 +3,7 @@
 import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useState } from "react";
+import Link from "next/link";
 
 // Mock data for pending withdrawal requests
 // In production, this would come from contract events or a backend
@@ -179,13 +180,13 @@ export function DashboardGuardianView() {
 
                                 {!request.hasUserSigned && (
                                     <div className="flex gap-3">
-                                        <button
-                                            onClick={() => handleApprove(request.id)}
+                                        <Link
+                                            href="/voting"
                                             className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
                                         >
                                             <CheckCircle size={20} />
                                             Approve & Sign
-                                        </button>
+                                        </Link>
                                         <button
                                             onClick={() => handleReject(request.id)}
                                             className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"

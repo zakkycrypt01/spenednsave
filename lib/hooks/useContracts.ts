@@ -308,3 +308,42 @@ export function useEmergencyUnlockTimeRemaining(vaultAddress?: Address) {
         },
     });
 }
+
+/**
+ * Hook to execute withdrawal with guardian signatures
+ */
+export function useExecuteWithdrawal(vaultAddress?: Address) {
+    const { writeContract, data: hash, isPending, error } = useWriteContract();
+
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+        hash,
+    });
+
+    const executeWithdrawal = (
+        token: Address,
+        amount: bigint,
+        recipient: Address,
+        reason: string,
+        signatures: `0x${string}`[]
+    ) => {
+        if (!vaultAddress) {
+            throw new Error('No vault address provided');
+        }
+
+        writeContract({
+            address: vaultAddress,
+            abi: SpendVaultABI,
+            functionName: 'withdraw',
+            args: [token, amount, recipient, reason, signatures],
+        });
+    };
+
+    return {
+        executeWithdrawal,
+        hash,
+        isPending,
+        isConfirming,
+        isSuccess,
+        error,
+    };
+}

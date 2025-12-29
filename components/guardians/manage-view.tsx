@@ -15,6 +15,14 @@ interface Guardian {
     status: 'active' | 'pending';
 }
 
+interface RecentEvent {
+    id: string;
+    type: 'added' | 'removed';
+    guardian: Address;
+    timestamp: number;
+    blockNumber: bigint;
+}
+
 export function ManageGuardiansView() {
     const { address, isConnected } = useAccount();
     const { data: userContracts, isLoading: isLoadingContracts } = useUserContracts(address as any);
@@ -28,6 +36,7 @@ export function ManageGuardiansView() {
     
     const [guardians, setGuardians] = useState<Guardian[]>([]);
     const [guardianCount, setGuardianCount] = useState(0);
+    const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
     const [isAdding, setIsAdding] = useState(false);
     const [newGuardian, setNewGuardian] = useState({ name: "", address: "" });
 
@@ -87,6 +96,29 @@ export function ManageGuardiansView() {
                 });
 
                 setGuardians(Array.from(guardianMap.values()));
+
+                // Build recent events list
+                const addedEvents: RecentEvent[] = addedLogs.map((log: any) => ({
+                    id: `${log.transactionHash}-${log.logIndex}`,
+                    type: 'added' as const,
+                    guardian: log.args.guardian,
+                    blockNumber: log.blockNumber,
+                    timestamp: Date.now() - Number(currentBlock - log.blockNumber) * 2000,
+                }));
+
+                const removedEvents: RecentEvent[] = removedLogs.map((log: any) => ({
+                    id: `${log.transactionHash}-${log.logIndex}`,
+                    type: 'removed' as const,
+                    guardian: log.args.guardian,
+                    blockNumber: log.blockNumber,
+                    timestamp: Date.now() - Number(currentBlock - log.blockNumber) * 2000,
+                }));
+
+                const allEvents = [...addedEvents, ...removedEvents]
+                    .sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
+                    .slice(0, 5); // Show last 5 events
+
+                setRecentEvents(allEvents);
             } catch (error) {
                 console.error('Error fetching guardian events:', error);
             }
@@ -350,20 +382,40 @@ export function ManageGuardiansView() {
                     {/* Recent Events */}
                     <div>
                         <h3 className="text-slate-900 dark:text-white font-bold mb-4">Recent Events</h3>
-                        <div className="space-y-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="flex gap-3">
-                                    <div className="relative">
-                                        <div className="size-2 rounded-full bg-slate-300 dark:bg-slate-600 mt-2"></div>
-                                        {i !== 3 && <div className="absolute top-4 left-1 w-px h-full bg-slate-200 dark:bg-slate-800 -ml-px"></div>}
-                                    </div>
-                                    <div className="pb-4">
-                                        <p className="text-sm text-slate-900 dark:text-white font-medium">Guardian Added</p>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400">Alice added Bob as guardian</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        {recentEvents.length === 0 ? (
+                            <div className="bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-border rounded-xl p-6 text-center">
+                                <Clock size={24} className="text-slate-400 mx-auto mb-2" />
+                                <p className="text-sm text-slate-500 dark:text-slate-400">No events yet</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {recentEvents.map((event, i) => {
+                                    const timeAgo = Math.floor((Date.now() - event.timestamp) / 1000);
+                                    const timeString = timeAgo < 60 ? 'Just now' : 
+                                                     timeAgo < 3600 ? `${Math.floor(timeAgo / 60)}m ago` :
+                                                     timeAgo < 86400 ? `${Math.floor(timeAgo / 3600)}h ago` :
+                                                     `${Math.floor(timeAgo / 86400)}d ago`;
+                                    
+                                    return (
+                                        <div key={event.id} className="flex gap-3">
+                                            <div className="relative">
+                                                <div className={`size-2 rounded-full mt-2 ${event.type === 'added' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
+                                                {i !== recentEvents.length - 1 && <div className="absolute top-4 left-1 w-px h-full bg-slate-200 dark:bg-slate-800 -ml-px"></div>}
+                                            </div>
+                                            <div className="pb-4 flex-1">
+                                                <p className="text-sm text-slate-900 dark:text-white font-medium">
+                                                    {event.type === 'added' ? 'Guardian Added' : 'Guardian Removed'}
+                                                </p>
+                                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                                    You {event.type === 'added' ? 'added' : 'removed'} {event.guardian.slice(0, 6)}...{event.guardian.slice(-4)} as guardian
+                                                </p>
+                                                <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{timeString}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

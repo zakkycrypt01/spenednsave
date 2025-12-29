@@ -45,6 +45,7 @@ export function Navbar() {
                         {[
                             { name: "Dashboard", href: "/dashboard" },
                             { name: "Guardians", href: "/guardians" },
+                            { name: "Voting", href: "/voting" },
                             { name: "Activity", href: "/activity" },
                             { name: "Emergency", href: "/emergency" },
                         ].map((link) => {

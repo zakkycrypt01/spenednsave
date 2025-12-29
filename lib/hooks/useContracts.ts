@@ -116,6 +116,7 @@ export function useVaultETHBalance(vaultAddress?: Address) {
         functionName: 'getETHBalance',
         query: {
             enabled: !!vaultAddress,
+            refetchInterval: 3000, // Refetch every 3 seconds
         },
     });
 }

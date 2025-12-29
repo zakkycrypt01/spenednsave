@@ -4,18 +4,29 @@ import { Users, Lock, CreditCard, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useDepositETH, useVaultETHBalance, useUserContracts, useVaultQuorum } from "@/lib/hooks/useContracts";
 import { formatEther } from "viem";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function DashboardSaverView() {
     const { address } = useAccount();
     const { data: userContracts } = useUserContracts(address as any);
     const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
     
-    const { deposit, isPending, isConfirming, isSuccess } = useDepositETH(vaultAddress);
-    const { data: vaultBalance } = useVaultETHBalance(vaultAddress);
+    const { deposit, isPending, isConfirming, isSuccess, hash } = useDepositETH(vaultAddress);
+    const { data: vaultBalance, refetch: refetchBalance } = useVaultETHBalance(vaultAddress);
     const { data: quorum } = useVaultQuorum(vaultAddress);
     const [depositAmount, setDepositAmount] = useState("0.01");
     const [showDepositModal, setShowDepositModal] = useState(false);
+
+    // Refetch balance after successful deposit
+    useEffect(() => {
+        if (isSuccess) {
+            // Wait a bit for the transaction to be indexed
+            const timer = setTimeout(() => {
+                refetchBalance();
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [isSuccess, refetchBalance]);
 
     const handleDeposit = () => {
         try {

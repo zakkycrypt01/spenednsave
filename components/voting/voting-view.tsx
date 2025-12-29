@@ -205,7 +205,22 @@ export function VotingView() {
                     <button
                         onClick={() => {
                             // Reload requests
-                            const storedRequests = localStorage.getItem(`withdrawal-requests-${vaultAddress}`);\n                            if (storedRequests) {\n                                const requests = JSON.parse(storedRequests);\n                                const pending = requests.filter((req: any) => {\n                                    const signatures = req.signatures || [];\n                                    return !signatures.some((sig: any) => sig.signer === address);\n                                });\n                                if (pending.length > 0) {\n                                    setPendingRequests(pending);\n                                    setStatus('pending');\n                                } else {\n                                    setStatus('empty');\n                                }\n                            } else {\n                                setStatus('empty');\n                            }
+                            const storedRequests = localStorage.getItem(`withdrawal-requests-${vaultAddress}`);
+                            if (storedRequests) {
+                                const requests = JSON.parse(storedRequests);
+                                const pending = requests.filter((req: any) => {
+                                    const signatures = req.signatures || [];
+                                    return !signatures.some((sig: any) => sig.signer === address);
+                                });
+                                if (pending.length > 0) {
+                                    setPendingRequests(pending);
+                                    setStatus('pending');
+                                } else {
+                                    setStatus('empty');
+                                }
+                            } else {
+                                setStatus('empty');
+                            }
                         }}
                         className="flex-1 bg-slate-100 dark:bg-surface-border hover:bg-slate-200 dark:hover:bg-surface-border/80 text-slate-900 dark:text-white font-bold py-3 px-4 rounded-xl text-sm transition-colors"
                     >
@@ -316,6 +331,41 @@ export function VotingView() {
                         <Shield size={12} />
                         Secured by Smart Contract
                     </p>
+                </div>
+            </div>
+        </div>
+        );
+    }
+
+    // If no pending requests, show empty state
+    return (
+        <div className="relative w-full max-w-md">
+            <div className="bg-[#1a1d26] dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl p-10 md:p-14 flex flex-col items-center shadow-card overflow-hidden group">
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent"></div>
+                <div className="relative w-32 h-32 mb-8 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-emerald-500/10 blur-[40px] rounded-full"></div>
+                    <div className="relative z-10 w-24 h-24 bg-gradient-to-b from-slate-800 to-slate-900 rounded-full flex items-center justify-center border border-surface-border shadow-lg group-hover:shadow-[0_8px_24px_rgba(16,185,129,0.1)] transition-all duration-500">
+                        <Shield size={44} className="text-emerald-500" />
+                    </div>
+                    <div className="absolute top-1 right-1 w-6 h-6 bg-slate-900 rounded-full flex items-center justify-center border border-surface-border">
+                        <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.6)] animate-pulse"></div>
+                    </div>
+                </div>
+                <div className="flex flex-col items-center text-center gap-3 mb-10">
+                    <h3 className="text-slate-900 dark:text-white text-2xl font-bold leading-tight tracking-tight">No active proposals</h3>
+                    <p className="text-slate-500 dark:text-slate-400 text-base font-normal leading-relaxed max-w-[280px]">
+                        Your friend hasn't tried to spend any money yet. Good job!
+                    </p>
+                </div>
+                <div className="flex flex-col w-full gap-3">
+                    <Link href="/activity" className="w-full h-11 px-6 rounded-xl bg-slate-100 dark:bg-surface-border/50 hover:bg-slate-200 dark:hover:bg-surface-border text-slate-900 dark:text-white text-sm font-semibold transition-all duration-200 flex items-center justify-center gap-2 border border-transparent hover:border-slate-300 dark:hover:border-white/5 group/btn">
+                        <ArrowRight size={20} className="text-slate-400 group-hover/btn:text-slate-900 dark:group-hover/btn:text-white transition-colors" />
+                        View Transaction History
+                    </Link>
+                </div>
+                <div className="mt-8 flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity cursor-default">
+                    <Shield size={14} className="text-emerald-500" />
+                    <span className="text-slate-400 text-xs font-medium tracking-wide">Secured by Base</span>
                 </div>
             </div>
         </div>

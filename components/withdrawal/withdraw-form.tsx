@@ -70,7 +70,11 @@ export function WithdrawalForm() {
             const requestId = `${vaultAddress}-${Date.now()}`;
             const requestData = {
                 id: requestId,
-                ...withdrawalRequest,
+                token: withdrawalRequest.token,
+                amount: withdrawalRequest.amount.toString(), // Convert BigInt to string
+                recipient: withdrawalRequest.recipient,
+                nonce: withdrawalRequest.nonce.toString(), // Convert BigInt to string
+                reason: withdrawalRequest.reason,
                 owner: address,
                 vaultAddress,
                 createdAt: Date.now(),

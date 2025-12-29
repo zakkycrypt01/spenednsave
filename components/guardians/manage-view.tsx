@@ -37,6 +37,7 @@ export function ManageGuardiansView() {
     const [guardians, setGuardians] = useState<Guardian[]>([]);
     const [guardianCount, setGuardianCount] = useState(0);
     const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
+    const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
     const [isAdding, setIsAdding] = useState(false);
     const [newGuardian, setNewGuardian] = useState({ name: "", address: "" });
 
@@ -126,6 +127,37 @@ export function ManageGuardiansView() {
         
         fetchGuardianEvents();
     }, [guardianTokenAddress, publicClient, currentBlock]);
+
+    // Fetch pending withdrawal requests from localStorage
+    useEffect(() => {
+        function fetchPendingRequests() {
+            if (!vaultAddress) return;
+            
+            try {
+                const existingRequests = localStorage.getItem(`withdrawal-requests-${vaultAddress}`);
+                if (existingRequests) {
+                    const requests = JSON.parse(existingRequests);
+                    // Count requests that don't have enough signatures yet
+                    const pending = requests.filter((req: any) => {
+                        const sigCount = req.signaturesCount || req.signatures?.length || 0;
+                        return sigCount < (quorum ? Number(quorum) : 0);
+                    });
+                    setPendingRequestsCount(pending.length);
+                } else {
+                    setPendingRequestsCount(0);
+                }
+            } catch (error) {
+                console.error('Error fetching pending requests:', error);
+                setPendingRequestsCount(0);
+            }
+        }
+        
+        fetchPendingRequests();
+        
+        // Poll for updates every 3 seconds
+        const interval = setInterval(fetchPendingRequests, 3000);
+        return () => clearInterval(interval);
+    }, [vaultAddress, quorum]);
 
     // Close modal and reset form after successful add
     useEffect(() => {
@@ -253,7 +285,7 @@ export function ManageGuardiansView() {
                         <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Queue</span>
                     </div>
                     <div className="mt-4">
-                        <h3 className="text-3xl font-bold text-slate-900 dark:text-white">0</h3>
+                        <h3 className="text-3xl font-bold text-slate-900 dark:text-white">{pendingRequestsCount}</h3>
                         <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Requests</p>
                     </div>
                 </div>

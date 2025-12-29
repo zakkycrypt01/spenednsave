@@ -4,6 +4,7 @@ import { Users, Lock, CreditCard, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAccount, useWatchContractEvent, usePublicClient, useBlockNumber } from "wagmi";
 import { useDepositETH, useVaultETHBalance, useUserContracts, useVaultQuorum } from "@/lib/hooks/useContracts";
 import { SpendVaultABI } from "@/lib/abis/SpendVault";
+import { GuardianSBTABI } from "@/lib/abis/GuardianSBT";
 import { formatEther, type Address } from "viem";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -11,6 +12,7 @@ import Link from "next/link";
 export function DashboardSaverView() {
     const { address } = useAccount();
     const { data: userContracts } = useUserContracts(address as any);
+    const guardianTokenAddress = userContracts ? (userContracts as any)[0] : undefined;
     const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
     const publicClient = usePublicClient();
     const { data: currentBlock } = useBlockNumber();
@@ -25,11 +27,13 @@ export function DashboardSaverView() {
     // Fetch historical Deposited events
     useEffect(() => {
         async function fetchHistoricalEvents() {
-            if (!vaultAddress || !publicClient || !currentBlock) return;
+            if (!vaultAddress || !guardianTokenAddress || !publicClient || !currentBlock) return;
             
             try {
                 const fromBlock = currentBlock - 10000n > 0n ? currentBlock - 10000n : 0n;
-                const logs = await publicClient.getLogs({
+                
+                // Fetch deposit events
+                const depositLogs = await publicClient.getLogs({
                     address: vaultAddress as Address,
                     event: {
                         type: 'event',
@@ -44,23 +48,50 @@ export function DashboardSaverView() {
                     toBlock: 'latest',
                 });
 
-                const historicalActivities = logs.map((log: any) => ({
+                // Fetch guardian added events
+                const guardianLogs = await publicClient.getLogs({
+                    address: guardianTokenAddress as Address,
+                    event: {
+                        type: 'event',
+                        name: 'GuardianAdded',
+                        inputs: [
+                            { type: 'address', indexed: true, name: 'guardian' },
+                            { type: 'uint256', indexed: false, name: 'tokenId' },
+                        ],
+                    },
+                    fromBlock,
+                    toBlock: 'latest',
+                });
+
+                const depositActivities = depositLogs.map((log: any) => ({
                     type: 'deposit',
                     from: log.args.from,
                     amount: log.args.amount,
                     token: log.args.token,
                     blockNumber: log.blockNumber,
-                    timestamp: Date.now() - Number(currentBlock - log.blockNumber) * 2000, // Approximate
-                })).reverse();
+                    timestamp: Date.now() - Number(currentBlock - log.blockNumber) * 2000,
+                }));
 
-                setActivities(historicalActivities.slice(0, 10));
+                const guardianActivities = guardianLogs.map((log: any) => ({
+                    type: 'guardian_added',
+                    guardian: log.args.guardian,
+                    tokenId: log.args.tokenId,
+                    blockNumber: log.blockNumber,
+                    timestamp: Date.now() - Number(currentBlock - log.blockNumber) * 2000,
+                }));
+
+                const allActivities = [...depositActivities, ...guardianActivities]
+                    .sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber))
+                    .slice(0, 10);
+
+                setActivities(allActivities);
             } catch (error) {
                 console.error('Error fetching historical events:', error);
             }
         }
         
         fetchHistoricalEvents();
-    }, [vaultAddress, publicClient, currentBlock]);
+    }, [vaultAddress, guardianTokenAddress, publicClient, currentBlock]);
 
     // Watch for Deposited events
     useWatchContractEvent({
@@ -77,7 +108,25 @@ export function DashboardSaverView() {
                 blockNumber: log.blockNumber,
                 timestamp: Date.now(),
             }));
-            setActivities(prev => [...newActivities, ...prev].slice(0, 10)); // Keep last 10
+            setActivities(prev => [...newActivities, ...prev].slice(0, 10));
+        },
+    });
+
+    // Watch for GuardianAdded events
+    useWatchContractEvent({
+        address: guardianTokenAddress as Address,
+        abi: GuardianSBTABI,
+        eventName: 'GuardianAdded',
+        enabled: !!guardianTokenAddress,
+        onLogs(logs) {
+            const newActivities = logs.map(log => ({
+                type: 'guardian_added',
+                guardian: log.args.guardian,
+                tokenId: log.args.tokenId,
+                blockNumber: log.blockNumber,
+                timestamp: Date.now(),
+            }));
+            setActivities(prev => [...newActivities, ...prev].slice(0, 10));
         },
     });
 
@@ -201,6 +250,7 @@ export function DashboardSaverView() {
                         <div className="bg-surface-dark border border-surface-border rounded-2xl overflow-hidden divide-y divide-surface-border">
                             {activities.map((activity, i) => {
                                 const isDeposit = activity.type === 'deposit';
+                                const isGuardianAdded = activity.type === 'guardian_added';
                                 const amount = activity.amount ? formatEther(activity.amount) : '0';
                                 const timeAgo = Math.floor((Date.now() - activity.timestamp) / 1000);
                                 const timeString = timeAgo < 60 ? 'Just now' : 
@@ -210,15 +260,26 @@ export function DashboardSaverView() {
                                 return (
                                     <div key={`${activity.blockNumber}-${i}`} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
                                         <div className="flex items-center gap-4">
-                                            <div className="size-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                                <CreditCard size={18} />
+                                            <div className={`size-10 rounded-full flex items-center justify-center ${
+                                                isDeposit ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'
+                                            }`}>
+                                                {isDeposit ? <CreditCard size={18} /> : <Users size={18} />}
                                             </div>
                                             <div>
-                                                <p className="text-white font-medium">Deposit</p>
+                                                <p className="text-white font-medium">
+                                                    {isDeposit ? 'Deposit' : 'Guardian Added'}
+                                                </p>
                                                 <p className="text-slate-500 text-xs">{timeString}</p>
                                             </div>
                                         </div>
-                                        <span className="text-emerald-400 font-medium">+{parseFloat(amount).toFixed(4)} ETH</span>
+                                        {isDeposit && (
+                                            <span className="text-emerald-400 font-medium">+{parseFloat(amount).toFixed(4)} ETH</span>
+                                        )}
+                                        {isGuardianAdded && activity.guardian && (
+                                            <span className="text-blue-400 font-mono text-xs">
+                                                {activity.guardian.slice(0, 6)}...{activity.guardian.slice(-4)}
+                                            </span>
+                                        )}
                                     </div>
                                 );
                             })}

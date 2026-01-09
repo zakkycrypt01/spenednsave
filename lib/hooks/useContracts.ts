@@ -305,8 +305,89 @@ export function useEmergencyUnlockTimeRemaining(vaultAddress?: Address) {
         functionName: 'getEmergencyUnlockTimeRemaining',
         query: {
             enabled: !!vaultAddress,
+            refetchInterval: 1000, // Refetch every second for countdown
         },
     });
+}
+
+/**
+ * Hook to get unlock request time
+ */
+export function useUnlockRequestTime(vaultAddress?: Address) {
+    return useReadContract({
+        address: vaultAddress as Address,
+        abi: SpendVaultABI,
+        functionName: 'unlockRequestTime',
+        query: {
+            enabled: !!vaultAddress,
+            refetchInterval: 3000,
+        },
+    });
+}
+
+/**
+ * Hook to execute emergency unlock (withdraw all funds after timelock)
+ */
+export function useExecuteEmergencyUnlock(vaultAddress?: Address) {
+    const { writeContract, data: hash, isPending, error } = useWriteContract();
+
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+        hash,
+    });
+
+    const executeUnlock = (tokenAddress: Address) => {
+        if (!vaultAddress) {
+            throw new Error('No vault address provided');
+        }
+
+        writeContract({
+            address: vaultAddress,
+            abi: SpendVaultABI,
+            functionName: 'executeEmergencyUnlock',
+            args: [tokenAddress],
+        });
+    };
+
+    return {
+        executeUnlock,
+        hash,
+        isPending,
+        isConfirming,
+        isSuccess,
+        error,
+    };
+}
+
+/**
+ * Hook to cancel emergency unlock
+ */
+export function useCancelEmergencyUnlock(vaultAddress?: Address) {
+    const { writeContract, data: hash, isPending, error } = useWriteContract();
+
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+        hash,
+    });
+
+    const cancelUnlock = () => {
+        if (!vaultAddress) {
+            throw new Error('No vault address provided');
+        }
+
+        writeContract({
+            address: vaultAddress,
+            abi: SpendVaultABI,
+            functionName: 'cancelEmergencyUnlock',
+        });
+    };
+
+    return {
+        cancelUnlock,
+        hash,
+        isPending,
+        isConfirming,
+        isSuccess,
+        error,
+    };
 }
 
 /**

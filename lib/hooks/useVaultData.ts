@@ -357,3 +357,55 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
 
     return { activities, isLoading };
 }
+
+/**
+ * Hook to get emergency unlock state
+ */
+export function useEmergencyUnlockState(unlockRequestTime?: bigint, timeRemaining?: bigint) {
+    const [state, setState] = useState<{
+        isActive: boolean;
+        canExecute: boolean;
+        timeLeft: { d: number; h: number; m: number; s: number } | null;
+    }>({
+        isActive: false,
+        canExecute: false,
+        timeLeft: null,
+    });
+
+    useEffect(() => {
+        if (!unlockRequestTime || unlockRequestTime === 0n) {
+            setState({
+                isActive: false,
+                canExecute: false,
+                timeLeft: null,
+            });
+            return;
+        }
+
+        const isActive = unlockRequestTime > 0n;
+        const remaining = timeRemaining ? Number(timeRemaining) : 0;
+        const canExecute = remaining === 0;
+
+        if (remaining > 0) {
+            const d = Math.floor(remaining / (60 * 60 * 24));
+            const h = Math.floor((remaining % (60 * 60 * 24)) / (60 * 60));
+            const m = Math.floor((remaining % (60 * 60)) / 60);
+            const s = Math.floor(remaining % 60);
+
+            setState({
+                isActive,
+                canExecute,
+                timeLeft: { d, h, m, s },
+            });
+        } else {
+            setState({
+                isActive,
+                canExecute,
+                timeLeft: { d: 0, h: 0, m: 0, s: 0 },
+            });
+        }
+    }, [unlockRequestTime, timeRemaining]);
+
+    return state;
+}
+

@@ -5,6 +5,7 @@ import { usePublicClient, useBlockNumber } from 'wagmi';
 import { type Address, type Hex } from 'viem';
 import { GuardianSBTABI } from '@/lib/abis/GuardianSBT';
 import { SpendVaultABI } from '@/lib/abis/SpendVault';
+import { getLogsInChunks } from '@/lib/utils/chunked-logs';
 
 export interface Guardian {
     address: Address;
@@ -60,35 +61,41 @@ export function useGuardians(guardianTokenAddress?: Address) {
                 console.log('[useGuardians] Fetching guardians from block', fromBlock, 'to latest');
                 console.log('[useGuardians] Guardian token address:', guardianTokenAddress);
                 
-                const addedLogs = await publicClient.getLogs({
-                    address: guardianTokenAddress,
-                    event: {
-                        type: 'event',
-                        name: 'GuardianAdded',
-                        inputs: [
-                            { type: 'address', indexed: true, name: 'guardian' },
-                            { type: 'uint256', indexed: false, name: 'tokenId' },
-                        ],
+                const addedLogs = await getLogsInChunks(
+                    publicClient,
+                    {
+                        address: guardianTokenAddress,
+                        event: {
+                            type: 'event',
+                            name: 'GuardianAdded',
+                            inputs: [
+                                { type: 'address', indexed: true, name: 'guardian' },
+                                { type: 'uint256', indexed: false, name: 'tokenId' },
+                            ],
+                        },
                     },
                     fromBlock,
-                    toBlock: 'latest',
-                });
+                    'latest'
+                );
 
                 console.log('[useGuardians] Found', addedLogs.length, 'GuardianAdded events');
 
-                const removedLogs = await publicClient.getLogs({
-                    address: guardianTokenAddress,
-                    event: {
-                        type: 'event',
-                        name: 'GuardianRemoved',
-                        inputs: [
-                            { type: 'address', indexed: true, name: 'guardian' },
-                            { type: 'uint256', indexed: false, name: 'tokenId' },
-                        ],
+                const removedLogs = await getLogsInChunks(
+                    publicClient,
+                    {
+                        address: guardianTokenAddress,
+                        event: {
+                            type: 'event',
+                            name: 'GuardianRemoved',
+                            inputs: [
+                                { type: 'address', indexed: true, name: 'guardian' },
+                                { type: 'uint256', indexed: false, name: 'tokenId' },
+                            ],
+                        },
                     },
                     fromBlock,
-                    toBlock: 'latest',
-                });
+                    'latest'
+                );
 
                 console.log('[useGuardians] Found', removedLogs.length, 'GuardianRemoved events');
 
@@ -162,21 +169,24 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                 const fromBlock = 0n; // Fetch from genesis
                 console.log('[useWithdrawalHistory] Fetching from block', fromBlock, 'for vault:', vaultAddress);
                 
-                const withdrawalLogs = await publicClient.getLogs({
-                    address: vaultAddress,
-                    event: {
-                        type: 'event',
-                        name: 'Withdrawn',
-                        inputs: [
-                            { type: 'address', indexed: true, name: 'token' },
-                            { type: 'address', indexed: true, name: 'recipient' },
-                            { type: 'uint256', indexed: false, name: 'amount' },
-                            { type: 'string', indexed: false, name: 'reason' },
-                        ],
+                const withdrawalLogs = await getLogsInChunks(
+                    publicClient,
+                    {
+                        address: vaultAddress,
+                        event: {
+                            type: 'event',
+                            name: 'Withdrawn',
+                            inputs: [
+                                { type: 'address', indexed: true, name: 'token' },
+                                { type: 'address', indexed: true, name: 'recipient' },
+                                { type: 'uint256', indexed: false, name: 'amount' },
+                                { type: 'string', indexed: false, name: 'reason' },
+                            ],
+                        },
                     },
                     fromBlock,
-                    toBlock: 'latest',
-                });
+                    'latest'
+                );
 
                 console.log('[useWithdrawalHistory] Found', withdrawalLogs.length, 'withdrawal events');
                 const withdrawalEvents: WithdrawalEvent[] = [];
@@ -235,20 +245,23 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                 const fromBlock = 0n; // Fetch from genesis
                 console.log('[useDepositHistory] Fetching from block', fromBlock, 'for vault:', vaultAddress);
                 
-                const depositLogs = await publicClient.getLogs({
-                    address: vaultAddress,
-                    event: {
-                        type: 'event',
-                        name: 'Deposited',
-                        inputs: [
-                            { type: 'address', indexed: true, name: 'token' },
-                            { type: 'address', indexed: true, name: 'from' },
-                            { type: 'uint256', indexed: false, name: 'amount' },
-                        ],
+                const depositLogs = await getLogsInChunks(
+                    publicClient,
+                    {
+                        address: vaultAddress,
+                        event: {
+                            type: 'event',
+                            name: 'Deposited',
+                            inputs: [
+                                { type: 'address', indexed: true, name: 'token' },
+                                { type: 'address', indexed: true, name: 'from' },
+                                { type: 'uint256', indexed: false, name: 'amount' },
+                            ],
+                        },
                     },
                     fromBlock,
-                    toBlock: 'latest',
-                });
+                    'latest'
+                );
 
                 console.log('[useDepositHistory] Found', depositLogs.length, 'deposit events');
                 const depositEvents: DepositEvent[] = [];

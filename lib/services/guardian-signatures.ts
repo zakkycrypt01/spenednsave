@@ -9,6 +9,7 @@ import {
 } from 'viem';
 import { SpendVaultABI } from '@/lib/abis/SpendVault';
 import { GuardianSBTABI } from '@/lib/abis/GuardianSBT';
+import { getLogsInChunks } from '@/lib/utils/chunked-logs';
 import type { 
     WithdrawalRequest, 
     SignedWithdrawal, 
@@ -105,20 +106,23 @@ export class GuardianSignatureService {
         const guardianTokenAddress = await this.getGuardianTokenAddress(vaultAddress);
         
         // Get all Transfer events from the Guardian SBT contract to find minted tokens
-        const logs = await this.publicClient.getLogs({
-            address: guardianTokenAddress,
-            event: {
-                type: 'event',
-                name: 'Transfer',
-                inputs: [
-                    { indexed: true, name: 'from', type: 'address' },
-                    { indexed: true, name: 'to', type: 'address' },
-                    { indexed: true, name: 'tokenId', type: 'uint256' },
-                ],
+        const logs = await getLogsInChunks(
+            this.publicClient,
+            {
+                address: guardianTokenAddress,
+                event: {
+                    type: 'event',
+                    name: 'Transfer',
+                    inputs: [
+                        { indexed: true, name: 'from', type: 'address' },
+                        { indexed: true, name: 'to', type: 'address' },
+                        { indexed: true, name: 'tokenId', type: 'uint256' },
+                    ],
+                },
             },
-            fromBlock: 0n,
-            toBlock: 'latest',
-        });
+            0n,
+            'latest'
+        );
 
         // Get unique addresses that received tokens (excluding burns)
         const guardianSet = new Set<Address>();

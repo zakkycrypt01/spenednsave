@@ -105,23 +105,29 @@ export function useGuardians(guardianTokenAddress?: Address) {
 
                 // Track removed guardians
                 for (const log of removedLogs) {
-                    const { guardian } = log.args as any;
-                    removedSet.add(guardian.toLowerCase());
+                    const args = (log as any).args;
+                    if (args?.guardian) {
+                        removedSet.add(args.guardian.toLowerCase());
+                    }
                 }
 
                 // Add guardians that haven't been removed
                 for (const log of addedLogs) {
-                    const { guardian, tokenId } = log.args as any;
+                    const args = (log as any).args;
+                    const blockNumber = log.blockNumber;
+                    const transactionHash = log.transactionHash;
                     
-                    if (!removedSet.has(guardian.toLowerCase())) {
-                        const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
+                    if (!args?.guardian || blockNumber === null || transactionHash === null) continue;
+                    
+                    if (!removedSet.has(args.guardian.toLowerCase())) {
+                        const block = await publicClient.getBlock({ blockNumber });
                         
-                        guardianMap.set(guardian.toLowerCase(), {
-                            address: guardian as Address,
-                            tokenId: tokenId as bigint,
+                        guardianMap.set(args.guardian.toLowerCase(), {
+                            address: args.guardian as Address,
+                            tokenId: args.tokenId as bigint,
                             addedAt: Number(block.timestamp) * 1000,
-                            blockNumber: log.blockNumber,
-                            txHash: log.transactionHash as Hex,
+                            blockNumber,
+                            txHash: transactionHash as Hex,
                         });
                     }
                 }
@@ -192,17 +198,22 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                 const withdrawalEvents: WithdrawalEvent[] = [];
 
                 for (const log of withdrawalLogs.slice(-limit)) {
-                    const { token, recipient, amount, reason } = log.args as any;
-                    const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
+                    const args = (log as any).args;
+                    const blockNumber = log.blockNumber;
+                    const transactionHash = log.transactionHash;
+                    
+                    if (!args || blockNumber === null || transactionHash === null) continue;
+                    
+                    const block = await publicClient.getBlock({ blockNumber });
 
                     withdrawalEvents.push({
-                        token: token as Address,
-                        recipient: recipient as Address,
-                        amount: amount as bigint,
-                        reason: reason as string,
+                        token: args.token as Address,
+                        recipient: args.recipient as Address,
+                        amount: args.amount as bigint,
+                        reason: args.reason as string,
                         timestamp: Number(block.timestamp) * 1000,
-                        blockNumber: log.blockNumber,
-                        txHash: log.transactionHash as Hex,
+                        blockNumber,
+                        txHash: transactionHash as Hex,
                     });
                 }
 
@@ -267,16 +278,21 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                 const depositEvents: DepositEvent[] = [];
 
                 for (const log of depositLogs.slice(-limit)) {
-                    const { token, from, amount } = log.args as any;
-                    const block = await publicClient.getBlock({ blockNumber: log.blockNumber });
+                    const args = (log as any).args;
+                    const blockNumber = log.blockNumber;
+                    const transactionHash = log.transactionHash;
+                    
+                    if (!args || blockNumber === null || transactionHash === null) continue;
+                    
+                    const block = await publicClient.getBlock({ blockNumber });
 
                     depositEvents.push({
-                        token: token as Address,
-                        from: from as Address,
-                        amount: amount as bigint,
+                        token: args.token as Address,
+                        from: args.from as Address,
+                        amount: args.amount as bigint,
                         timestamp: Number(block.timestamp) * 1000,
-                        blockNumber: log.blockNumber,
-                        txHash: log.transactionHash as Hex,
+                        blockNumber,
+                        txHash: transactionHash as Hex,
                     });
                 }
 

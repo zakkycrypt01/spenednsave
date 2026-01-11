@@ -57,44 +57,22 @@ export function useGuardians(guardianTokenAddress?: Address) {
             try {
                 const cacheKey = `guardians-cache-${guardianTokenAddress.toLowerCase()}`;
                 
-                // Always fetch from block 0 to get all guardians
-                // Remove incremental syncing as it was causing issues with cache
-                console.log('[useGuardians] Fetching all guardians');
-                console.log('[useGuardians] Guardian token address:', guardianTokenAddress);
+                console.log('[useGuardians] Fetching all guardians from', guardianTokenAddress);
                 
-                const addedLogs = await getLogsInChunks(
-                    publicClient,
-                    {
-                        address: guardianTokenAddress,
-                        event: {
-                            type: 'event',
-                            name: 'GuardianAdded',
-                            inputs: [
-                                { type: 'address', indexed: true, name: 'guardian' },
-                                { type: 'uint256', indexed: false, name: 'tokenId' },
-                            ],
-                        },
-                    },
-                    0n,
-                    'latest'
-                );
+                // Fetch logs with proper ABI definitions
+                const addedLogs = await publicClient.getLogs({
+                    address: guardianTokenAddress,
+                    event: GuardianSBTABI.find((a: any) => a.name === 'GuardianAdded') as any,
+                    fromBlock: 0n,
+                    toBlock: 'latest',
+                });
 
-                const removedLogs = await getLogsInChunks(
-                    publicClient,
-                    {
-                        address: guardianTokenAddress,
-                        event: {
-                            type: 'event',
-                            name: 'GuardianRemoved',
-                            inputs: [
-                                { type: 'address', indexed: true, name: 'guardian' },
-                                { type: 'uint256', indexed: false, name: 'tokenId' },
-                            ],
-                        },
-                    },
-                    0n,
-                    'latest'
-                );
+                const removedLogs = await publicClient.getLogs({
+                    address: guardianTokenAddress,
+                    event: GuardianSBTABI.find((a: any) => a.name === 'GuardianRemoved') as any,
+                    fromBlock: 0n,
+                    toBlock: 'latest',
+                });
 
                 console.log('[useGuardians] Found', addedLogs.length, 'GuardianAdded events');
                 console.log('[useGuardians] Found', removedLogs.length, 'GuardianRemoved events');
@@ -117,30 +95,35 @@ export function useGuardians(guardianTokenAddress?: Address) {
                     return args?.guardian && !removedSet.has(args.guardian.toLowerCase());
                 });
 
-                const blockNumbers = [...new Set(activeGuardians.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
-                const blockPromises = blockNumbers.map(blockNum => 
-                    publicClient.getBlock({ blockNumber: blockNum })
-                );
-                const blocks = await Promise.all(blockPromises);
-                const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
+                console.log('[useGuardians] Active guardians after filtering:', activeGuardians.length);
 
-                // Add active guardians
-                for (const log of activeGuardians) {
-                    const args = (log as any).args;
-                    const blockNumber = log.blockNumber;
-                    const transactionHash = log.transactionHash;
-                    
-                    if (!args?.guardian || blockNumber === null || transactionHash === null) continue;
-                    
-                    const block = blockMap.get(blockNumber);
-                    if (block) {
-                        guardianMap.set(args.guardian.toLowerCase(), {
-                            address: args.guardian as Address,
-                            tokenId: args.tokenId as bigint,
-                            addedAt: Number(block.timestamp) * 1000,
-                            blockNumber,
-                            txHash: transactionHash as Hex,
-                        });
+                const blockNumbers = [...new Set(activeGuardians.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
+                
+                if (blockNumbers.length > 0) {
+                    const blockPromises = blockNumbers.map(blockNum => 
+                        publicClient.getBlock({ blockNumber: blockNum })
+                    );
+                    const blocks = await Promise.all(blockPromises);
+                    const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
+
+                    // Add active guardians
+                    for (const log of activeGuardians) {
+                        const args = (log as any).args;
+                        const blockNumber = log.blockNumber;
+                        const transactionHash = log.transactionHash;
+                        
+                        if (!args?.guardian || blockNumber === null || transactionHash === null) continue;
+                        
+                        const block = blockMap.get(blockNumber);
+                        if (block) {
+                            guardianMap.set(args.guardian.toLowerCase(), {
+                                address: args.guardian as Address,
+                                tokenId: args.tokenId as bigint,
+                                addedAt: Number(block.timestamp) * 1000,
+                                blockNumber,
+                                txHash: transactionHash as Hex,
+                            });
+                        }
                     }
                 }
 

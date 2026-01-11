@@ -56,29 +56,10 @@ export function useGuardians(guardianTokenAddress?: Address) {
 
             try {
                 const cacheKey = `guardians-cache-${guardianTokenAddress.toLowerCase()}`;
-                const lastSyncKey = `guardians-lastSync-${guardianTokenAddress.toLowerCase()}`;
                 
-                // Try to load from cache
-                let cachedGuardians: Guardian[] = [];
-                let lastSyncBlock = 0n;
-                try {
-                    const cached = localStorage.getItem(cacheKey);
-                    const lastSync = localStorage.getItem(lastSyncKey);
-                    if (cached) {
-                        cachedGuardians = JSON.parse(cached).map((g: any) => ({
-                            ...g,
-                            tokenId: BigInt(g.tokenId),
-                            blockNumber: BigInt(g.blockNumber),
-                        }));
-                        lastSyncBlock = lastSync ? BigInt(lastSync) : 0n;
-                    }
-                } catch (e) {
-                    console.warn('[useGuardians] Failed to load cache:', e);
-                }
-
-                // Only fetch new events from lastSyncBlock onwards
-                const fromBlock = lastSyncBlock > 0n ? lastSyncBlock : 0n;
-                console.log('[useGuardians] Fetching new guardians from block', fromBlock, 'to latest');
+                // Always fetch from block 0 to get all guardians
+                // Remove incremental syncing as it was causing issues with cache
+                console.log('[useGuardians] Fetching all guardians');
                 console.log('[useGuardians] Guardian token address:', guardianTokenAddress);
                 
                 const addedLogs = await getLogsInChunks(
@@ -94,7 +75,7 @@ export function useGuardians(guardianTokenAddress?: Address) {
                             ],
                         },
                     },
-                    fromBlock,
+                    0n,
                     'latest'
                 );
 
@@ -111,45 +92,40 @@ export function useGuardians(guardianTokenAddress?: Address) {
                             ],
                         },
                     },
-                    fromBlock,
+                    0n,
                     'latest'
                 );
 
-                console.log('[useGuardians] Found', addedLogs.length, 'new GuardianAdded events');
-                console.log('[useGuardians] Found', removedLogs.length, 'new GuardianRemoved events');
+                console.log('[useGuardians] Found', addedLogs.length, 'GuardianAdded events');
+                console.log('[useGuardians] Found', removedLogs.length, 'GuardianRemoved events');
 
-                // Build map starting with cached guardians
+                // Build map of current guardians (added but not removed)
                 const guardianMap = new Map<string, Guardian>();
-                for (const g of cachedGuardians) {
-                    guardianMap.set(g.address.toLowerCase(), g);
-                }
-
                 const removedSet = new Set<string>();
 
-                // Track newly removed guardians
+                // Track removed guardians
                 for (const log of removedLogs) {
                     const args = (log as any).args;
                     if (args?.guardian) {
                         removedSet.add(args.guardian.toLowerCase());
-                        guardianMap.delete(args.guardian.toLowerCase());
                     }
                 }
 
-                // Fetch block timestamps in parallel for new guardians (optimization)
-                const newGuardians = addedLogs.filter(log => {
+                // Fetch block timestamps in parallel for guardians (optimization)
+                const activeGuardians = addedLogs.filter(log => {
                     const args = (log as any).args;
                     return args?.guardian && !removedSet.has(args.guardian.toLowerCase());
                 });
 
-                const blockNumbers = [...new Set(newGuardians.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
+                const blockNumbers = [...new Set(activeGuardians.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
                 const blockPromises = blockNumbers.map(blockNum => 
                     publicClient.getBlock({ blockNumber: blockNum })
                 );
                 const blocks = await Promise.all(blockPromises);
                 const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
 
-                // Add new guardians
-                for (const log of newGuardians) {
+                // Add active guardians
+                for (const log of activeGuardians) {
                     const args = (log as any).args;
                     const blockNumber = log.blockNumber;
                     const transactionHash = log.transactionHash;
@@ -174,20 +150,37 @@ export function useGuardians(guardianTokenAddress?: Address) {
                 console.log('[useGuardians] Final guardian list:', guardianList);
                 setGuardians(guardianList);
 
-                // Cache the results
+                // Cache the results for faster reloads
                 try {
                     localStorage.setItem(cacheKey, JSON.stringify(guardianList.map(g => ({
                         ...g,
                         tokenId: g.tokenId.toString(),
                         blockNumber: g.blockNumber.toString(),
                     }))));
-                    localStorage.setItem(lastSyncKey, currentBlock.toString());
                 } catch (e) {
                     console.warn('[useGuardians] Failed to cache results:', e);
                 }
             } catch (err) {
                 console.error('[useGuardians] Error fetching guardians:', err);
-                setError(err instanceof Error ? err : new Error('Failed to fetch guardians'));
+                
+                // Try to load from cache as fallback
+                try {
+                    const cacheKey = `guardians-cache-${guardianTokenAddress.toLowerCase()}`;
+                    const cached = localStorage.getItem(cacheKey);
+                    if (cached) {
+                        const cachedGuardians = JSON.parse(cached).map((g: any) => ({
+                            ...g,
+                            tokenId: BigInt(g.tokenId),
+                            blockNumber: BigInt(g.blockNumber),
+                        }));
+                        console.log('[useGuardians] Loaded guardians from cache as fallback');
+                        setGuardians(cachedGuardians);
+                    } else {
+                        setError(err instanceof Error ? err : new Error('Failed to fetch guardians'));
+                    }
+                } catch (cacheErr) {
+                    setError(err instanceof Error ? err : new Error('Failed to fetch guardians'));
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -200,7 +193,7 @@ export function useGuardians(guardianTokenAddress?: Address) {
 }
 
 /**
- * Hook to fetch withdrawal history with caching optimization
+ * Hook to fetch withdrawal history with caching
  */
 export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
     const publicClient = usePublicClient();
@@ -221,28 +214,7 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
 
             try {
                 const cacheKey = `withdrawals-cache-${vaultAddress.toLowerCase()}`;
-                const lastSyncKey = `withdrawals-lastSync-${vaultAddress.toLowerCase()}`;
-                
-                // Try to load from cache
-                let cachedWithdrawals: WithdrawalEvent[] = [];
-                let lastSyncBlock = 0n;
-                try {
-                    const cached = localStorage.getItem(cacheKey);
-                    const lastSync = localStorage.getItem(lastSyncKey);
-                    if (cached) {
-                        cachedWithdrawals = JSON.parse(cached).map((w: any) => ({
-                            ...w,
-                            amount: BigInt(w.amount),
-                            blockNumber: BigInt(w.blockNumber),
-                        }));
-                        lastSyncBlock = lastSync ? BigInt(lastSync) : 0n;
-                    }
-                } catch (e) {
-                    console.warn('[useWithdrawalHistory] Failed to load cache:', e);
-                }
-
-                const fromBlock = lastSyncBlock > 0n ? lastSyncBlock : 0n;
-                console.log('[useWithdrawalHistory] Fetching from block', fromBlock, 'for vault:', vaultAddress);
+                console.log('[useWithdrawalHistory] Fetching withdrawals for vault:', vaultAddress);
                 
                 const withdrawalLogs = await getLogsInChunks(
                     publicClient,
@@ -259,13 +231,13 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                             ],
                         },
                     },
-                    fromBlock,
+                    0n,
                     'latest'
                 );
 
                 console.log('[useWithdrawalHistory] Found', withdrawalLogs.length, 'withdrawal events');
 
-                // Batch fetch blocks for new withdrawals
+                // Batch fetch blocks for withdrawals
                 const blockNumbers = [...new Set(withdrawalLogs.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
                 const blockPromises = blockNumbers.map(blockNum => 
                     publicClient.getBlock({ blockNumber: blockNum })
@@ -273,7 +245,7 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                 const blocks = await Promise.all(blockPromises);
                 const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
 
-                const newWithdrawals: WithdrawalEvent[] = [];
+                const withdrawalEvents: WithdrawalEvent[] = [];
                 for (const log of withdrawalLogs) {
                     const args = (log as any).args;
                     const blockNumber = log.blockNumber;
@@ -283,7 +255,7 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                     
                     const block = blockMap.get(blockNumber);
                     if (block) {
-                        newWithdrawals.push({
+                        withdrawalEvents.push({
                             token: args.token as Address,
                             recipient: args.recipient as Address,
                             amount: args.amount as bigint,
@@ -295,25 +267,40 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                     }
                 }
 
-                // Combine cached and new, take latest limit items
-                const allWithdrawals = [...cachedWithdrawals, ...newWithdrawals];
-                const finalWithdrawals = allWithdrawals.slice(-limit);
+                const finalWithdrawals = withdrawalEvents.slice(-limit);
                 setWithdrawals(finalWithdrawals.sort((a, b) => Number(b.blockNumber - a.blockNumber)));
 
                 // Cache the results
                 try {
-                    localStorage.setItem(cacheKey, JSON.stringify(allWithdrawals.map(w => ({
+                    localStorage.setItem(cacheKey, JSON.stringify(withdrawalEvents.map(w => ({
                         ...w,
                         amount: w.amount.toString(),
                         blockNumber: w.blockNumber.toString(),
                     }))));
-                    localStorage.setItem(lastSyncKey, currentBlock.toString());
                 } catch (e) {
                     console.warn('[useWithdrawalHistory] Failed to cache results:', e);
                 }
             } catch (err) {
                 console.error('Error fetching withdrawals:', err);
-                setError(err instanceof Error ? err : new Error('Failed to fetch withdrawals'));
+                
+                // Try to load from cache as fallback
+                try {
+                    const cacheKey = `withdrawals-cache-${vaultAddress.toLowerCase()}`;
+                    const cached = localStorage.getItem(cacheKey);
+                    if (cached) {
+                        const cachedWithdrawals = JSON.parse(cached).map((w: any) => ({
+                            ...w,
+                            amount: BigInt(w.amount),
+                            blockNumber: BigInt(w.blockNumber),
+                        }));
+                        console.log('[useWithdrawalHistory] Loaded withdrawals from cache as fallback');
+                        setWithdrawals(cachedWithdrawals.slice(-limit));
+                    } else {
+                        setError(err instanceof Error ? err : new Error('Failed to fetch withdrawals'));
+                    }
+                } catch (cacheErr) {
+                    setError(err instanceof Error ? err : new Error('Failed to fetch withdrawals'));
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -326,7 +313,7 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
 }
 
 /**
- * Hook to fetch deposit history with caching optimization
+ * Hook to fetch deposit history with caching
  */
 export function useDepositHistory(vaultAddress?: Address, limit = 50) {
     const publicClient = usePublicClient();
@@ -347,28 +334,7 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
 
             try {
                 const cacheKey = `deposits-cache-${vaultAddress.toLowerCase()}`;
-                const lastSyncKey = `deposits-lastSync-${vaultAddress.toLowerCase()}`;
-                
-                // Try to load from cache
-                let cachedDeposits: DepositEvent[] = [];
-                let lastSyncBlock = 0n;
-                try {
-                    const cached = localStorage.getItem(cacheKey);
-                    const lastSync = localStorage.getItem(lastSyncKey);
-                    if (cached) {
-                        cachedDeposits = JSON.parse(cached).map((d: any) => ({
-                            ...d,
-                            amount: BigInt(d.amount),
-                            blockNumber: BigInt(d.blockNumber),
-                        }));
-                        lastSyncBlock = lastSync ? BigInt(lastSync) : 0n;
-                    }
-                } catch (e) {
-                    console.warn('[useDepositHistory] Failed to load cache:', e);
-                }
-
-                const fromBlock = lastSyncBlock > 0n ? lastSyncBlock : 0n;
-                console.log('[useDepositHistory] Fetching from block', fromBlock, 'for vault:', vaultAddress);
+                console.log('[useDepositHistory] Fetching deposits for vault:', vaultAddress);
                 
                 const depositLogs = await getLogsInChunks(
                     publicClient,
@@ -384,13 +350,13 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                             ],
                         },
                     },
-                    fromBlock,
+                    0n,
                     'latest'
                 );
 
                 console.log('[useDepositHistory] Found', depositLogs.length, 'deposit events');
 
-                // Batch fetch blocks for new deposits
+                // Batch fetch blocks for deposits
                 const blockNumbers = [...new Set(depositLogs.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
                 const blockPromises = blockNumbers.map(blockNum => 
                     publicClient.getBlock({ blockNumber: blockNum })
@@ -398,7 +364,7 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                 const blocks = await Promise.all(blockPromises);
                 const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
 
-                const newDeposits: DepositEvent[] = [];
+                const depositEvents: DepositEvent[] = [];
                 for (const log of depositLogs) {
                     const args = (log as any).args;
                     const blockNumber = log.blockNumber;
@@ -408,7 +374,7 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                     
                     const block = blockMap.get(blockNumber);
                     if (block) {
-                        newDeposits.push({
+                        depositEvents.push({
                             token: args.token as Address,
                             from: args.from as Address,
                             amount: args.amount as bigint,
@@ -419,25 +385,40 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                     }
                 }
 
-                // Combine cached and new, take latest limit items
-                const allDeposits = [...cachedDeposits, ...newDeposits];
-                const finalDeposits = allDeposits.slice(-limit);
+                const finalDeposits = depositEvents.slice(-limit);
                 setDeposits(finalDeposits.sort((a, b) => Number(b.blockNumber - a.blockNumber)));
 
                 // Cache the results
                 try {
-                    localStorage.setItem(cacheKey, JSON.stringify(allDeposits.map(d => ({
+                    localStorage.setItem(cacheKey, JSON.stringify(depositEvents.map(d => ({
                         ...d,
                         amount: d.amount.toString(),
                         blockNumber: d.blockNumber.toString(),
                     }))));
-                    localStorage.setItem(lastSyncKey, currentBlock.toString());
                 } catch (e) {
                     console.warn('[useDepositHistory] Failed to cache results:', e);
                 }
             } catch (err) {
                 console.error('Error fetching deposits:', err);
-                setError(err instanceof Error ? err : new Error('Failed to fetch deposits'));
+                
+                // Try to load from cache as fallback
+                try {
+                    const cacheKey = `deposits-cache-${vaultAddress.toLowerCase()}`;
+                    const cached = localStorage.getItem(cacheKey);
+                    if (cached) {
+                        const cachedDeposits = JSON.parse(cached).map((d: any) => ({
+                            ...d,
+                            amount: BigInt(d.amount),
+                            blockNumber: BigInt(d.blockNumber),
+                        }));
+                        console.log('[useDepositHistory] Loaded deposits from cache as fallback');
+                        setDeposits(cachedDeposits.slice(-limit));
+                    } else {
+                        setError(err instanceof Error ? err : new Error('Failed to fetch deposits'));
+                    }
+                } catch (cacheErr) {
+                    setError(err instanceof Error ? err : new Error('Failed to fetch deposits'));
+                }
             } finally {
                 setIsLoading(false);
             }

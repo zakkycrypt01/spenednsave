@@ -80,7 +80,7 @@ export function DashboardSaverView() {
     };
 
     // Format vault balance for display
-    const ethBalance = vaultBalance ? formatEther(vaultBalance) : "0";
+    const ethBalance = vaultBalance && typeof vaultBalance === 'bigint' ? formatEther(vaultBalance) : "0";
     const formattedEthBalance = parseFloat(ethBalance).toFixed(4);
     const totalGuardians = guardians.length;
 

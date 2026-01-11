@@ -46,7 +46,6 @@ export async function getLogsInChunks(
     // If the range is within the chunk size, just make one request
     const totalBlocks = endBlock - startBlock;
     if (totalBlocks <= BigInt(chunkSize)) {
-        console.log(`[getLogsInChunks] Range ${startBlock} to ${endBlock} (${totalBlocks} blocks) is within chunk size, fetching in single request`);
         return await publicClient.getLogs({
             ...params,
             fromBlock: startBlock,
@@ -55,7 +54,6 @@ export async function getLogsInChunks(
     }
 
     // Otherwise, chunk the requests
-    console.log(`[getLogsInChunks] Range ${startBlock} to ${endBlock} (${totalBlocks} blocks) exceeds chunk size ${chunkSize}, splitting into chunks`);
     const allLogs: Log[] = [];
     let currentFrom = startBlock;
 
@@ -83,6 +81,5 @@ export async function getLogsInChunks(
         currentFrom = currentTo + 1n;
     }
 
-    console.log(`[getLogsInChunks] Completed fetching logs across all chunks. Total logs found: ${allLogs.length}`);
     return allLogs;
 }

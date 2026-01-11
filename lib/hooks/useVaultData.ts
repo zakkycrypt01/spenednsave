@@ -5,7 +5,6 @@ import { usePublicClient, useBlockNumber } from 'wagmi';
 import { type Address, type Hex } from 'viem';
 import { GuardianSBTABI } from '@/lib/abis/GuardianSBT';
 import { SpendVaultABI } from '@/lib/abis/SpendVault';
-import { getLogsInChunks } from '@/lib/utils/chunked-logs';
 
 export interface Guardian {
     address: Address;
@@ -199,24 +198,12 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                 const cacheKey = `withdrawals-cache-${vaultAddress.toLowerCase()}`;
                 console.log('[useWithdrawalHistory] Fetching withdrawals for vault:', vaultAddress);
                 
-                const withdrawalLogs = await getLogsInChunks(
-                    publicClient,
-                    {
-                        address: vaultAddress,
-                        event: {
-                            type: 'event',
-                            name: 'Withdrawn',
-                            inputs: [
-                                { type: 'address', indexed: true, name: 'token' },
-                                { type: 'address', indexed: true, name: 'recipient' },
-                                { type: 'uint256', indexed: false, name: 'amount' },
-                                { type: 'string', indexed: false, name: 'reason' },
-                            ],
-                        },
-                    },
-                    0n,
-                    'latest'
-                );
+                const withdrawalLogs = await publicClient.getLogs({
+                    address: vaultAddress,
+                    event: SpendVaultABI.find((a: any) => a.name === 'Withdrawn') as any,
+                    fromBlock: 0n,
+                    toBlock: 'latest',
+                });
 
                 console.log('[useWithdrawalHistory] Found', withdrawalLogs.length, 'withdrawal events');
 
@@ -319,23 +306,12 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                 const cacheKey = `deposits-cache-${vaultAddress.toLowerCase()}`;
                 console.log('[useDepositHistory] Fetching deposits for vault:', vaultAddress);
                 
-                const depositLogs = await getLogsInChunks(
-                    publicClient,
-                    {
-                        address: vaultAddress,
-                        event: {
-                            type: 'event',
-                            name: 'Deposited',
-                            inputs: [
-                                { type: 'address', indexed: true, name: 'token' },
-                                { type: 'address', indexed: true, name: 'from' },
-                                { type: 'uint256', indexed: false, name: 'amount' },
-                            ],
-                        },
-                    },
-                    0n,
-                    'latest'
-                );
+                const depositLogs = await publicClient.getLogs({
+                    address: vaultAddress,
+                    event: SpendVaultABI.find((a: any) => a.name === 'Deposited') as any,
+                    fromBlock: 0n,
+                    toBlock: 'latest',
+                });
 
                 console.log('[useDepositHistory] Found', depositLogs.length, 'deposit events');
 

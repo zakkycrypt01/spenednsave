@@ -12,6 +12,8 @@ interface GetLogsParams {
     events?: any;
     args?: any;
     strict?: boolean;
+    fromBlock?: bigint | 'earliest';
+    toBlock?: bigint | 'latest';
 }
 
 /**
@@ -37,17 +39,20 @@ export async function getLogsInChunks(
         const currentBlock = await publicClient.getBlockNumber();
         endBlock = currentBlock;
     } else {
-        endBlock = toBlock;
+        endBlock = toBlock as bigint;
     }
 
     // Handle 'earliest' fromBlock
-    const startBlock = fromBlock === 'earliest' ? 0n : fromBlock;
+    const startBlock = fromBlock === 'earliest' ? 0n : (fromBlock as bigint);
+
+    // Remove fromBlock and toBlock from params if they exist
+    const { fromBlock: _, toBlock: __, ...cleanParams } = params;
 
     // If the range is within the chunk size, just make one request
     const totalBlocks = endBlock - startBlock;
     if (totalBlocks <= BigInt(chunkSize)) {
         return await publicClient.getLogs({
-            ...params,
+            ...cleanParams,
             fromBlock: startBlock,
             toBlock: endBlock,
         } as any) as Log[];
@@ -66,7 +71,7 @@ export async function getLogsInChunks(
 
         try {
             const logs = await publicClient.getLogs({
-                ...params,
+                ...cleanParams,
                 fromBlock: currentFrom,
                 toBlock: currentTo,
             } as any) as Log[];

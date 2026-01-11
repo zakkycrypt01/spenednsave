@@ -35,7 +35,7 @@ export interface DepositEvent {
 }
 
 /**
- * Hook to fetch all current guardians for a vault
+ * Hook to fetch all current guardians for a vault with caching optimization
  */
 export function useGuardians(guardianTokenAddress?: Address) {
     const publicClient = usePublicClient();
@@ -55,10 +55,30 @@ export function useGuardians(guardianTokenAddress?: Address) {
             setError(null);
 
             try {
-                // Start from genesis or recent blocks
-                const fromBlock = 0n; // Fetch from genesis to ensure we get all events
+                const cacheKey = `guardians-cache-${guardianTokenAddress.toLowerCase()}`;
+                const lastSyncKey = `guardians-lastSync-${guardianTokenAddress.toLowerCase()}`;
                 
-                console.log('[useGuardians] Fetching guardians from block', fromBlock, 'to latest');
+                // Try to load from cache
+                let cachedGuardians: Guardian[] = [];
+                let lastSyncBlock = 0n;
+                try {
+                    const cached = localStorage.getItem(cacheKey);
+                    const lastSync = localStorage.getItem(lastSyncKey);
+                    if (cached) {
+                        cachedGuardians = JSON.parse(cached).map((g: any) => ({
+                            ...g,
+                            tokenId: BigInt(g.tokenId),
+                            blockNumber: BigInt(g.blockNumber),
+                        }));
+                        lastSyncBlock = lastSync ? BigInt(lastSync) : 0n;
+                    }
+                } catch (e) {
+                    console.warn('[useGuardians] Failed to load cache:', e);
+                }
+
+                // Only fetch new events from lastSyncBlock onwards
+                const fromBlock = lastSyncBlock > 0n ? lastSyncBlock : 0n;
+                console.log('[useGuardians] Fetching new guardians from block', fromBlock, 'to latest');
                 console.log('[useGuardians] Guardian token address:', guardianTokenAddress);
                 
                 const addedLogs = await getLogsInChunks(
@@ -78,8 +98,6 @@ export function useGuardians(guardianTokenAddress?: Address) {
                     'latest'
                 );
 
-                console.log('[useGuardians] Found', addedLogs.length, 'GuardianAdded events');
-
                 const removedLogs = await getLogsInChunks(
                     publicClient,
                     {
@@ -97,31 +115,49 @@ export function useGuardians(guardianTokenAddress?: Address) {
                     'latest'
                 );
 
-                console.log('[useGuardians] Found', removedLogs.length, 'GuardianRemoved events');
+                console.log('[useGuardians] Found', addedLogs.length, 'new GuardianAdded events');
+                console.log('[useGuardians] Found', removedLogs.length, 'new GuardianRemoved events');
 
-                // Build map of current guardians (added but not removed)
+                // Build map starting with cached guardians
                 const guardianMap = new Map<string, Guardian>();
+                for (const g of cachedGuardians) {
+                    guardianMap.set(g.address.toLowerCase(), g);
+                }
+
                 const removedSet = new Set<string>();
 
-                // Track removed guardians
+                // Track newly removed guardians
                 for (const log of removedLogs) {
                     const args = (log as any).args;
                     if (args?.guardian) {
                         removedSet.add(args.guardian.toLowerCase());
+                        guardianMap.delete(args.guardian.toLowerCase());
                     }
                 }
 
-                // Add guardians that haven't been removed
-                for (const log of addedLogs) {
+                // Fetch block timestamps in parallel for new guardians (optimization)
+                const newGuardians = addedLogs.filter(log => {
+                    const args = (log as any).args;
+                    return args?.guardian && !removedSet.has(args.guardian.toLowerCase());
+                });
+
+                const blockNumbers = [...new Set(newGuardians.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
+                const blockPromises = blockNumbers.map(blockNum => 
+                    publicClient.getBlock({ blockNumber: blockNum })
+                );
+                const blocks = await Promise.all(blockPromises);
+                const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
+
+                // Add new guardians
+                for (const log of newGuardians) {
                     const args = (log as any).args;
                     const blockNumber = log.blockNumber;
                     const transactionHash = log.transactionHash;
                     
                     if (!args?.guardian || blockNumber === null || transactionHash === null) continue;
                     
-                    if (!removedSet.has(args.guardian.toLowerCase())) {
-                        const block = await publicClient.getBlock({ blockNumber });
-                        
+                    const block = blockMap.get(blockNumber);
+                    if (block) {
                         guardianMap.set(args.guardian.toLowerCase(), {
                             address: args.guardian as Address,
                             tokenId: args.tokenId as bigint,
@@ -137,6 +173,18 @@ export function useGuardians(guardianTokenAddress?: Address) {
 
                 console.log('[useGuardians] Final guardian list:', guardianList);
                 setGuardians(guardianList);
+
+                // Cache the results
+                try {
+                    localStorage.setItem(cacheKey, JSON.stringify(guardianList.map(g => ({
+                        ...g,
+                        tokenId: g.tokenId.toString(),
+                        blockNumber: g.blockNumber.toString(),
+                    }))));
+                    localStorage.setItem(lastSyncKey, currentBlock.toString());
+                } catch (e) {
+                    console.warn('[useGuardians] Failed to cache results:', e);
+                }
             } catch (err) {
                 console.error('[useGuardians] Error fetching guardians:', err);
                 setError(err instanceof Error ? err : new Error('Failed to fetch guardians'));
@@ -152,7 +200,7 @@ export function useGuardians(guardianTokenAddress?: Address) {
 }
 
 /**
- * Hook to fetch withdrawal history
+ * Hook to fetch withdrawal history with caching optimization
  */
 export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
     const publicClient = usePublicClient();
@@ -172,7 +220,28 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
             setError(null);
 
             try {
-                const fromBlock = 0n; // Fetch from genesis
+                const cacheKey = `withdrawals-cache-${vaultAddress.toLowerCase()}`;
+                const lastSyncKey = `withdrawals-lastSync-${vaultAddress.toLowerCase()}`;
+                
+                // Try to load from cache
+                let cachedWithdrawals: WithdrawalEvent[] = [];
+                let lastSyncBlock = 0n;
+                try {
+                    const cached = localStorage.getItem(cacheKey);
+                    const lastSync = localStorage.getItem(lastSyncKey);
+                    if (cached) {
+                        cachedWithdrawals = JSON.parse(cached).map((w: any) => ({
+                            ...w,
+                            amount: BigInt(w.amount),
+                            blockNumber: BigInt(w.blockNumber),
+                        }));
+                        lastSyncBlock = lastSync ? BigInt(lastSync) : 0n;
+                    }
+                } catch (e) {
+                    console.warn('[useWithdrawalHistory] Failed to load cache:', e);
+                }
+
+                const fromBlock = lastSyncBlock > 0n ? lastSyncBlock : 0n;
                 console.log('[useWithdrawalHistory] Fetching from block', fromBlock, 'for vault:', vaultAddress);
                 
                 const withdrawalLogs = await getLogsInChunks(
@@ -195,29 +264,53 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                 );
 
                 console.log('[useWithdrawalHistory] Found', withdrawalLogs.length, 'withdrawal events');
-                const withdrawalEvents: WithdrawalEvent[] = [];
 
-                for (const log of withdrawalLogs.slice(-limit)) {
+                // Batch fetch blocks for new withdrawals
+                const blockNumbers = [...new Set(withdrawalLogs.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
+                const blockPromises = blockNumbers.map(blockNum => 
+                    publicClient.getBlock({ blockNumber: blockNum })
+                );
+                const blocks = await Promise.all(blockPromises);
+                const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
+
+                const newWithdrawals: WithdrawalEvent[] = [];
+                for (const log of withdrawalLogs) {
                     const args = (log as any).args;
                     const blockNumber = log.blockNumber;
                     const transactionHash = log.transactionHash;
                     
                     if (!args || blockNumber === null || transactionHash === null) continue;
                     
-                    const block = await publicClient.getBlock({ blockNumber });
-
-                    withdrawalEvents.push({
-                        token: args.token as Address,
-                        recipient: args.recipient as Address,
-                        amount: args.amount as bigint,
-                        reason: args.reason as string,
-                        timestamp: Number(block.timestamp) * 1000,
-                        blockNumber,
-                        txHash: transactionHash as Hex,
-                    });
+                    const block = blockMap.get(blockNumber);
+                    if (block) {
+                        newWithdrawals.push({
+                            token: args.token as Address,
+                            recipient: args.recipient as Address,
+                            amount: args.amount as bigint,
+                            reason: args.reason as string,
+                            timestamp: Number(block.timestamp) * 1000,
+                            blockNumber,
+                            txHash: transactionHash as Hex,
+                        });
+                    }
                 }
 
-                setWithdrawals(withdrawalEvents.reverse());
+                // Combine cached and new, take latest limit items
+                const allWithdrawals = [...cachedWithdrawals, ...newWithdrawals];
+                const finalWithdrawals = allWithdrawals.slice(-limit);
+                setWithdrawals(finalWithdrawals.sort((a, b) => Number(b.blockNumber - a.blockNumber)));
+
+                // Cache the results
+                try {
+                    localStorage.setItem(cacheKey, JSON.stringify(allWithdrawals.map(w => ({
+                        ...w,
+                        amount: w.amount.toString(),
+                        blockNumber: w.blockNumber.toString(),
+                    }))));
+                    localStorage.setItem(lastSyncKey, currentBlock.toString());
+                } catch (e) {
+                    console.warn('[useWithdrawalHistory] Failed to cache results:', e);
+                }
             } catch (err) {
                 console.error('Error fetching withdrawals:', err);
                 setError(err instanceof Error ? err : new Error('Failed to fetch withdrawals'));
@@ -233,7 +326,7 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
 }
 
 /**
- * Hook to fetch deposit history
+ * Hook to fetch deposit history with caching optimization
  */
 export function useDepositHistory(vaultAddress?: Address, limit = 50) {
     const publicClient = usePublicClient();
@@ -253,7 +346,28 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
             setError(null);
 
             try {
-                const fromBlock = 0n; // Fetch from genesis
+                const cacheKey = `deposits-cache-${vaultAddress.toLowerCase()}`;
+                const lastSyncKey = `deposits-lastSync-${vaultAddress.toLowerCase()}`;
+                
+                // Try to load from cache
+                let cachedDeposits: DepositEvent[] = [];
+                let lastSyncBlock = 0n;
+                try {
+                    const cached = localStorage.getItem(cacheKey);
+                    const lastSync = localStorage.getItem(lastSyncKey);
+                    if (cached) {
+                        cachedDeposits = JSON.parse(cached).map((d: any) => ({
+                            ...d,
+                            amount: BigInt(d.amount),
+                            blockNumber: BigInt(d.blockNumber),
+                        }));
+                        lastSyncBlock = lastSync ? BigInt(lastSync) : 0n;
+                    }
+                } catch (e) {
+                    console.warn('[useDepositHistory] Failed to load cache:', e);
+                }
+
+                const fromBlock = lastSyncBlock > 0n ? lastSyncBlock : 0n;
                 console.log('[useDepositHistory] Fetching from block', fromBlock, 'for vault:', vaultAddress);
                 
                 const depositLogs = await getLogsInChunks(
@@ -275,28 +389,52 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                 );
 
                 console.log('[useDepositHistory] Found', depositLogs.length, 'deposit events');
-                const depositEvents: DepositEvent[] = [];
 
-                for (const log of depositLogs.slice(-limit)) {
+                // Batch fetch blocks for new deposits
+                const blockNumbers = [...new Set(depositLogs.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];
+                const blockPromises = blockNumbers.map(blockNum => 
+                    publicClient.getBlock({ blockNumber: blockNum })
+                );
+                const blocks = await Promise.all(blockPromises);
+                const blockMap = new Map(blockNumbers.map((num, i) => [num, blocks[i]]));
+
+                const newDeposits: DepositEvent[] = [];
+                for (const log of depositLogs) {
                     const args = (log as any).args;
                     const blockNumber = log.blockNumber;
                     const transactionHash = log.transactionHash;
                     
                     if (!args || blockNumber === null || transactionHash === null) continue;
                     
-                    const block = await publicClient.getBlock({ blockNumber });
-
-                    depositEvents.push({
-                        token: args.token as Address,
-                        from: args.from as Address,
-                        amount: args.amount as bigint,
-                        timestamp: Number(block.timestamp) * 1000,
-                        blockNumber,
-                        txHash: transactionHash as Hex,
-                    });
+                    const block = blockMap.get(blockNumber);
+                    if (block) {
+                        newDeposits.push({
+                            token: args.token as Address,
+                            from: args.from as Address,
+                            amount: args.amount as bigint,
+                            timestamp: Number(block.timestamp) * 1000,
+                            blockNumber,
+                            txHash: transactionHash as Hex,
+                        });
+                    }
                 }
 
-                setDeposits(depositEvents.reverse());
+                // Combine cached and new, take latest limit items
+                const allDeposits = [...cachedDeposits, ...newDeposits];
+                const finalDeposits = allDeposits.slice(-limit);
+                setDeposits(finalDeposits.sort((a, b) => Number(b.blockNumber - a.blockNumber)));
+
+                // Cache the results
+                try {
+                    localStorage.setItem(cacheKey, JSON.stringify(allDeposits.map(d => ({
+                        ...d,
+                        amount: d.amount.toString(),
+                        blockNumber: d.blockNumber.toString(),
+                    }))));
+                    localStorage.setItem(lastSyncKey, currentBlock.toString());
+                } catch (e) {
+                    console.warn('[useDepositHistory] Failed to cache results:', e);
+                }
             } catch (err) {
                 console.error('Error fetching deposits:', err);
                 setError(err instanceof Error ? err : new Error('Failed to fetch deposits'));

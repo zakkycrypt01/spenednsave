@@ -18,7 +18,7 @@ import { formatEther, type Address } from "viem";
 export function EmergencyView() {
     const { address } = useAccount();
     const { data: contracts } = useUserContracts(address);
-    const vaultAddress = contracts?.[0] as Address | undefined;
+    const vaultAddress = contracts?.[1] as Address | undefined;
 
     // Fetch emergency unlock state
     const { data: unlockRequestTime } = useUnlockRequestTime(vaultAddress);

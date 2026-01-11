@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react";
 import { Shield, ArrowRight, User, Check, X, AlertCircle } from "lucide-react";
 import { useAccount, useSignTypedData, useChainId } from "wagmi";
-import { useUserContracts, useVaultQuorum } from "@/lib/hooks/useContracts";
+import { useUserContracts, useVaultQuorum, useIsGuardian } from "@/lib/hooks/useContracts";
 import { type Address, formatEther } from "viem";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
 
 export function VotingView() {
-    const [status, setStatus] = useState<'loading' | 'pending' | 'signed' | 'empty'>('loading');
+    const [status, setStatus] = useState<'loading' | 'pending' | 'signed' | 'empty' | 'unauthorized'>('loading');
     const [pendingRequests, setPendingRequests] = useState<any[]>([]);
     
     const { address, isConnected } = useAccount();
@@ -18,10 +18,22 @@ export function VotingView() {
     const guardianTokenAddress = userContracts ? (userContracts as any)[0] : undefined;
     const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
     const { data: quorum } = useVaultQuorum(vaultAddress);
+    const { data: isGuardian, isLoading: isCheckingGuardian } = useIsGuardian(guardianTokenAddress, address);
     
     const { signTypedData, data: signature, isPending: isSigning, isSuccess: isSignSuccess } = useSignTypedData();
 
     useEffect(() => {
+        // Check if user is a guardian before showing withdrawal requests
+        if (isCheckingGuardian) {
+            setStatus('loading');
+            return;
+        }
+
+        if (!isGuardian) {
+            setStatus('unauthorized');
+            return;
+        }
+
         // Fetch withdrawal requests from localStorage
         // In production, this would fetch from a backend or IPFS
         if (!vaultAddress) return;
@@ -30,9 +42,13 @@ export function VotingView() {
             const storedRequests = localStorage.getItem(`withdrawal-requests-${vaultAddress}`);
             if (storedRequests) {
                 const requests = JSON.parse(storedRequests);
-                // Filter out already signed requests by this guardian
+                // Filter to only show requests for this vault and not already signed by this guardian
                 const pending = requests.filter((req: any) => {
+                    // Only show requests for this vault
+                    if (req.vaultAddress !== vaultAddress) return false;
+                    
                     const signatures = req.signatures || [];
+                    // Filter out already signed requests by this guardian
                     return !signatures.some((sig: any) => sig.signer === address);
                 });
                 
@@ -49,7 +65,7 @@ export function VotingView() {
             console.error('Error loading withdrawal requests:', error);
             setStatus('empty');
         }
-    }, [vaultAddress, address]);
+    }, [vaultAddress, address, isGuardian, isCheckingGuardian]);
 
     useEffect(() => {
         if (isSignSuccess && signature && pendingRequests.length > 0) {
@@ -128,6 +144,18 @@ export function VotingView() {
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Wallet Not Connected</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm">
                     Please connect your wallet to view and vote on withdrawal requests
+                </p>
+            </div>
+        );
+    }
+
+    if (status === 'unauthorized') {
+        return (
+            <div className="w-full max-w-md bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl p-12 text-center">
+                <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Unauthorized Access</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    You are not a guardian for any vault. Only guardians can sign withdrawal requests.
                 </p>
             </div>
         );

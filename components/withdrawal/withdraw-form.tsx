@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/spinner";
 
 import { useAccount, useSignTypedData, useChainId } from "wagmi";
 import { parseEther, formatEther, type Address } from "viem";
-import { useUserContracts, useVaultETHBalance, useVaultQuorum, useVaultNonce } from "@/lib/hooks/useContracts";
+import { useUserContracts, useVaultETHBalance, useVaultQuorum, useVaultNonce, useIsVaultOwner } from "@/lib/hooks/useContracts";
 
 export function WithdrawalForm() {
     const [step, setStep] = useState<'form' | 'signing' | 'success'>('form');
@@ -22,6 +22,7 @@ export function WithdrawalForm() {
     const { data: vaultBalance } = useVaultETHBalance(vaultAddress);
     const { data: quorum } = useVaultQuorum(vaultAddress);
     const { data: currentNonce } = useVaultNonce(vaultAddress);
+    const { data: isVaultOwner, isLoading: isCheckingOwnership } = useIsVaultOwner(vaultAddress, address);
     
     const { signTypedData, data: signature, isPending: isSigning, isSuccess: isSignSuccess } = useSignTypedData();
 
@@ -134,6 +135,36 @@ export function WithdrawalForm() {
                     </p>
                     <Link href="/vault/setup" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold">
                         Create Vault
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
+    if (isCheckingOwnership) {
+        return (
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-12 text-center">
+                    <Spinner className="w-8 h-8 text-primary mx-auto mb-4" />
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">
+                        Checking vault access...
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isVaultOwner) {
+        return (
+            <div className="w-full max-w-md mx-auto">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-12 text-center">
+                    <AlertCircle size={48} className="text-red-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Unauthorized Access</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+                        Only the vault owner can create withdrawal requests. You are not the owner of this vault.
+                    </p>
+                    <Link href="/dashboard" className="inline-flex items-center gap-2 bg-primary hover:bg-primary-hover text-white px-5 py-2.5 rounded-xl font-bold">
+                        Back to Dashboard
                     </Link>
                 </div>
             </div>

@@ -107,6 +107,29 @@ export function useIsGuardian(guardianTokenAddress?: Address, address?: Address)
 }
 
 /**
+ * Hook to check if an address is the vault owner
+ */
+export function useIsVaultOwner(vaultAddress?: Address, address?: Address) {
+    const vaultOwnerResult = useReadContract({
+        address: vaultAddress as Address,
+        abi: SpendVaultABI,
+        functionName: 'owner',
+        query: {
+            enabled: !!vaultAddress,
+        },
+    });
+
+    // Check if the owner matches the provided address
+    const isOwner = vaultOwnerResult.data && address ? (vaultOwnerResult.data as Address).toLowerCase() === address.toLowerCase() : false;
+
+    return {
+        data: isOwner,
+        isLoading: vaultOwnerResult.isLoading,
+        error: vaultOwnerResult.error,
+    };
+}
+
+/**
  * Hook to get vault balance (ETH)
  */
 export function useVaultETHBalance(vaultAddress?: Address) {

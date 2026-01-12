@@ -38,7 +38,6 @@ export interface DepositEvent {
  */
 export function useGuardians(guardianTokenAddress?: Address) {
     const publicClient = usePublicClient();
-    const { data: currentBlock } = useBlockNumber();
     const [guardians, setGuardians] = useState<Guardian[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -206,7 +205,7 @@ export function useGuardians(guardianTokenAddress?: Address) {
         }
 
         fetchGuardians();
-    }, [guardianTokenAddress, publicClient, currentBlock]);
+    }, [guardianTokenAddress, publicClient]);
 
     return { guardians, isLoading, error };
 }
@@ -216,7 +215,7 @@ export function useGuardians(guardianTokenAddress?: Address) {
  */
 export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
     const publicClient = usePublicClient();
-    const { data: currentBlock } = useBlockNumber();
+
     const [withdrawals, setWithdrawals] = useState<WithdrawalEvent[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -347,7 +346,7 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
         }
 
         fetchWithdrawals();
-    }, [vaultAddress, publicClient, currentBlock, limit, refreshTrigger]);
+    }, [vaultAddress, publicClient, limit, refreshTrigger]);
 
     return { withdrawals, isLoading, error, refetch };
 }
@@ -357,7 +356,6 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
  */
 export function useDepositHistory(vaultAddress?: Address, limit = 50) {
     const publicClient = usePublicClient();
-    const { data: currentBlock } = useBlockNumber();
     const [deposits, setDeposits] = useState<DepositEvent[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<Error | null>(null);
@@ -499,7 +497,7 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
         }
 
         fetchDeposits();
-    }, [vaultAddress, publicClient, currentBlock, limit, refreshTrigger]);
+    }, [vaultAddress, publicClient, limit, refreshTrigger]);
 
     return { deposits, isLoading, error, refetch };
 }

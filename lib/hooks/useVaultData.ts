@@ -58,20 +58,35 @@ export function useGuardians(guardianTokenAddress?: Address) {
                 
                 console.log('[useGuardians] Fetching all guardians from', guardianTokenAddress);
                 
+                // Find events from ABI
+                const guardianAddedEvent = GuardianSBTABI.find((item: any) => 
+                    item.type === 'event' && item.name === 'GuardianAdded'
+                );
+                const guardianRemovedEvent = GuardianSBTABI.find((item: any) => 
+                    item.type === 'event' && item.name === 'GuardianRemoved'
+                );
+                
+                if (!guardianAddedEvent) {
+                    console.error('[useGuardians] GuardianAdded event not found in ABI');
+                    setGuardians([]);
+                    setIsLoading(false);
+                    return;
+                }
+                
                 // Fetch logs with proper ABI definitions
                 const addedLogs = await publicClient.getLogs({
                     address: guardianTokenAddress,
-                    event: GuardianSBTABI.find((a: any) => a.name === 'GuardianAdded') as any,
+                    event: guardianAddedEvent,
                     fromBlock: 0n,
                     toBlock: 'latest',
                 });
 
-                const removedLogs = await publicClient.getLogs({
+                const removedLogs = guardianRemovedEvent ? await publicClient.getLogs({
                     address: guardianTokenAddress,
-                    event: GuardianSBTABI.find((a: any) => a.name === 'GuardianRemoved') as any,
+                    event: guardianRemovedEvent,
                     fromBlock: 0n,
                     toBlock: 'latest',
-                });
+                }) : [];
 
                 console.log('[useGuardians] Found', addedLogs.length, 'GuardianAdded events');
                 console.log('[useGuardians] Found', removedLogs.length, 'GuardianRemoved events');
@@ -203,9 +218,20 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                 const cacheKey = `withdrawals-cache-${vaultAddress.toLowerCase()}`;
                 console.log('[useWithdrawalHistory] Fetching withdrawals for vault:', vaultAddress);
                 
+                const withdrawnEvent = SpendVaultABI.find((item: any) => 
+                    item.type === 'event' && item.name === 'Withdrawn'
+                );
+                
+                if (!withdrawnEvent) {
+                    console.error('[useWithdrawalHistory] Withdrawn event not found in ABI');
+                    setWithdrawals([]);
+                    setIsLoading(false);
+                    return;
+                }
+                
                 const withdrawalLogs = await publicClient.getLogs({
                     address: vaultAddress,
-                    event: SpendVaultABI.find((a: any) => a.name === 'Withdrawn') as any,
+                    event: withdrawnEvent,
                     fromBlock: 0n,
                     toBlock: 'latest',
                 });
@@ -315,15 +341,31 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
             try {
                 const cacheKey = `deposits-cache-${vaultAddress.toLowerCase()}`;
                 console.log('[useDepositHistory] Fetching deposits for vault:', vaultAddress);
+                console.log('[useDepositHistory] RefreshTrigger:', refreshTrigger);
+                
+                // Find the Deposited event from ABI
+                const depositedEvent = SpendVaultABI.find((item: any) => 
+                    item.type === 'event' && item.name === 'Deposited'
+                );
+                
+                if (!depositedEvent) {
+                    console.error('[useDepositHistory] Deposited event not found in ABI');
+                    setDeposits([]);
+                    setIsLoading(false);
+                    return;
+                }
+                
+                console.log('[useDepositHistory] Using event:', depositedEvent);
                 
                 const depositLogs = await publicClient.getLogs({
                     address: vaultAddress,
-                    event: SpendVaultABI.find((a: any) => a.name === 'Deposited') as any,
+                    event: depositedEvent,
                     fromBlock: 0n,
                     toBlock: 'latest',
                 });
 
                 console.log('[useDepositHistory] Found', depositLogs.length, 'deposit events');
+                console.log('[useDepositHistory] Deposit logs:', depositLogs);
 
                 // Batch fetch blocks for deposits
                 const blockNumbers = [...new Set(depositLogs.map(log => log.blockNumber).filter(n => n !== null && n !== undefined) as bigint[])];

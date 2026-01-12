@@ -74,7 +74,7 @@ export function useGuardians(guardianTokenAddress?: Address) {
                 
                 let fromBlock = 0n;
                 while (fromBlock <= currentBlock) {
-                    const toBlock = Math.min(fromBlock + CHUNK_SIZE - 1n, currentBlock);
+                    const toBlock = currentBlock < fromBlock + CHUNK_SIZE - 1n ? currentBlock : fromBlock + CHUNK_SIZE - 1n;
                     
                     try {
                         // Fetch GuardianAdded events
@@ -251,7 +251,7 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                 
                 let fromBlock = 0n;
                 while (fromBlock <= currentBlock) {
-                    const toBlock = Math.min(fromBlock + CHUNK_SIZE - 1n, currentBlock);
+                    const toBlock = currentBlock < fromBlock + CHUNK_SIZE - 1n ? currentBlock : fromBlock + CHUNK_SIZE - 1n;
                     
                     try {
                         const chunkLogs = await publicClient.getLogs({

@@ -171,10 +171,11 @@ export function useGuardianSignatures(vaultAddress?: Address) {
             if (pendingRequest.signatures.some(sig => sig.signer.toLowerCase() === signedWithdrawal.signer.toLowerCase())) {
                 throw new Error('Guardian has already signed this request');
             }
+            const newStatus = (pendingRequest.signatures.length + 1 >= pendingRequest.requiredQuorum ? 'approved' : pendingRequest.status) as 'pending' | 'approved' | 'executed' | 'rejected';
             const updated = {
                 ...pendingRequest,
                 signatures: [...pendingRequest.signatures, signedWithdrawal],
-                status: pendingRequest.signatures.length + 1 >= pendingRequest.requiredQuorum ? 'approved' : pendingRequest.status,
+                status: newStatus,
             };
             GuardianSignatureDB.savePendingRequest(updated);
         } catch (err) {
@@ -230,7 +231,7 @@ export function useGuardianSignatures(vaultAddress?: Address) {
             if (!pendingRequest) throw new Error('Request not found');
             const executed = {
                 ...pendingRequest,
-                status: 'executed',
+                status: 'executed' as 'executed',
                 executedAt: Date.now(),
                 executionTxHash: txHash,
             };
@@ -343,7 +344,7 @@ export function useGuardianSignatures(vaultAddress?: Address) {
     const rejectRequest = useCallback((requestId: string): void => {
         const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
         if (pendingRequest) {
-            GuardianSignatureDB.savePendingRequest({ ...pendingRequest, status: 'rejected' });
+            GuardianSignatureDB.savePendingRequest({ ...pendingRequest, status: 'rejected' as 'rejected' });
         }
     }, []);
 

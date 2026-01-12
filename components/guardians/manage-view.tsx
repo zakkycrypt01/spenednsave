@@ -23,10 +23,10 @@ export function ManageGuardiansView() {
 
     const guardianCount = guardiansList.length;
     const pendingRequestsCount = 0; // TODO: Fetch from contract when available
-    const recentEvents: Array<{ id: string; type: 'added' | 'removed'; guardian: string; timestamp: number }> = guardiansList.map((g, i) => ({
-        id: g.address,
-        type: 'added',
-        guardian: g.address,
+    const recentEvents = guardiansList.map((g) => ({
+        id: String(g.address),
+        type: 'added' as const,
+        guardian: String(g.address),
         timestamp: g.addedAt,
     })).reverse().slice(0, 5);
 

@@ -444,6 +444,19 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                 
                 console.log('[useDepositHistory] Total logs from vault:', allLogs.length);
                 
+                // Store debug info in localStorage for inspection
+                try {
+                    localStorage.setItem(`deposits-debug-${vaultAddress.toLowerCase()}`, JSON.stringify({
+                        timestamp: new Date().toISOString(),
+                        vaultAddress,
+                        currentBlock: String(currentBlockNum),
+                        logsFound: allLogs.length,
+                        depositedTopic,
+                    }));
+                } catch (e) {
+                    console.warn('[useDepositHistory] Failed to store debug info:', e);
+                }
+                
                 // The Deposited event signature: keccak256("Deposited(address,address,uint256)")
                 // This is 0xb71b7d3b... but we'll decode all logs and filter by event name
                 const depositEvents: DepositEvent[] = [];

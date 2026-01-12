@@ -10,8 +10,9 @@ const STORAGE_KEYS = {
 } as const;
 
 /**
- * Storage service for managing pending withdrawal requests
- * Uses localStorage for persistence across sessions
+ * DEPRECATED: Storage service for managing pending withdrawal requests
+ * Uses localStorage for persistence across sessions (legacy, browser-only)
+ * Use GuardianSignatureDB (see guardian-signature-db.ts) for persistent, server-side storage (e.g., SQLite)
  */
 export class SignatureStorageService {
     /**

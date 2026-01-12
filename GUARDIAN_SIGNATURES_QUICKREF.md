@@ -5,7 +5,8 @@
 ### Core Services
 1. **lib/types/guardian-signatures.ts** - TypeScript type definitions
 2. **lib/services/guardian-signatures.ts** - Main signature service with EIP-712 support
-3. **lib/services/signature-storage.ts** - LocalStorage persistence
+3. **lib/services/signature-storage.ts** - LocalStorage persistence (legacy, deprecated)
+4. **lib/services/guardian-signature-db.ts** - SQLite DB persistence (recommended for server-side)
 4. **lib/hooks/useGuardianSignatures.ts** - React hook for easy integration
 
 ### Documentation & Examples
@@ -47,7 +48,7 @@ function WithdrawComponent() {
 ✅ **EIP-712 Signatures** - Human-readable wallet prompts  
 ✅ **Automatic Verification** - Validates guardians and prevents duplicates  
 ✅ **Quorum Tracking** - Auto-approves when threshold met  
-✅ **Persistent Storage** - LocalStorage for pending requests  
+✅ **Persistent Storage** - SQLite DB for pending requests (see guardian-signature-db.ts). LocalStorage is now legacy and only for browser fallback.
 ✅ **Nonce Management** - Prevents replay attacks  
 ✅ **Type-Safe** - Full TypeScript support  
 

@@ -8,7 +8,6 @@ const config: HardhatUserConfig = {
       url: "https://sepolia.base.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 84532,
-      type: "http" as any,
     },
   },
   etherscan: {
@@ -26,6 +25,6 @@ const config: HardhatUserConfig = {
       },
     ],
   },
-};
+} as any;
 
 export default config;

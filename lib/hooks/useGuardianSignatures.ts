@@ -310,8 +310,9 @@ export function useGuardianSignatures(vaultAddress?: Address) {
         setIsLoading(true);
         setError(null);
 
+
         try {
-            const pendingRequest = SignatureStorageService.getPendingRequest(requestId);
+            const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
             if (!pendingRequest) {
                 throw new Error('Request not found');
             }
@@ -340,6 +341,7 @@ export function useGuardianSignatures(vaultAddress?: Address) {
      * Reject a withdrawal request
      */
     const rejectRequest = useCallback((requestId: string): void => {
+        const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
         if (pendingRequest) {
             GuardianSignatureDB.savePendingRequest({ ...pendingRequest, status: 'rejected' });
         }

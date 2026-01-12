@@ -546,7 +546,19 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
     const { guardians, isLoading: guardiansLoading } = useGuardians(guardianTokenAddress);
 
     const [activities, setActivities] = useState<any[]>([]);
-    const isLoading = depositsLoading || withdrawalsLoading || guardiansLoading;
+    const [loadingTimeout, setLoadingTimeout] = useState(false);
+    
+    // Force loading state to false after 10 seconds
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            console.log('[useVaultActivity] Loading timeout - forcing completion');
+            setLoadingTimeout(true);
+        }, 10000);
+        
+        return () => clearTimeout(timeout);
+    }, []);
+    
+    const isLoading = (depositsLoading || withdrawalsLoading || guardiansLoading) && !loadingTimeout;
 
     const refetch = () => {
         refetchDeposits();

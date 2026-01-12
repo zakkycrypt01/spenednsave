@@ -8,7 +8,8 @@ The service consists of four main components:
 
 1. **Types** (`lib/types/guardian-signatures.ts`) - TypeScript interfaces for all signature-related data
 2. **Guardian Signature Service** (`lib/services/guardian-signatures.ts`) - Core service for EIP-712 signing and verification
-3. **Storage Service** (`lib/services/signature-storage.ts`) - Local storage management for pending requests
+3. **Storage Service** (`lib/services/signature-storage.ts`) - Local storage management for pending requests (legacy, deprecated)
+4. **DB Storage** (`lib/services/guardian-signature-db.ts`) - SQLite DB management for persistent pending requests (recommended)
 4. **React Hook** (`lib/hooks/useGuardianSignatures.ts`) - Easy-to-use hook for React components
 
 ## Features
@@ -16,7 +17,7 @@ The service consists of four main components:
 ✅ **EIP-712 Typed Signatures** - Guardians see readable messages in their wallet  
 ✅ **Signature Verification** - Validates guardian status and prevents duplicates  
 ✅ **Quorum Management** - Tracks when enough signatures are collected  
-✅ **Local Persistence** - Stores pending requests in localStorage  
+✅ **Persistent Storage** - Stores pending requests in SQLite DB (see guardian-signature-db.ts). LocalStorage is now legacy and only for browser fallback.
 ✅ **Replay Attack Prevention** - Uses nonces to prevent signature reuse  
 ✅ **Complete Workflow** - From creation to execution  
 

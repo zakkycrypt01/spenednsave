@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -44,7 +45,7 @@ export function useGuardians(guardianTokenAddress?: Address) {
 
     useEffect(() => {
         async function fetchGuardians() {
-            if (!guardianTokenAddress || !publicClient || !currentBlock) {
+            if (!guardianTokenAddress || !publicClient) {
                 setGuardians([]);
                 return;
             }

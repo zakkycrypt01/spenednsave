@@ -270,7 +270,16 @@ export function useWithdrawalHistory(vaultAddress?: Address, limit = 50) {
                     try {
                         const chunkLogs = await publicClient.getLogs({
                             address: vaultAddress,
-                            topics: [withdrawnTopic],
+                            event: {
+                                name: 'Withdrawn',
+                                type: 'event',
+                                inputs: [
+                                    { indexed: true, name: 'token', type: 'address' },
+                                    { indexed: true, name: 'recipient', type: 'address' },
+                                    { indexed: false, name: 'amount', type: 'uint256' },
+                                    { indexed: false, name: 'reason', type: 'string' },
+                                ]
+                            },
                             fromBlock,
                             toBlock,
                         });
@@ -428,7 +437,15 @@ export function useDepositHistory(vaultAddress?: Address, limit = 50) {
                     try {
                         const chunkLogs = await publicClient.getLogs({
                             address: vaultAddress,
-                            topics: [depositedTopic],
+                            event: {
+                                name: 'Deposited',
+                                type: 'event',
+                                inputs: [
+                                    { indexed: true, name: 'token', type: 'address' },
+                                    { indexed: true, name: 'from', type: 'address' },
+                                    { indexed: false, name: 'amount', type: 'uint256' },
+                                ]
+                            },
                             fromBlock,
                             toBlock,
                         });

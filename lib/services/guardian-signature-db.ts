@@ -21,6 +21,16 @@ const init = () => {
       executionTxHash TEXT
     );
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS account_activities (
+      id TEXT PRIMARY KEY,
+      account TEXT,
+      type TEXT,
+      details TEXT,
+      relatedRequestId TEXT,
+      timestamp INTEGER
+    );
+  `);
 };
 
 init();
@@ -74,5 +84,65 @@ export class GuardianSignatureDB {
     db.prepare('DELETE FROM pending_requests WHERE id = ?').run(id);
   }
 
+  // Account activity methods
+  static saveActivity(activity: {
+    id: string;
+    account: string;
+    type: string;
+    details?: any;
+    relatedRequestId?: string;
+    timestamp: number;
+  }) {
+    db.prepare(`REPLACE INTO account_activities (id, account, type, details, relatedRequestId, timestamp) VALUES (?, ?, ?, ?, ?, ?)`)
+      .run(
+        activity.id,
+        activity.account,
+        activity.type,
+        JSON.stringify(activity.details ?? {}),
+        activity.relatedRequestId ?? null,
+        activity.timestamp
+      );
+  }
+
+  static getActivitiesByAccount(account: string) {
+    const rows = db.prepare('SELECT * FROM account_activities WHERE account = ? ORDER BY timestamp DESC').all(account);
+    return rows.map((row: any) => ({
+      id: row.id,
+      account: row.account,
+      type: row.type,
+      details: row.details ? JSON.parse(row.details) : undefined,
+      relatedRequestId: row.relatedRequestId,
+      timestamp: row.timestamp,
+    }));
+  }
+
+  static getAllActivities() {
+    const rows = db.prepare('SELECT * FROM account_activities ORDER BY timestamp DESC').all();
+    return rows.map((row: any) => ({
+      id: row.id,
+      account: row.account,
+      type: row.type,
+      details: row.details ? JSON.parse(row.details) : undefined,
+      relatedRequestId: row.relatedRequestId,
+      timestamp: row.timestamp,
+    }));
+  }
+
+  static getActivity(id: string) {
+    const row = db.prepare('SELECT * FROM account_activities WHERE id = ?').get(id);
+    if (!row) return null;
+    return {
+      id: row.id,
+      account: row.account,
+      type: row.type,
+      details: row.details ? JSON.parse(row.details) : undefined,
+      relatedRequestId: row.relatedRequestId,
+      timestamp: row.timestamp,
+    };
+  }
+
+  static deleteActivity(id: string) {
+    db.prepare('DELETE FROM account_activities WHERE id = ?').run(id);
+  }
   // Add more methods as needed (addSignature, markAsExecuted, etc)
 }

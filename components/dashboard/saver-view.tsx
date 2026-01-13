@@ -13,7 +13,7 @@ import { useVaultHealth } from "@/lib/hooks/useVaultHealth";
 import Link from "next/link";
 
 export function DashboardSaverView() {
-    // useAccount is already called above, do not call again
+    const { address } = useAccount();
     const { data: userContracts } = useUserContracts(address as any);
     const guardianTokenAddress = userContracts ? (userContracts as any)[0] : undefined;
     const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
@@ -25,10 +25,6 @@ export function DashboardSaverView() {
     let healthColor = "bg-emerald-500";
     if (healthStatus === "Warning") healthColor = "bg-yellow-400";
     if (healthStatus === "Critical") healthColor = "bg-red-500";
-    const { address } = useAccount();
-    const { data: userContracts } = useUserContracts(address as any);
-    const guardianTokenAddress = userContracts ? (userContracts as any)[0] : undefined;
-    const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
     
     const { deposit, isPending, isConfirming, isSuccess, hash } = useDepositETH(vaultAddress);
     const { data: vaultBalance, refetch: refetchBalance } = useVaultETHBalance(vaultAddress);

@@ -4,6 +4,7 @@ import { Users, Lock, CreditCard, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAccount, useWatchContractEvent } from "wagmi";
 import { useDepositETH, useVaultETHBalance, useUserContracts, useVaultQuorum } from "@/lib/hooks/useContracts";
 import { useGuardians, useVaultActivity } from "@/lib/hooks/useVaultData";
+import { SignatureStorageService } from '@/lib/services/signature-storage';
 import { SpendVaultABI } from "@/lib/abis/SpendVault";
 import { GuardianSBTABI } from "@/lib/abis/GuardianSBT";
 import { formatEther, type Address } from "viem";
@@ -169,6 +170,7 @@ export function DashboardSaverView() {
                 <section className="lg:col-span-2 flex flex-col gap-6">
                     <div className="flex items-center justify-between">
                         <h3 className="text-white text-xl font-bold">Recent Activity</h3>
+                        <div className="flex items-center gap-3">
                         <button 
                             onClick={() => {
                                 console.log('[DashboardSaverView] Manual refresh clicked');
@@ -181,6 +183,26 @@ export function DashboardSaverView() {
                             </svg>
                             Refresh
                         </button>
+
+                        <button
+                            onClick={async () => {
+                                try {
+                                    if (!vaultAddress) return alert('No vault address');
+                                    console.log('[DashboardSaverView] Starting migration of cached activity to server');
+                                    const res = await SignatureStorageService.migrateChainActivityToServer(String(vaultAddress), String(guardianTokenAddress));
+                                    console.log('Migration result', res);
+                                    alert('Migration completed');
+                                    refetchActivities();
+                                } catch (err) {
+                                    console.error('Migration failed', err);
+                                    alert('Migration failed: ' + (err instanceof Error ? err.message : String(err)));
+                                }
+                            }}
+                            className="text-sm font-medium text-slate-400 hover:text-slate-200"
+                        >
+                            Migrate
+                        </button>
+                        </div>
                     </div>
 
                     {activitiesLoading ? (

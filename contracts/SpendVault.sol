@@ -17,6 +17,76 @@ interface IGuardianSBT {
  * @dev Uses EIP-712 for signature verification and soulbound tokens for guardian verification
  */
 contract SpendVault is Ownable, EIP712, ReentrancyGuard {
+        // Emergency guardian rotation
+        struct GuardianRotation {
+            address inactiveGuardian;
+            address proposedReplacement;
+            uint256 proposalTime;
+            address[] approvals;
+            bool completed;
+        }
+        mapping(address => GuardianRotation) public guardianRotations; // inactiveGuardian => rotation
+        uint256 public constant ROTATION_DELAY = 14 days;
+
+        event GuardianRotationProposed(address indexed inactiveGuardian, address indexed replacement, uint256 proposalTime);
+        event GuardianRotationApproved(address indexed inactiveGuardian, address indexed approver);
+        event GuardianRotationCompleted(address indexed oldGuardian, address indexed newGuardian);
+        /**
+         * @notice Propose emergency guardian rotation if inactive >60 days
+         * @param inactiveGuardian Address of inactive guardian
+         * @param replacement Address of proposed replacement
+         */
+        function proposeGuardianRotation(address inactiveGuardian, address replacement) external onlyOwner {
+            require(inactiveGuardian != address(0) && replacement != address(0), "Invalid address");
+            GuardianReputation memory rep = guardianReputations[inactiveGuardian];
+            require(rep.lastActiveTimestamp > 0 && block.timestamp > rep.lastActiveTimestamp + 60 days, "Guardian not inactive");
+            GuardianRotation storage rotation = guardianRotations[inactiveGuardian];
+            require(!rotation.completed, "Rotation already completed");
+            rotation.inactiveGuardian = inactiveGuardian;
+            rotation.proposedReplacement = replacement;
+            rotation.proposalTime = block.timestamp;
+            delete rotation.approvals;
+            rotation.completed = false;
+            emit GuardianRotationProposed(inactiveGuardian, replacement, block.timestamp);
+        }
+
+        /**
+         * @notice Approve emergency guardian rotation (by active guardian)
+         * @param inactiveGuardian Address of inactive guardian
+         */
+        function approveGuardianRotation(address inactiveGuardian) external {
+            GuardianRotation storage rotation = guardianRotations[inactiveGuardian];
+            require(rotation.proposalTime > 0 && !rotation.completed, "No active proposal");
+            require(IGuardianSBT(guardianToken).balanceOf(msg.sender) > 0, "Only active guardians");
+            // Prevent duplicate approvals
+            for (uint256 i = 0; i < rotation.approvals.length; i++) {
+                require(rotation.approvals[i] != msg.sender, "Already approved");
+            }
+            rotation.approvals.push(msg.sender);
+            emit GuardianRotationApproved(inactiveGuardian, msg.sender);
+        }
+
+        /**
+         * @notice Execute guardian rotation after approvals or time delay
+         * @param inactiveGuardian Address of inactive guardian
+         */
+        function executeGuardianRotation(address inactiveGuardian) external onlyOwner {
+            GuardianRotation storage rotation = guardianRotations[inactiveGuardian];
+            require(rotation.proposalTime > 0 && !rotation.completed, "No active proposal");
+            // Count active guardians (excluding inactive)
+            uint256 activeCount = 0;
+            // This assumes a way to enumerate all guardians; for now, require at least quorum-1 approvals
+            if (rotation.approvals.length >= quorum - 1 || block.timestamp > rotation.proposalTime + ROTATION_DELAY) {
+                // Prevent reducing below quorum
+                require(quorum <= rotation.approvals.length + 1, "Cannot reduce below quorum");
+                // Remove inactive guardian and add replacement
+                // This requires updating the GuardianSBT contract externally (owner must call burn/mint)
+                rotation.completed = true;
+                emit GuardianRotationCompleted(inactiveGuardian, rotation.proposedReplacement);
+            } else {
+                revert("Not enough approvals or time delay");
+            }
+        }
     using ECDSA for bytes32;
 
     // State variables

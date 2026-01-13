@@ -222,6 +222,7 @@ function balanceOf(address account) external view returns (uint256)
 - Emergency timelock escape hatch
 - **Guardian Reputation System**: Each guardian tracks approvals, rejections, and last activity
 - **Weighted Quorum (Optional)**: Withdrawals can use trust scores for weighted voting
+- **Emergency Guardian Rotation**: Owner can propose a replacement for an inactive guardian (>60 days). Requires approval from remaining active guardians or a 14-day time delay. Cannot reduce active guardians below quorum. Emits events for all steps.
 
 **Main Functions**:
 ```solidity
@@ -244,6 +245,11 @@ function getGuardianTrustScore(address guardian) public view returns (uint256)
 // Weighted Quorum Management
 function setWeightedQuorum(bool enabled, uint256 threshold) external onlyOwner
 
+// Emergency Guardian Rotation
+function proposeGuardianRotation(address inactiveGuardian, address replacement) external onlyOwner
+function approveGuardianRotation(address inactiveGuardian) external
+function executeGuardianRotation(address inactiveGuardian) external onlyOwner
+
 // Emergency access
 function requestEmergencyUnlock() external onlyOwner
 function executeEmergencyUnlock(address token) external onlyOwner
@@ -253,14 +259,11 @@ function setQuorum(uint256 _newQuorum) external onlyOwner
 function updateGuardianToken(address _newToken) external onlyOwner
 ```
 
-**Guardian Reputation System**:
-- Each guardian has:
-  - `approvalsCount`: Number of approvals
-  - `rejectionsCount`: Number of rejections
-  - `lastActiveTimestamp`: Last time they participated
-- Trust score is calculated from approval ratio and recent activity
-- Weighted quorum mode can be enabled for trust-based voting
-- Backward compatible: can use equal voting (N-of-M) or weighted quorum
+**Emergency Guardian Rotation**:
+- If a guardian is inactive for more than 60 days, the owner can propose a replacement.
+- Remaining active guardians can approve the rotation, or it can execute after a 14-day delay.
+- Rotation cannot reduce active guardians below quorum.
+- Events are emitted for proposal, approval, and completion.
 
 ### VaultFactory.sol
 

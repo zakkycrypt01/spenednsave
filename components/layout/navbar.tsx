@@ -12,11 +12,11 @@ export function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-gray-200 dark:border-surface-border bg-white/80 dark:bg-background-dark/80 backdrop-blur-xl">
-            <div className="w-full px-4 sm:px-6 lg:px-8">
+        <nav className="sticky top-0 z-50 w-full border-b border-surface-border bg-white/90 dark:bg-background-dark/90 backdrop-blur-xl">
+            <div className="w-full px-6 md:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center gap-3">
-                        <Link href="/" className="flex items-center gap-3 group">
+                        <Link href="/" className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md transition-shadow">
                             <div className="flex items-center justify-center size-8 text-primary group-hover:scale-105 transition-transform">
                                 <svg
                                     className="w-full h-full drop-shadow-sm"
@@ -43,7 +43,7 @@ export function Navbar() {
                         </Link>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-1 p-1 bg-gray-100 dark:bg-surface-border rounded-full border border-gray-200 dark:border-gray-700/50">
+                    <div className="hidden md:flex items-center gap-1 p-1 bg-surface-light dark:bg-surface-border rounded-full border border-surface-border dark:border-gray-700/50 shadow-sm">
                         {[
                             { name: "Dashboard", href: "/dashboard" },
                             { name: "Guardians", href: "/guardians" },
@@ -57,9 +57,9 @@ export function Navbar() {
                                     key={link.name}
                                     href={link.href}
                                     className={cn(
-                                        "px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200",
+                                        "px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                                         isActive
-                                            ? "text-slate-900 dark:text-white bg-white dark:bg-surface-dark shadow-sm font-semibold"
+                                            ? "text-slate-900 dark:text-white bg-white dark:bg-surface-dark shadow font-semibold"
                                             : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                                     )}
                                 >
@@ -76,12 +76,8 @@ export function Navbar() {
                                 largeScreen: 'full',
                             }}
                         />
-                        <button 
-                            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                            className="md:hidden text-slate-900 dark:text-white p-2"
-                            aria-label="Toggle menu"
-                        >
-                            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+                        <button className="md:hidden text-slate-900 dark:text-white p-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-shadow" aria-label="Open menu">
+                            <span className="material-symbols-outlined">menu</span>
                         </button>
                     </div>
                 </div>

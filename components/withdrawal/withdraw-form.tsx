@@ -246,63 +246,24 @@ export function WithdrawalForm() {
                         Your withdrawal request for <strong className="text-slate-900 dark:text-white">{amount} ETH</strong> has been created. Share the link with your guardians to get approval.
                     </p>
 
-                    <div className="bg-gray-50 dark:bg-surface-border/30 rounded-lg p-4 mb-4 border border-gray-200 dark:border-surface-border">
-                        <div className="space-y-2 text-left">
-                            <div className="flex justify-between text-xs">
-                                <span className="text-slate-500">Amount:</span>
-                                <span className="text-slate-900 dark:text-white font-medium">{amount} ETH</span>
-                            </div>
-                            <div className="flex justify-between text-xs">
-                                <span className="text-slate-500">Recipient:</span>
-                                <span className="text-slate-900 dark:text-white font-mono text-xs">{address?.slice(0, 6)}...{address?.slice(-4)}</span>
-                            </div>
-                            {reason && (
-                                <div className="pt-2 border-t border-gray-200 dark:border-surface-border">
-                                    <span className="text-slate-500 text-xs block mb-1">Reason:</span>
-                                    <span className="text-slate-700 dark:text-slate-300 text-xs italic">"{reason}"</span>
-                                </div>
-                            )}
-                        </div>
+                    <div className="bg-gray-50 dark:bg-surface-border/30 rounded-lg p-3 flex items-center gap-2 mb-6 border border-gray-200 dark:border-surface-border">
+                        <span className="text-xs font-mono text-slate-500 dark:text-slate-400 truncate flex-1">spendguard.app/vote/req-8a92...</span>
+                        <button className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-surface-border text-slate-500 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                            <Copy size={16} />
+                        </button>
                     </div>
 
-                    <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20 rounded-lg p-3 mb-6">
-                        <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
-                            <strong>Next Steps:</strong> Share this request with your guardians. They will need to sign the withdrawal request. Once {quorumValue} guardians have signed, you can execute the withdrawal.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                        <button 
-                            onClick={shareViaWhatsApp}
-                            className="flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white py-3 px-4 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-md shadow-green-500/20"
-                        >
+                    <div className="grid grid-cols-2 gap-3">
+                        <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                             WhatsApp
                         </button>
-                        <button 
-                            onClick={shareViaTelegram}
-                            className="flex items-center justify-center gap-2 bg-[#229ED9] hover:bg-[#1e8cc0] text-white py-3 px-4 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-md shadow-blue-400/20"
-                        >
+                        <button className="flex items-center justify-center gap-2 bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold text-sm transition-transform active:scale-95 shadow-lg shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
                             Telegram
                         </button>
                     </div>
 
-                    <Link 
-                        href="/dashboard" 
-                        className="block w-full bg-primary hover:bg-primary-hover text-white py-3 px-4 rounded-xl font-bold text-sm transition-colors mb-3"
-                    >
-                        Back to Dashboard
-                    </Link>
-
-                    <button 
-                        onClick={() => {
-                            setStep('form');
-                            setAmount('');
-                            setReason('');
-                            setWithdrawalData(null);
-                        }} 
-                        className="text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium"
-                    >
-                        Create Another Request
+                    <button onClick={() => setStep('form')} className="mt-6 text-sm text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-full">
+                        Start Over
                     </button>
                 </div>
             </div>
@@ -357,9 +318,9 @@ export function WithdrawalForm() {
                         />
                     </div>
                     <div className="flex gap-2 mt-4">
-                        <button type="button" onClick={() => setAmount("0.01")} className="px-3 py-1 bg-gray-100 dark:bg-surface-border rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-surface-border/80 transition-colors">0.01</button>
-                        <button type="button" onClick={() => setAmount("0.05")} className="px-3 py-1 bg-gray-100 dark:bg-surface-border rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-surface-border/80 transition-colors">0.05</button>
-                        <button type="button" onClick={() => setAmount(formattedBalance)} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold hover:bg-primary/20 transition-colors ml-auto">MAX</button>
+                        <button type="button" onClick={() => setAmount("100")} className="px-3 py-1 bg-gray-100 dark:bg-surface-border rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-surface-border/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">$100</button>
+                        <button type="button" onClick={() => setAmount("500")} className="px-3 py-1 bg-gray-100 dark:bg-surface-border rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-surface-border/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">$500</button>
+                        <button type="button" onClick={() => setAmount("5420.50")} className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-bold hover:bg-primary/20 transition-colors ml-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">MAX</button>
                     </div>
                 </div>
 
@@ -383,8 +344,8 @@ export function WithdrawalForm() {
 
                 <button
                     type="submit"
-                    disabled={!amount || parseFloat(amount) <= 0}
-                    className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+                    disabled={!amount || isSubmitting}
+                    className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-[0.99] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
                     Create Withdrawal Request
                 </button>

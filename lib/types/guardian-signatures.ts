@@ -45,3 +45,12 @@ export interface SignatureVerificationResult {
     isDuplicate: boolean;
     error?: string;
 }
+
+export interface AccountActivity {
+    id: string;
+    account: `0x${string}`;
+    type: string; // e.g., 'create_request', 'sign_request', 'execute_withdrawal', 'reject_request', 'delete_request'
+    details?: any; // JSON-serializable details about the activity
+    relatedRequestId?: string;
+    timestamp: number;
+}

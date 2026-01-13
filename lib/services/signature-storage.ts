@@ -312,6 +312,34 @@ export class SignatureStorageService {
     }
 
     /**
+     * Migrate localStorage pending requests to the server-side DB via API
+     */
+    static async migrateToServer(apiPath: string = '/api/guardian-signatures/import') {
+        if (typeof window === 'undefined') return;
+
+        try {
+            const data = this.exportData();
+            // exportData returns a JSON string with amounts and nonces as strings
+            const parsed = JSON.parse(data);
+
+            const res = await fetch(apiPath, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(parsed),
+            });
+
+            if (!res.ok) {
+                throw new Error(`Migration failed: ${res.status}`);
+            }
+
+            return await res.json();
+        } catch (err) {
+            console.error('Migration to server failed:', err);
+            throw err;
+        }
+    }
+
+    /**
      * Clear all data (use with caution!)
      */
     static clearAll(): void {

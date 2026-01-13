@@ -75,6 +75,34 @@ export function DashboardGuardianView() {
                     vaultName: `Vault ${vaultAddr.slice(2, 8)}`,
                     owner: "0xOwner...", // TODO: fetch from SpendVault contract
                     pendingApprovals: Math.floor(Math.random() * 3), // TODO: fetch actual pending approvals
+                }))
+            );
+            setVaults(vaultData);
+        }
+        fetchVaults();
+    }, [address]);
+
+    const handleApprove = (requestId: string) => {
+        console.log("Approving request:", requestId);
+        // TODO: Sign the withdrawal request with EIP-712
+        alert("Signing withdrawal request...");
+    };
+
+    const handleReject = (requestId: string) => {
+        console.log("Rejecting request:", requestId);
+        // TODO: Implement rejection logic (optional - can just not sign)
+        alert("Request rejected");
+    };
+
+    const pendingRequests = mockPendingRequests.filter(r => !r.status);
+    const completedRequests = mockPendingRequests.filter(r => r.status);
+
+    return (
+        <div className="w-full flex flex-col gap-8">
+            {/* Header */}
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Guardian Dashboard</h1>
                     <p className="text-slate-600 dark:text-slate-400 mt-1">Review and approve withdrawal requests from your friends</p>
                 </div>
                 <div className="flex items-center gap-3 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
@@ -116,6 +144,20 @@ export function DashboardGuardianView() {
                         <span className="text-sm text-slate-600 dark:text-slate-400">Vaults Guarding</span>
                     </div>
                     <p className="text-3xl font-bold text-slate-900 dark:text-white">3</p>
+                </div>
+            </div>
+
+            {/* Vaults Guarding */}
+            <div>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Vaults Guarding</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {vaults.map((vault) => (
+                        <div key={vault.vaultAddress} className="bg-white dark:bg-surface-dark border border-surface-border rounded-2xl p-6">
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{vault.vaultName}</h3>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Owner: {vault.owner}</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">Pending Approvals: {vault.pendingApprovals}</p>
+                        </div>
+                    ))}
                 </div>
             </div>
 

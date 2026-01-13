@@ -82,10 +82,54 @@ export function DashboardGuardianView() {
         fetchVaults();
     }, [address]);
 
-    const handleApprove = (requestId: string) => {
-        console.log("Approving request:", requestId);
-        // TODO: Sign the withdrawal request with EIP-712
-        alert("Signing withdrawal request...");
+    // EIP-712 signing for gasless guardian approval
+    const handleApprove = async (requestId: string) => {
+        const request = pendingRequests.find(r => r.id === requestId);
+        if (!request || !address) return;
+        // Fetch nonce from contract (mocked here, replace with actual call)
+        const nonce = Date.now(); // Replace with contract nonce
+        // EIP-712 domain and types
+        const domain = {
+            name: 'SpendGuard',
+            version: '1',
+            chainId: 84532, // Replace with actual chainId
+            verifyingContract: request.vaultAddress,
+        };
+        const types = {
+            Withdrawal: [
+                { name: 'token', type: 'address' },
+                { name: 'amount', type: 'uint256' },
+                { name: 'recipient', type: 'address' },
+                { name: 'nonce', type: 'uint256' },
+                { name: 'reason', type: 'string' },
+                { name: 'category', type: 'string' },
+                { name: 'reasonHash', type: 'string' },
+                { name: 'createdAt', type: 'uint256' },
+            ],
+        };
+        // Prepare message
+        const message = {
+            token: '0x0000000000000000000000000000000000000000',
+            amount: parseFloat(request.amount) * 1e18,
+            recipient: request.saverAddress,
+            nonce,
+            reason: request.reason,
+            category: 'General', // Replace with actual category
+            reasonHash: '', // Replace with actual reasonHash
+            createdAt: Date.now(),
+        };
+        // Use wallet to signTypedData (wagmi, ethers, etc.)
+        try {
+            // @ts-ignore
+            const signature = await window.ethereum.request({
+                method: 'eth_signTypedData_v4',
+                params: [address, JSON.stringify({ domain, types, primaryType: 'Withdrawal', message })],
+            });
+            // Store signature locally or send to backend for aggregation
+            alert('Signature created! Share with owner to submit onchain.');
+        } catch (err) {
+            alert('Signature failed: ' + (err instanceof Error ? err.message : String(err)));
+        }
     };
 
     const handleReject = (requestId: string) => {

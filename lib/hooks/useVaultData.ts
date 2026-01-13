@@ -579,6 +579,7 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
     const [loadingTimeout, setLoadingTimeout] = useState(false);
     const [serverActivities, setServerActivities] = useState<any[] | null>(null);
     const [serverLoading, setServerLoading] = useState(false);
+    const [migrated, setMigrated] = useState(false);
     
     // Force loading state to false after 10 seconds
     useEffect(() => {
@@ -651,6 +652,40 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
         allActivities.sort((a, b) => b.timestamp - a.timestamp);
         const limited = allActivities.slice(0, limit);
         setActivities(limited);
+
+        // Auto-import to server DB if server has no activities yet and we haven't migrated
+        (async () => {
+            try {
+                const migratedFlag = typeof window !== 'undefined' ? localStorage.getItem(`activities-migrated-${String(vaultAddress).toLowerCase()}`) : null;
+                if (serverActivities !== null && Array.isArray(serverActivities) && serverActivities.length === 0 && !migrated && !migratedFlag) {
+                    const payload = limited.map((act) => ({
+                        id: `${String(vaultAddress)}-${act.type}-${String(act.blockNumber || '0')}-${act.timestamp}`,
+                        account: String(vaultAddress),
+                        type: act.type,
+                        details: act.data ?? {},
+                        relatedRequestId: act.data?.id ?? act.data?.requestId ?? null,
+                        timestamp: act.timestamp,
+                    }));
+
+                    if (payload.length > 0) {
+                        const resp = await fetch('/api/activities/import', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                        });
+                        if (resp.ok) {
+                            setMigrated(true);
+                            try { if (typeof window !== 'undefined') localStorage.setItem(`activities-migrated-${String(vaultAddress).toLowerCase()}`, '1'); } catch (e) {}
+                            setServerActivities(payload.map(p => ({ type: p.type, timestamp: p.timestamp, blockNumber: p.blockNumber ?? 0, data: p.details })));
+                        } else {
+                            console.warn('Failed to import activities to server', resp.status);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Auto-migration failed:', e);
+            }
+        })();
     }, [deposits, withdrawals, guardians, limit, serverActivities]);
 
     // Fetch server activities on vault change

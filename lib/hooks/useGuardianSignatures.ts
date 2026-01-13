@@ -147,10 +147,17 @@ export function useGuardianSignatures(vaultAddress?: Address) {
                 status: 'pending',
             };
 
-            // Save to storage
-            GuardianSignatureDB.savePendingRequest(pendingRequest);
+            // Persist via API
+            const res = await fetch('/api/guardian-signatures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pendingRequest),
+            });
 
-            return pendingRequest;
+            if (!res.ok) throw new Error('Failed to save pending request');
+            const saved: PendingWithdrawalRequest = await res.json();
+            setPendingRequests((prev) => [...prev, saved]);
+            return saved;
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'Failed to create withdrawal request';
             setError(errorMsg);
@@ -174,10 +181,10 @@ export function useGuardianSignatures(vaultAddress?: Address) {
         setError(null);
 
         try {
-            const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
-            if (!pendingRequest) {
-                throw new Error('Request not found');
-            }
+            // Fetch the latest request from server
+            const getRes = await fetch(`/api/guardian-signatures/${requestId}`);
+            if (!getRes.ok) throw new Error('Request not found');
+            const pendingRequest: PendingWithdrawalRequest = await getRes.json();
 
             // Sign the withdrawal
             const signedWithdrawal = await service.signWithdrawal(
@@ -185,19 +192,25 @@ export function useGuardianSignatures(vaultAddress?: Address) {
                 pendingRequest.request
             );
 
-            // Add signature to storage
-            // Add signature to the request and save
-            if (!pendingRequest) throw new Error('Request not found');
             if (pendingRequest.signatures.some(sig => sig.signer.toLowerCase() === signedWithdrawal.signer.toLowerCase())) {
                 throw new Error('Guardian has already signed this request');
             }
+
             const newStatus = (pendingRequest.signatures.length + 1 >= pendingRequest.requiredQuorum ? 'approved' : pendingRequest.status) as 'pending' | 'approved' | 'executed' | 'rejected';
-            const updated = {
+            const updated: PendingWithdrawalRequest = {
                 ...pendingRequest,
                 signatures: [...pendingRequest.signatures, signedWithdrawal],
                 status: newStatus,
             };
-            GuardianSignatureDB.savePendingRequest(updated);
+
+            const putRes = await fetch(`/api/guardian-signatures/${requestId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated),
+            });
+            if (!putRes.ok) throw new Error('Failed to save signature');
+
+            setPendingRequests((prev) => prev.map(r => r.id === updated.id ? updated : r));
         } catch (err) {
             const errorMsg = err instanceof Error ? err.message : 'Failed to sign request';
             setError(errorMsg);
@@ -221,15 +234,13 @@ export function useGuardianSignatures(vaultAddress?: Address) {
         setError(null);
 
         try {
-            const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
-            if (!pendingRequest) {
-                throw new Error('Request not found');
-            }
+            // Get latest request
+            const getRes = await fetch(`/api/guardian-signatures/${requestId}`);
+            if (!getRes.ok) throw new Error('Request not found');
+            const pendingRequest: PendingWithdrawalRequest = await getRes.json();
 
             if (pendingRequest.signatures.length < pendingRequest.requiredQuorum) {
-                throw new Error(
-                    `Insufficient signatures: ${pendingRequest.signatures.length}/${pendingRequest.requiredQuorum}`
-                );
+                throw new Error(`Insufficient signatures: ${pendingRequest.signatures.length}/${pendingRequest.requiredQuorum}`);
             }
 
             const signatures = pendingRequest.signatures.map((sig) => sig.signature);
@@ -247,15 +258,21 @@ export function useGuardianSignatures(vaultAddress?: Address) {
                 throw new Error('Transaction failed');
             }
 
-            // Mark as executed
-            if (!pendingRequest) throw new Error('Request not found');
-            const executed = {
+            const executed: PendingWithdrawalRequest = {
                 ...pendingRequest,
-                status: 'executed' as 'executed',
+                status: 'executed',
                 executedAt: Date.now(),
                 executionTxHash: txHash,
             };
-            GuardianSignatureDB.savePendingRequest(executed);
+
+            const putRes = await fetch(`/api/guardian-signatures/${requestId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(executed),
+            });
+            if (!putRes.ok) throw new Error('Failed to mark executed');
+
+            setPendingRequests((prev) => prev.map(r => r.id === executed.id ? executed : r));
 
             return txHash;
         } catch (err) {
@@ -281,10 +298,9 @@ export function useGuardianSignatures(vaultAddress?: Address) {
         setError(null);
 
         try {
-            const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
-            if (!pendingRequest) {
-                throw new Error('Request not found');
-            }
+            const getRes = await fetch(`/api/guardian-signatures/${requestId}`);
+            if (!getRes.ok) throw new Error('Request not found');
+            const pendingRequest: PendingWithdrawalRequest = await getRes.json();
 
             const guardians = await service.getAllGuardians(vaultAddress);
             const statuses: GuardianSignatureStatus[] = [];
@@ -333,10 +349,9 @@ export function useGuardianSignatures(vaultAddress?: Address) {
 
 
         try {
-            const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
-            if (!pendingRequest) {
-                throw new Error('Request not found');
-            }
+            const getRes = await fetch(`/api/guardian-signatures/${requestId}`);
+            if (!getRes.ok) throw new Error('Request not found');
+            const pendingRequest: PendingWithdrawalRequest = await getRes.json();
 
             const chainId = await publicClient.getChainId();
             const signatures = pendingRequest.signatures.map((sig) => sig.signature);
@@ -362,17 +377,21 @@ export function useGuardianSignatures(vaultAddress?: Address) {
      * Reject a withdrawal request
      */
     const rejectRequest = useCallback((requestId: string): void => {
-        const pendingRequest = GuardianSignatureDB.getPendingRequest(requestId);
-        if (pendingRequest) {
-            GuardianSignatureDB.savePendingRequest({ ...pendingRequest, status: 'rejected' as 'rejected' });
-        }
+        // Optimistically update local state and inform server
+        setPendingRequests((prev) => prev.map(r => r.id === requestId ? { ...r, status: 'rejected' } : r));
+        fetch(`/api/guardian-signatures/${requestId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'rejected' }),
+        }).catch((err) => console.error('Failed to reject request:', err));
     }, []);
 
     /**
      * Delete a withdrawal request
      */
     const deleteRequest = useCallback((requestId: string): void => {
-        GuardianSignatureDB.deletePendingRequest(requestId);
+        setPendingRequests((prev) => prev.filter(r => r.id !== requestId));
+        fetch(`/api/guardian-signatures/${requestId}`, { method: 'DELETE' }).catch((err) => console.error('Failed to delete request:', err));
     }, []);
 
     return {

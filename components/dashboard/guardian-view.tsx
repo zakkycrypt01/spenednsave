@@ -4,7 +4,7 @@ import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users } from "lucid
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Contract, providers } from "ethers";
+import { Contract } from "ethers";
 // import GuardianSBT ABI and address
 import GuardianSBTABI from "@/lib/abis/GuardianSBT.json";
 
@@ -42,7 +42,6 @@ export function DashboardGuardianView() {
             version: '1',
             chainId: 84532, // Replace with actual chainId
             verifyingContract: request.vaultAddr
-            ess,
         };
         const types = {
             Withdrawal: [

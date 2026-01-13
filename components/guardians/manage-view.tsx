@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useUserContracts, useAddGuardian, useVaultQuorum } from "@/lib/hooks/useContracts";
 import { useGuardians } from "@/lib/hooks/useVaultData";
+import { useGuardianBadges } from "@/lib/hooks/useGuardianBadges";
 import { Users, ShieldCheck, Clock, Plus, Trash2, Key, History } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { type Address } from "viem";
@@ -216,39 +217,56 @@ export function ManageGuardiansView() {
                                 </button>
                             </div>
                         ) : (
-                            guardiansList.map((guardian) => (
-                            <div key={guardian.address} className="group bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-border p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-primary/50 dark:hover:border-primary/50 transition-all shadow-sm">
-                                <div className="flex items-center gap-4">
-                                    <div className="size-12 rounded-full bg-slate-100 dark:bg-surface-border flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                                        <ShieldCheck size={20} />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <h3 className="font-bold text-slate-900 dark:text-white text-lg">
-                                                Guardian #{guardian.tokenId.toString()}
-                                            </h3>
-                                            <span className="size-2 rounded-full bg-emerald-500"></span>
+                            guardiansList.map((guardian) => {
+                                // Replace with your deployed GuardianBadge contract address
+                                const GUARDIAN_BADGE_ADDRESS = process.env.NEXT_PUBLIC_GUARDIAN_BADGE_ADDRESS || "";
+                                const badges = useGuardianBadges(GUARDIAN_BADGE_ADDRESS, guardian.address);
+                                return (
+                                    <div key={guardian.address} className="group bg-white dark:bg-surface-dark border border-slate-200 dark:border-surface-border p-5 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:border-primary/50 dark:hover:border-primary/50 transition-all shadow-sm">
+                                        <div className="flex items-center gap-4">
+                                            <div className="size-12 rounded-full bg-slate-100 dark:bg-surface-border flex items-center justify-center text-slate-500 dark:text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                                <ShieldCheck size={20} />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-bold text-slate-900 dark:text-white text-lg">
+                                                        Guardian #{guardian.tokenId.toString()}
+                                                    </h3>
+                                                    <span className="size-2 rounded-full bg-emerald-500"></span>
+                                                </div>
+                                                <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+                                                    {guardian.address}
+                                                </div>
+                                                <p className="text-xs text-slate-400 mt-1">
+                                                    Added {new Date(guardian.addedAt).toLocaleDateString()}
+                                                </p>
+                                                {/* Badges */}
+                                                {badges.length > 0 && (
+                                                    <div className="flex gap-2 mt-2">
+                                                        {badges.map((badge, i) => (
+                                                            <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded bg-primary/10 text-primary text-xs font-semibold">
+                                                                {badge.badgeType === 0 && "Approvals"}
+                                                                {badge.badgeType === 1 && "Response"}
+                                                                {badge.badgeType === 2 && "Longevity"}
+                                                                <span className="ml-1">Lv{badge.level}</span>
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                                            {guardian.address}
+                                        <div className="flex items-center gap-4 w-full sm:w-auto mt-2 sm:mt-0 justify-between sm:justify-end">
+                                            <button
+                                                onClick={() => handleRevoke(guardian.tokenId)}
+                                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-red-500 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-semibold"
+                                            >
+                                                <Trash2 size={16} />
+                                                Revoke
+                                            </button>
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-1">
-                                            Added {new Date(guardian.addedAt).toLocaleDateString()}
-                                        </p>
                                     </div>
-                                </div>
-
-                                <div className="flex items-center gap-4 w-full sm:w-auto mt-2 sm:mt-0 justify-between sm:justify-end">
-                                    <button
-                                        onClick={() => handleRevoke(guardian.tokenId)}
-                                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-red-500 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors text-sm font-semibold"
-                                    >
-                                        <Trash2 size={16} />
-                                        Revoke
-                                    </button>
-                                </div>
-                            </div>
-                        ))
+                                );
+                            })
                         )}
                     </div>
                 </div>

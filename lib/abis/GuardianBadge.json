@@ -1,0 +1,14 @@
+// Minimal ABI for GuardianBadge contract
+export default [
+  {
+    "inputs": [
+      { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint8", "name": "badgeType", "type": "uint8" },
+      { "internalType": "uint256", "name": "level", "type": "uint256" }
+    ],
+    "name": "mintBadge",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

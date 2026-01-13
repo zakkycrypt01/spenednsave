@@ -1,9 +1,29 @@
-import Database from 'better-sqlite3';
 import path from 'path';
+
+// `better-sqlite3` is a native, server-only module. Avoid static imports so the
+// Next/Turbopack client bundler doesn't try to resolve it. Require at runtime
+// when running on the server.
+let Database: any = null;
+try {
+  if (typeof window === 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    Database = require('better-sqlite3');
+  }
+} catch (e) {
+  // Leave Database as null; code will throw at runtime if DB is required but
+  // the native module isn't available.
+  Database = null;
+}
 import { type PendingWithdrawalRequest, type SignedWithdrawal } from '@/lib/types/guardian-signatures';
 import { type Address, type Hex } from 'viem';
 
 const dbPath = path.resolve(process.cwd(), 'guardian_signatures.sqlite');
+if (!Database) {
+  // If Database isn't available at module import time, export stub methods
+  // that will throw when used. This prevents build-time resolution errors.
+  throw new Error('better-sqlite3 module is not available. Ensure it is installed and available on the server.');
+}
+
 const db = new Database(dbPath);
 
 // Initialize tables if not exist

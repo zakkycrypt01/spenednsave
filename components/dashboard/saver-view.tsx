@@ -1,3 +1,4 @@
+import { EmergencyContacts } from './emergency-contacts';
 
 "use client";
 import { AvatarBlockie } from '@/components/ui/avatar-blockie';

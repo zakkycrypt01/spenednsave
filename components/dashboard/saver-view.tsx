@@ -14,6 +14,17 @@ import Link from "next/link";
 import { VaultAnalyticsDashboard } from "./VaultAnalyticsDashboard";
 
 export function DashboardSaverView() {
+        // Timer for stable current time in render
+        const [now, setNow] = useState(0);
+        useEffect(() => {
+            setNow(Date.now()); // set initial value after mount
+            const interval = setInterval(() => setNow(Date.now()), 60000); // update every minute
+            return () => clearInterval(interval);
+        }, []);
+        useEffect(() => {
+            const interval = setInterval(() => setNow(Date.now()), 60000); // update every minute
+            return () => clearInterval(interval);
+        }, []);
     const { address } = useAccount();
     const { data: userContracts } = useUserContracts(address as Address);
     const guardianTokenAddress = userContracts ? (userContracts as [Address, Address])[0] : undefined;
@@ -253,7 +264,6 @@ export function DashboardSaverView() {
                                 const isWithdrawal = activity.type === 'withdrawal';
                                 
                                 const amount = activity.data?.amount ? formatEther(activity.data.amount) : '0';
-                                const now = typeof window !== 'undefined' ? window.performance.now() + performance.timeOrigin : Date.now();
                                 const timeAgo = Math.floor((now - activity.timestamp) / 1000);
                                 const timeString = timeAgo < 60 ? 'Just now' : 
                                                  timeAgo < 3600 ? `${Math.floor(timeAgo / 60)}m ago` :

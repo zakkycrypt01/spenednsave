@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users } from "lucide-react";
+import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -121,6 +121,22 @@ export function DashboardGuardianView() {
                         <p className="text-sm font-bold text-indigo-900 dark:text-indigo-300">{pendingRequests.length} Pending</p>
                     </div>
                 </div>
+                {badgeData && (
+                    <div className="flex items-center gap-3">
+                        <div className="text-sm text-slate-500">Badges</div>
+                        <div className="flex items-center gap-2">
+                            {(badgeData[0] || []).map((tid: any, i: number) => (
+                                <div key={String(tid)} className="inline-flex items-center gap-2 bg-white dark:bg-surface-dark border border-surface-border rounded-xl px-3 py-1 text-xs">
+                                    <Award size={16} className="text-amber-500" />
+                                    <div>
+                                        <div className="font-semibold">{badgeData[1] && badgeData[1][i] ? `Type ${String(badgeData[1][i])}` : 'Badge'}</div>
+                                        <div className="text-xs text-slate-500">{badgeData[2] && badgeData[2][i] ? new Date(Number(badgeData[2][i]) * 1000).toLocaleDateString() : ''}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Stats Cards */}

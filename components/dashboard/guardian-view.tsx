@@ -1,6 +1,7 @@
 "use client";
 
 import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from "lucide-react";
+import AvatarBlockie from "@/components/ui/avatar-blockie";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
@@ -29,15 +30,36 @@ interface ScheduledWithdrawal {
     hasUserSigned: boolean;
 }
 
-export function DashboardGuardianView() {
+// Dummy fetchGuardianReputation for demonstration; replace with actual import if available
+async function fetchGuardianReputation(address: string) {
+    // Replace with actual API call or logic
+    return {
+        approvals: 10,
+        avgResponseSeconds: 120,
+        history: [
+            { recipient: "0x1234567890abcdef1234567890abcdef12345678", reason: "Helped friend", amount: "0.5 ETH", timestamp: Date.now() }
+        ]
+    };
+}
+
+// Dummy badgeData fetch; replace with actual logic or hook
+import { useState, useEffect } from "react";
+
     const { address } = useAccount();
     const [vaults, setVaults] = useState<any[]>([]);
     const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
     const [reputation, setReputation] = useState<any>(null);
+    const [badgeData, setBadgeData] = useState<any>(null);
 
     useEffect(() => {
         if (address) {
             fetchGuardianReputation(address).then(setReputation);
+            // Dummy badge data: [tokenIds[], types[], timestamps[]]
+            setBadgeData([
+                [1, 2], // tokenIds
+                ["Approvals", "Longevity"], // types
+                [Math.floor(Date.now() / 1000), Math.floor(Date.now() / 1000) - 86400] // timestamps
+            ]);
         }
     }, [address]);
 

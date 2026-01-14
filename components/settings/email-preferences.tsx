@@ -10,6 +10,8 @@ export function EmailPreferences({ initialEmail = "", initialOptIn = false, onSa
   const [optIn, setOptIn] = useState(initialOptIn);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resent, setResent] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -19,6 +21,16 @@ export function EmailPreferences({ initialEmail = "", initialOptIn = false, onSa
       setSaved(true);
       onSave?.(email, optIn);
       setTimeout(() => setSaved(false), 2000);
+    }, 800);
+  }
+
+  async function handleResend() {
+    setResending(true);
+    // Simulate API call to resend verification email
+    setTimeout(() => {
+      setResending(false);
+      setResent(true);
+      setTimeout(() => setResent(false), 2000);
     }, 800);
   }
 
@@ -45,14 +57,24 @@ export function EmailPreferences({ initialEmail = "", initialOptIn = false, onSa
         />
         <span>Enable email notifications</span>
       </label>
-      <button
-        className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-60"
-        onClick={handleSave}
-        disabled={saving || !email}
-      >
-        {saving ? "Saving..." : "Save Preferences"}
-      </button>
+      <div className="flex gap-2 mb-2">
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-60"
+          onClick={handleSave}
+          disabled={saving || !email}
+        >
+          {saving ? "Saving..." : "Save Preferences"}
+        </button>
+        <button
+          className="px-4 py-2 bg-gray-200 text-blue-700 rounded disabled:opacity-60"
+          onClick={handleResend}
+          disabled={resending || !email}
+        >
+          {resending ? "Resending..." : "Resend verification email"}
+        </button>
+      </div>
       {saved && <div className="mt-2 text-green-600">Preferences saved!</div>}
+      {resent && <div className="mt-2 text-green-600">Verification email resent!</div>}
     </div>
   );
 }

@@ -28,8 +28,7 @@ interface ScheduledWithdrawal {
     requiredSignatures: number;
     currentSignatures: number;
     hasUserSigned: boolean;
-
-
+}
 
     const { address } = useAccount();
     const [vaults, setVaults] = useState<any[]>([]);
@@ -369,4 +368,4 @@ interface ScheduledWithdrawal {
             )}
         </div>
     );
-}
+

@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * @dev Non-transferable (soulbound) NFT for guardians, awarded based on activity.
  */
 
+
 contract GuardianBadge is ERC721Enumerable, Ownable {
 
     constructor() ERC721("GuardianBadge", "GBADGE") {}
@@ -59,28 +60,41 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
     }
 
     // --- Soulbound: Block all transfers and approvals ---
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal override(ERC721Enumerable) {
+
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
+        internal
+        override(ERC721, ERC721Enumerable)
+    {
         require(from == address(0) || to == address(0), "Soulbound: Transfers disabled");
         super._beforeTokenTransfer(from, to, tokenId, batchSize);
     }
 
-    function approve(address to, uint256 tokenId) public override {
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721, ERC721Enumerable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
+
+    function approve(address to, uint256 tokenId) public override(ERC721) {
         revert("Soulbound: Approvals disabled");
     }
 
-    function setApprovalForAll(address operator, bool approved) public override {
+    function setApprovalForAll(address operator, bool approved) public override(ERC721) {
         revert("Soulbound: Approvals disabled");
     }
 
-    function transferFrom(address from, address to, uint256 tokenId) public override {
+    function transferFrom(address from, address to, uint256 tokenId) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId) public override {
+    function safeTransferFrom(address from, address to, uint256 tokenId) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
     }
 
-    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override {
+    function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
     }
     enum BadgeType { Approvals, ResponseTime, Longevity }

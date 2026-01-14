@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { ArrowLeft, Check, Copy, Share2, Info, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,6 +17,8 @@ export function WithdrawalForm() {
     const [reason, setReason] = useState("");
     const [withdrawalData, setWithdrawalData] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isScheduled, setIsScheduled] = useState(false);
+    const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
 
     const { address, isConnected } = useAccount();
     const chainId = useChainId();
@@ -78,12 +82,38 @@ export function WithdrawalForm() {
                 return;
             }
             const amountInWei = parseEther(amount);
-            // Check if user has sufficient balance
             if (vaultBalance && typeof vaultBalance === 'bigint' && amountInWei > vaultBalance) {
                 alert("Insufficient vault balance");
                 return;
             }
-            // Prepare withdrawal data using the current nonce from the contract
+            if (isScheduled) {
+                if (!scheduledDate || scheduledDate.getTime() <= Date.now()) {
+                    alert("Please select a valid future date/time");
+                    return;
+                }
+                // Call API to schedule withdrawal
+                const res = await fetch('/api/scheduled-withdrawals', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        token: '0x0000000000000000000000000000000000000000',
+                        amount: amountInWei.toString(),
+                        recipient: address,
+                        reason: reason || "Scheduled withdrawal",
+                        category: "General",
+                        scheduledFor: Math.floor(scheduledDate.getTime() / 1000)
+                    })
+                });
+                if (res.ok) {
+                    setStep('success');
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Failed to schedule withdrawal');
+                }
+                setIsSubmitting(false);
+                return;
+            }
+            // ...existing immediate withdrawal logic...
             const withdrawalRequest = {
                 token: '0x0000000000000000000000000000000000000000' as Address, // ETH
                 amount: amountInWei,
@@ -92,25 +122,8 @@ export function WithdrawalForm() {
                 reason: reason || "Withdrawal request"
             };
             setWithdrawalData(withdrawalRequest);
-            // Move to signing step to get owner's signature
             setStep('signing');
-            // EIP-712 domain
-            const domain = {
-                name: 'SpendGuard',
-                version: '1',
-                chainId: chainId,
-                verifyingContract: vaultAddress as Address,
-            };
-            // EIP-712 types
-            const types = {
-                Withdrawal: [
-                    { name: 'token', type: 'address' },
-                    { name: 'amount', type: 'uint256' },
-                    { name: 'recipient', type: 'address' },
-                    { name: 'nonce', type: 'uint256' },
-                    { name: 'reason', type: 'string' },
-                ],
-            };
+            // ...existing EIP-712 logic...
         } finally {
             setIsSubmitting(false);
         }
@@ -299,6 +312,36 @@ export function WithdrawalForm() {
                     ></textarea>
                 </div>
 
+                {/* Scheduled Withdrawal Option */}
+                <div className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        id="schedule-withdrawal"
+                        checked={isScheduled}
+                        onChange={() => setIsScheduled(!isScheduled)}
+                        className="form-checkbox h-4 w-4 text-primary"
+                    />
+                    <label htmlFor="schedule-withdrawal" className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                        Schedule for future date/time
+                    </label>
+                </div>
+                {isScheduled && (
+                    <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-4 shadow-sm">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Scheduled For</label>
+                        <DatePicker
+                            selected={scheduledDate}
+                            onChange={setScheduledDate}
+                            showTimeSelect
+                            timeFormat="HH:mm"
+                            timeIntervals={15}
+                            dateFormat="MMMM d, yyyy h:mm aa"
+                            minDate={new Date()}
+                            className="w-full bg-transparent text-lg font-bold text-slate-900 dark:text-white outline-none border-b border-gray-200 dark:border-slate-700 py-2"
+                            placeholderText="Select date and time"
+                        />
+                    </div>
+                )}
+
                 <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
                     <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
                     <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
@@ -311,7 +354,7 @@ export function WithdrawalForm() {
                     disabled={!amount || isSubmitting}
                     className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-[0.99] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                    Create Withdrawal Request
+                    {isScheduled ? 'Schedule Withdrawal' : 'Create Withdrawal Request'}
                 </button>
             </form>
         </div>

@@ -152,10 +152,23 @@ export function DashboardSaverView() {
                             </div>
                         </div>
                         <div className="space-y-3">
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between items-center text-sm gap-2">
                                 <span className="text-slate-400">Vault Address</span>
-                                <span className="text-white font-mono text-xs">
-                                    {vaultAddress ? `${vaultAddress.slice(0, 6)}...${vaultAddress.slice(-4)}` : "Loading..."}
+                                <span className="flex items-center gap-1">
+                                    <span className="text-white font-mono text-xs">
+                                        {vaultAddress ? `${vaultAddress.slice(0, 6)}...${vaultAddress.slice(-4)}` : "Loading..."}
+                                    </span>
+                                    {vaultAddress && (
+                                        <button
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(vaultAddress);
+                                            }}
+                                            title="Copy address"
+                                            className="ml-1 p-1 rounded hover:bg-slate-700 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="3" y="3" width="13" height="13" rx="2"/></svg>
+                                        </button>
+                                    )}
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">

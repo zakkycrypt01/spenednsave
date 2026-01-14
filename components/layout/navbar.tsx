@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useSimulation } from "../simulation/SimulationContext";
 import { cn } from "@/lib/utils"; // We need to create this utility
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Shield, X, Menu } from "lucide-react"; // Using Lucide for the logo icon for now, or SVG
@@ -10,6 +11,11 @@ import { Shield, X, Menu } from "lucide-react"; // Using Lucide for the logo ico
 export function Navbar() {
     const pathname = usePathname();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const {
+        enabled: simulationEnabled,
+        setEnabled: setSimulationEnabled,
+        reset: resetSimulation
+    } = useSimulation();
 
     return (
         <nav className="sticky top-0 z-50 w-full border-b border-surface-border bg-white/90 dark:bg-background-dark/90 backdrop-blur-xl">
@@ -76,6 +82,24 @@ export function Navbar() {
                                 largeScreen: 'full',
                             }}
                         />
+                        <button
+                            className={
+                                "px-3 py-1 rounded-full border text-xs font-semibold transition-colors " +
+                                (simulationEnabled
+                                    ? "bg-green-100 border-green-400 text-green-700 hover:bg-green-200"
+                                    : "bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200")
+                            }
+                            onClick={() => {
+                                if (simulationEnabled) {
+                                    resetSimulation();
+                                } else {
+                                    setSimulationEnabled(true);
+                                }
+                            }}
+                            title="Toggle Simulation Mode"
+                        >
+                            {simulationEnabled ? "Simulation: ON" : "Simulation: OFF"}
+                        </button>
                         <button className="md:hidden text-slate-900 dark:text-white p-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-shadow" aria-label="Open menu">
                             <span className="material-symbols-outlined">menu</span>
                         </button>

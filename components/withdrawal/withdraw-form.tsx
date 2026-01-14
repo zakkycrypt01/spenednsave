@@ -114,9 +114,9 @@ export function WithdrawalForm() {
         } finally {
             setIsSubmitting(false);
         }
+    };
 
-
-
+    // ...existing code...
     if (!isConnected) {
         return (
             <div className="w-full max-w-md mx-auto">

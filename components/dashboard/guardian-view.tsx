@@ -66,12 +66,14 @@ export function DashboardGuardianView() {
     // Real contract/backend data should be loaded here
     // Scheduled withdrawals integration
     const { scheduled, loading, error } = useScheduledWithdrawals();
-    let errorMsg = '';
-    if (typeof error === 'string') {
-        errorMsg = error;
-    } else if (typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message?: unknown }).message === 'string') {
-        errorMsg = (error as { message: string }).message;
+    function getErrorMessage(err: unknown): string {
+        if (typeof err === 'string') return err;
+        if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as Record<string, unknown>).message === 'string') {
+            return (err as Record<string, string>).message;
+        }
+        return '';
     }
+    const errorMsg = getErrorMessage(error);
     // Filter for pending scheduled withdrawals (not executed, not yet approved by this guardian)
     const addressStr = address ? String(address) : "";
     const pendingRequests: ScheduledWithdrawal[] = (scheduled || []).filter((w: ScheduledWithdrawal) => !w.executed && !(w.approvals || []).includes(addressStr));

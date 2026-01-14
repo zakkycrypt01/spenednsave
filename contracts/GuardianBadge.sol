@@ -108,8 +108,8 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
     // tokenId => Badge
     mapping(uint256 => Badge) badges;
     // guardian => badge type => tokenId
-    mapping(address => mapping(BadgeType => uint256)) public guardianBadges;
-    uint256 private _tokenIdCounter;
+    mapping(address => mapping(BadgeType => uint256)) guardianBadges;
+    private uint256 _tokenIdCounter;
 
     event BadgeMinted(address indexed guardian, BadgeType badgeType, uint256 level, uint256 tokenId);
 

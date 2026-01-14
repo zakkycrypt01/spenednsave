@@ -1,13 +1,14 @@
 "use client";
 
 import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from "lucide-react";
+import { AvatarBlockie } from "@/components/ui/avatar-blockie";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import AvatarBlockie from "../ui/avatar-blockie";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
 
 import { Contract } from "ethers";
-import { ethers } from "ethers";
+import { JsonRpcProvider } from "@ethersproject/providers";
 // import GuardianSBT ABI and address
 import GuardianSBTABI from "@/lib/abis/GuardianSBT.json";
 
@@ -30,7 +31,7 @@ interface ScheduledWithdrawal {
     hasUserSigned: boolean;
 }
 
-export function DashboardGuardianView() {
+function GuardianView({ badgeData }: { badgeData?: any }) {
     const { address } = useAccount();
 
     interface VaultInfo {
@@ -56,18 +57,14 @@ export function DashboardGuardianView() {
     // BadgeData: [tokenIds: string[], types: string[], timestamps: string[]]
     const badgeData: [string[], string[], string[]] | null = null;
 
-    useEffect(() => {
-        if (address) {
-            fetchGuardianReputation(address).then(setReputation);
-        }
-    }, [address]);
+    // Replace with actual data fetching logic for reputation and badgeData
 
     useEffect(() => {
         async function fetchVaults() {
             if (!address || !GUARDIAN_SBT_ADDRESS) return;
             try {
                 // Use ethers.js to call getVaultsForGuardian
-                const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+                const provider = new JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
                 const contract = new Contract(GUARDIAN_SBT_ADDRESS, GuardianSBTABI, provider);
                 // This call may fail if the ABI or contract is not correct, so wrap in try/catch
                 // If not implemented, just set empty
@@ -391,6 +388,10 @@ export function DashboardGuardianView() {
                     </div>
                 </div>
             )}
-        </div>
-    );
-}
+            </div>
+        );
+    }
+
+    export default GuardianView;
+    export { GuardianView as DashboardGuardianView };
+

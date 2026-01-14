@@ -514,9 +514,34 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
         // Increment nonce to prevent replay attacks
         nonce++;
 
-        // Record withdrawal time for cooldown
+        // Execute transfer
+        if (token == address(0)) {
+            // Native ETH transfer
+            require(address(this).balance >= amount, "Insufficient ETH balance");
+            (bool success, ) = recipient.call{value: amount}("");
+            require(success, "ETH transfer failed");
+        } else {
+            // ERC20 transfer
+            IERC20(token).transfer(recipient, amount);
+        }
+
+        // Update withdrawn counters for the periods
+        if (cap.daily > 0) {
+            withdrawnDaily[_token][dayIndex] += amount;
+        }
+        if (cap.weekly > 0) {
+            withdrawnWeekly[_token][weekIndex] += amount;
+        }
+        if (cap.monthly > 0) {
+            withdrawnMonthly[_token][monthIndex] += amount;
+        }
+
+        emit Withdrawn(token, recipient, amount, reason);
+
+        // Record withdrawal time for cooldown (moved after stack variables released)
         if (policy.cooldown > 0) {
-            lastWithdrawalTime[recipient][getPolicyIndex(amount)] = block.timestamp;
+            uint256 policyIdx = getPolicyIndex(amount);
+            lastWithdrawalTime[recipient][policyIdx] = block.timestamp;
         }
 
         // Execute transfer

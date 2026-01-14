@@ -552,3 +552,61 @@ export function useGetPolicyForAmount(vaultAddress?: Address, amount?: bigint) {
         query: { enabled: !!vaultAddress && amount !== undefined },
     }) as any;
 }
+
+/**
+ * Hook to read withdrawal caps for a token (address(0) for ETH)
+ */
+export function useGetWithdrawalCaps(vaultAddress?: Address, token?: Address) {
+    return useReadContract({
+        address: vaultAddress as Address,
+        abi: SpendVaultABI,
+        functionName: 'withdrawalCaps',
+        args: token ? [token] : undefined,
+        query: { enabled: !!vaultAddress && !!token },
+    }) as any;
+}
+
+/**
+ * Hook to set withdrawal caps (owner only)
+ */
+export function useSetWithdrawalCaps(vaultAddress?: Address) {
+    const { writeContract, data: hash, isPending, error } = useWriteContract();
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+    const setCaps = (token: Address, daily: bigint | number | string, weekly: bigint | number | string, monthly: bigint | number | string) => {
+        if (!vaultAddress) throw new Error('No vault address provided');
+
+        writeContract({
+            address: vaultAddress,
+            abi: SpendVaultABI,
+            functionName: 'setWithdrawalCaps',
+            args: [token, BigInt(daily as any), BigInt(weekly as any), BigInt(monthly as any)],
+        } as any);
+    };
+
+    return { setCaps, hash, isPending, isConfirming, isSuccess, error };
+}
+
+/**
+ * Hook to read withdrawn amount for current period (daily/weekly/monthly)
+ */
+export function useVaultWithdrawnInPeriod(vaultAddress?: Address, token?: Address, period: 'daily' | 'weekly' | 'monthly' = 'daily') {
+    if (!vaultAddress || !token) return { data: undefined, isLoading: false, error: null } as any;
+
+    // compute index
+    const now = Math.floor(Date.now() / 1000);
+    let index = 0n;
+    if (period === 'daily') index = BigInt(Math.floor(now / 86400));
+    else if (period === 'weekly') index = BigInt(Math.floor(now / (86400 * 7)));
+    else index = BigInt(Math.floor(now / (86400 * 30)));
+
+    const fn = period === 'daily' ? 'withdrawnDaily' : period === 'weekly' ? 'withdrawnWeekly' : 'withdrawnMonthly';
+
+    return useReadContract({
+        address: vaultAddress as Address,
+        abi: SpendVaultABI,
+        functionName: fn,
+        args: [token, index],
+        query: { enabled: !!vaultAddress && !!token },
+    }) as any;
+}

@@ -56,6 +56,7 @@ export function Navbar() {
                             { name: "Voting", href: "/voting" },
                             { name: "Activity", href: "/activity" },
                             { name: "Emergency", href: "/emergency" },
+                            { name: "Feature Requests", href: "/feature-requests" },
                         ].map((link) => {
                             const isActive = pathname === link.href;
                             return (
@@ -116,6 +117,7 @@ export function Navbar() {
                                 { name: "Voting", href: "/voting" },
                                 { name: "Activity", href: "/activity" },
                                 { name: "Emergency", href: "/emergency" },
+                                { name: "Feature Requests", href: "/feature-requests" },
                             ].map((link) => {
                                 const isActive = pathname === link.href;
                                 return (

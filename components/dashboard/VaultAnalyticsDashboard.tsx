@@ -1,7 +1,7 @@
 "use client";
 
 import { useVaultAnalytics } from '@/lib/hooks/useVaultAnalytics';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+// Card UI fallback: use simple divs if Card component is missing
 import { Line } from 'react-chartjs-2';
 import React from 'react';
 
@@ -53,34 +53,26 @@ export function VaultAnalyticsDashboard({ vaultAddress, guardianTokenAddress }: 
         <>
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <Card>
-              <CardHeader>Total Deposited</CardHeader>
-              <CardContent>
-                <span className="text-2xl font-bold">{formatEth(analytics.totalDeposited)} ETH</span>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>Total Withdrawn</CardHeader>
-              <CardContent>
-                <span className="text-2xl font-bold">{formatEth(analytics.totalWithdrawn)} ETH</span>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>Withdrawals</CardHeader>
-              <CardContent>
-                <span className="text-2xl font-bold">{analytics.withdrawalFrequency}</span>
-                <div className="text-xs text-slate-500">Avg: {analytics.avgWithdrawal.toFixed(4)} ETH</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>Guardians</CardHeader>
-              <CardContent>
-                <span className="text-2xl font-bold">{analytics.totalGuardians}</span>
-                {analytics.mostRecentGuardian && (
-                  <div className="text-xs text-slate-500">Last: {analytics.mostRecentGuardian.address}</div>
-                )}
-              </CardContent>
-            </Card>
+            <div className="bg-white dark:bg-surface-dark rounded-xl p-6 shadow">
+              <div className="font-bold mb-2">Total Deposited</div>
+              <span className="text-2xl font-bold">{formatEth(analytics.totalDeposited)} ETH</span>
+            </div>
+            <div className="bg-white dark:bg-surface-dark rounded-xl p-6 shadow">
+              <div className="font-bold mb-2">Total Withdrawn</div>
+              <span className="text-2xl font-bold">{formatEth(analytics.totalWithdrawn)} ETH</span>
+            </div>
+            <div className="bg-white dark:bg-surface-dark rounded-xl p-6 shadow">
+              <div className="font-bold mb-2">Withdrawals</div>
+              <span className="text-2xl font-bold">{analytics.withdrawalFrequency}</span>
+              <div className="text-xs text-slate-500">Avg: {analytics.avgWithdrawal.toFixed(4)} ETH</div>
+            </div>
+            <div className="bg-white dark:bg-surface-dark rounded-xl p-6 shadow">
+              <div className="font-bold mb-2">Guardians</div>
+              <span className="text-2xl font-bold">{analytics.totalGuardians}</span>
+              {analytics.mostRecentGuardian && (
+                <div className="text-xs text-slate-500">Last: {analytics.mostRecentGuardian.address}</div>
+              )}
+            </div>
           </div>
 
           {/* Savings Growth Chart */}

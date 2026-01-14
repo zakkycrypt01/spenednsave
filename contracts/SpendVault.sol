@@ -1,3 +1,30 @@
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
+interface IGuardianSBT {
+    function balanceOf(address account) external view returns (uint256);
+}
+
+/**
+ * @title SpendVault
+ * @notice Multi-signature treasury vault with guardian-based approvals
+ * @dev Uses EIP-712 for signature verification and soulbound tokens for guardian verification
+ */
+contract SpendVault is Ownable, EIP712, ReentrancyGuard {
+    using ECDSA for bytes32;
+
+    // State variables
+    address public guardianToken;
+    uint256 public quorum;
+    uint256 public nonce;
+
     // ============ Policy-Based Withdrawal Rules ============
 
     struct WithdrawalPolicy {
@@ -10,7 +37,7 @@
     WithdrawalPolicy[] public withdrawalPolicies;
     mapping(address => mapping(uint256 => uint256)) public lastWithdrawalTime; // recipient => policyIdx => last timestamp
 
-    event WithdrawalPolicySet(uint256 indexed policyIdx, WithdrawalPolicy policy);
+    event WithdrawalPolicySet(uint256 indexed policyIdx, uint256 minAmount, uint256 maxAmount, uint256 requiredApprovals, uint256 cooldown);
     event WithdrawalPoliciesCleared();
 
     /**
@@ -22,9 +49,17 @@
         for (uint256 i = 0; i < policies.length; i++) {
             require(policies[i].requiredApprovals > 0, "Approvals must be > 0");
             withdrawalPolicies.push(policies[i]);
-            emit WithdrawalPolicySet(i, policies[i]);
+            WithdrawalPolicy memory p = policies[i];
+            emit WithdrawalPolicySet(i, p.minAmount, p.maxAmount, p.requiredApprovals, p.cooldown);
         }
         emit WithdrawalPoliciesCleared();
+    }
+
+    /**
+     * @notice Get the number of configured policies
+     */
+    function withdrawalPoliciesCount() external view returns (uint256) {
+        return withdrawalPolicies.length;
     }
 
     /**

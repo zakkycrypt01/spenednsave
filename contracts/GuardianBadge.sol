@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @title GuardianBadge
  * @dev Non-transferable (soulbound) NFT for guardians, awarded based on activity.
- */
+
 
 
 contract GuardianBadge is ERC721Enumerable, Ownable {
@@ -106,7 +106,7 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
     }
 
     // tokenId => Badge
-    mapping(uint256 => Badge) public badges;
+    mapping(uint256 => Badge) badges;
     // guardian => badge type => tokenId
     mapping(address => mapping(BadgeType => uint256)) public guardianBadges;
     uint256 private _tokenIdCounter;

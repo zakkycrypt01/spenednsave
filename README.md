@@ -307,6 +307,32 @@ SpendVault:    [User-specific deployments]
 - **Icons**: Lucide React
 - **Theme**: Next Themes (dark mode support)
 
+
+### Simulation Mode (Frontend-Only Demo)
+
+SpendGuard includes a built-in simulation mode for demo and education purposes. This mode lets you experience the full vault recovery and guardian approval flow **without sending any onchain transactions**.
+
+**How to Use Simulation Mode:**
+
+1. **Toggle Simulation:**
+   - Use the "Simulation: ON/OFF" button in the top navigation bar to enable or disable simulation mode.
+2. **Demo Panel:**
+   - When enabled, a floating panel appears in the bottom-right corner.
+   - Simulate guardian approvals, start an emergency unlock countdown, and see the recovery success state.
+3. **No Blockchain Required:**
+   - All actions in simulation mode are handled in the frontend only. No real transactions are sent.
+   - All onchain actions in the UI are blocked while simulation is active.
+
+**Simulation Features:**
+- Simulate vault owner loss of access
+- Guardian approval workflow
+- Emergency unlock countdown (demo duration)
+- Recovery success state
+- No wallet or blockchain required
+
+This is ideal for onboarding, demos, and testing the user experience without risk.
+
+---
 ### Project Structure
 
 ```

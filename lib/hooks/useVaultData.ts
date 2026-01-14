@@ -659,11 +659,12 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
                 const migratedFlag = typeof window !== 'undefined' ? localStorage.getItem(`activities-migrated-${String(vaultAddress).toLowerCase()}`) : null;
                 if (serverActivities !== null && Array.isArray(serverActivities) && serverActivities.length === 0 && !migrated && !migratedFlag) {
                     const payload = limited.map((act) => ({
-                        id: `${String(vaultAddress)}-${act.type}-${String(act.blockNumber || '0')}-${act.timestamp}`,
+                        id: `${String(vaultAddress)}-${act.type}-${String(act.blockNumber ?? '0')}-${act.timestamp}`,
                         account: String(vaultAddress),
                         type: act.type,
                         details: act.data ?? {},
-                        relatedRequestId: act.data?.id ?? act.data?.requestId ?? null,
+                        relatedRequestId: (act.data as any)?.id ?? (act.data as any)?.requestId ?? null,
+                        blockNumber: act.blockNumber ?? 0,
                         timestamp: act.timestamp,
                     }));
 

@@ -94,6 +94,21 @@ export function DashboardGuardianView() {
     const pendingRequests = (scheduled || []).filter((w) => !w.executed && !(w.approvals || []).includes(address));
     const completedRequests = (scheduled || []).filter((w) => w.executed);
 
+    // Approve scheduled withdrawal via API
+    async function approveScheduledWithdrawal(id: number) {
+        try {
+            const res = await fetch(`/api/scheduled-withdrawals/${id}/approve`, { method: 'POST' });
+            if (!res.ok) {
+                const err = await res.json();
+                alert(err.error || 'Failed to approve withdrawal');
+            } else {
+                alert('Withdrawal approved!');
+                window.location.reload();
+            }
+        } catch (err: any) {
+            alert(err.message || 'Failed to approve withdrawal');
+        }
+    }
     return (
         <div className="w-full flex flex-col gap-8">
             {loading && (
@@ -245,21 +260,6 @@ export function DashboardGuardianView() {
                                         </button>
                                     </div>
                                 )}
-                                // Approve scheduled withdrawal via API
-                                async function approveScheduledWithdrawal(id: number) {
-                                    try {
-                                        const res = await fetch(`/api/scheduled-withdrawals/${id}/approve`, { method: 'POST' });
-                                        if (!res.ok) {
-                                            const err = await res.json();
-                                            alert(err.error || 'Failed to approve withdrawal');
-                                        } else {
-                                            alert('Withdrawal approved!');
-                                            window.location.reload();
-                                        }
-                                    } catch (err: any) {
-                                        alert(err.message || 'Failed to approve withdrawal');
-                                    }
-                                }
                             </div>
                         ))}
                     </div>

@@ -28,7 +28,6 @@ interface ScheduledWithdrawal {
     requiredSignatures: number;
     currentSignatures: number;
     hasUserSigned: boolean;
-}
 
 
 

@@ -67,6 +67,7 @@ export function DashboardGuardianView() {
         hasUserSigned: boolean;
     }
     const { scheduled, loading, error } = useScheduledWithdrawals();
+    const errorMsg = typeof error === 'string' ? error : (error && typeof error.message === 'string' ? error.message : '');
     // Filter for pending scheduled withdrawals (not executed, not yet approved by this guardian)
     const addressStr = address ? String(address) : "";
     const pendingRequests: ScheduledWithdrawal[] = (scheduled || []).filter((w: ScheduledWithdrawal) => !w.executed && !(w.approvals || []).includes(addressStr));
@@ -77,8 +78,12 @@ export function DashboardGuardianView() {
         try {
             const res = await fetch(`/api/scheduled-withdrawals/${id}/approve`, { method: 'POST' });
             if (!res.ok) {
-                const err = await res.json();
-                alert(err.error || 'Failed to approve withdrawal');
+                let errMsg = 'Failed to approve withdrawal';
+                try {
+                    const err = await res.json();
+                    if (err && typeof err.error === 'string') errMsg = err.error;
+                } catch {}
+                alert(errMsg);
             } else {
                 alert('Withdrawal approved!');
                 window.location.reload();
@@ -94,9 +99,9 @@ export function DashboardGuardianView() {
                     <p className="text-slate-600 dark:text-slate-400">Loading requests...</p>
                 </div>
             )}
-            {error && (
+            {errorMsg && (
                 <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center">
-                    <p className="text-red-600 dark:text-red-400">{error}</p>
+                    <p className="text-red-600 dark:text-red-400">{errorMsg}</p>
                 </div>
             )}
             {/* Header */}

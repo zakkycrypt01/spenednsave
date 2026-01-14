@@ -19,6 +19,7 @@ export type EmailEventType =
   | 'withdrawal-requested'
   | 'withdrawal-approved'
   | 'withdrawal-rejected'
+  | 'withdrawal-executed'
   | 'emergency-unlock-requested';
 
 export interface SendNotificationParams {
@@ -38,7 +39,6 @@ export async function sendNotification({ to, subject, html }: SendNotificationPa
 }
 
 // Helper: Compose email content for each event type
-export function composeEmail(event: EmailEventType, data: any): { subject: string; html: string } {
   switch (event) {
     case 'withdrawal-requested':
       return {
@@ -54,6 +54,11 @@ export function composeEmail(event: EmailEventType, data: any): { subject: strin
       return {
         subject: 'Withdrawal Rejected',
         html: `<p>Your withdrawal request for <b>${data.amount}</b> was rejected by guardian <b>${data.guardianName || data.guardianAddress}</b>.</p>`
+      };
+    case 'withdrawal-executed':
+      return {
+        subject: 'Withdrawal Executed',
+        html: `<p>Your withdrawal of <b>${data.amount}</b> from vault <b>${data.vaultName || data.vaultAddress}</b> has been executed. Tx: <b>${data.executionTxHash || ''}</b></p>`
       };
     case 'emergency-unlock-requested':
       return {

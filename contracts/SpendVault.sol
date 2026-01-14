@@ -18,6 +18,43 @@ interface IGuardianSBT {
  * @dev Uses EIP-712 for signature verification and soulbound tokens for guardian verification
  */
 contract SpendVault is Ownable, EIP712, ReentrancyGuard {
+
+                // Internal helper to check withdrawal caps
+                function _checkWithdrawalCaps(address _token, uint256 amount) internal view {
+                    WithdrawalCap memory cap = withdrawalCaps[_token];
+                    uint256 dayIndex = block.timestamp / 1 days;
+                    uint256 weekIndex = block.timestamp / 1 weeks;
+                    uint256 monthIndex = block.timestamp / 30 days;
+                    if (cap.daily > 0) {
+                        uint256 usedDaily = withdrawnDaily[_token][dayIndex];
+                        require(usedDaily + amount <= cap.daily, "Daily withdrawal cap exceeded");
+                    }
+                    if (cap.weekly > 0) {
+                        uint256 usedWeekly = withdrawnWeekly[_token][weekIndex];
+                        require(usedWeekly + amount <= cap.weekly, "Weekly withdrawal cap exceeded");
+                    }
+                    if (cap.monthly > 0) {
+                        uint256 usedMonthly = withdrawnMonthly[_token][monthIndex];
+                        require(usedMonthly + amount <= cap.monthly, "Monthly withdrawal cap exceeded");
+                    }
+                }
+
+                // Internal helper to update withdrawal counters
+                function _updateWithdrawalCounters(address _token, uint256 amount) internal {
+                    WithdrawalCap memory cap = withdrawalCaps[_token];
+                    uint256 dayIndex = block.timestamp / 1 days;
+                    uint256 weekIndex = block.timestamp / 1 weeks;
+                    uint256 monthIndex = block.timestamp / 30 days;
+                    if (cap.daily > 0) {
+                        withdrawnDaily[_token][dayIndex] += amount;
+                    }
+                    if (cap.weekly > 0) {
+                        withdrawnWeekly[_token][weekIndex] += amount;
+                    }
+                    if (cap.monthly > 0) {
+                        withdrawnMonthly[_token][monthIndex] += amount;
+                    }
+                }
             // Helper struct for withdrawal cap checks (fixes stack too deep)
             struct UsedCaps { uint256 daily; uint256 weekly; uint256 monthly; }
         // ============ Vault Metadata ============
@@ -493,23 +530,7 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
 
         // Enforce temporal caps (per-token/per-vault)
         address _token = token;
-        WithdrawalCap memory cap = withdrawalCaps[_token];
-        uint256 dayIndex = block.timestamp / 1 days;
-        uint256 weekIndex = block.timestamp / 1 weeks;
-        uint256 monthIndex = block.timestamp / 30 days;
-
-        if (cap.daily > 0) {
-            uint256 usedDaily = withdrawnDaily[_token][dayIndex];
-            require(usedDaily + amount <= cap.daily, "Daily withdrawal cap exceeded");
-        }
-        if (cap.weekly > 0) {
-            uint256 usedWeekly = withdrawnWeekly[_token][weekIndex];
-            require(usedWeekly + amount <= cap.weekly, "Weekly withdrawal cap exceeded");
-        }
-        if (cap.monthly > 0) {
-            uint256 usedMonthly = withdrawnMonthly[_token][monthIndex];
-            require(usedMonthly + amount <= cap.monthly, "Monthly withdrawal cap exceeded");
-        }
+        _checkWithdrawalCaps(_token, amount);
 
         // Increment nonce to prevent replay attacks
         nonce++;
@@ -525,16 +546,7 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
             IERC20(token).transfer(recipient, amount);
         }
 
-        // Update withdrawn counters for the periods
-        if (cap.daily > 0) {
-            withdrawnDaily[_token][dayIndex] += amount;
-        }
-        if (cap.weekly > 0) {
-            withdrawnWeekly[_token][weekIndex] += amount;
-        }
-        if (cap.monthly > 0) {
-            withdrawnMonthly[_token][monthIndex] += amount;
-        }
+        _updateWithdrawalCounters(_token, amount);
 
         emit Withdrawn(token, recipient, amount, reason);
 

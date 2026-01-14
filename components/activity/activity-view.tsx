@@ -57,7 +57,7 @@ export function ActivityLogView() {
     // Calculate stats from activities
     const totalDeposits = activities
         .filter(a => a.type === 'deposit' && a.data?.amount)
-        .reduce((sum, a) => sum + (a.data.amount ?? 0n), 0n);
+        .reduce((sum, a) => sum + BigInt(a.data.amount ?? 0), 0n);
     
     const totalGuardians = activities.filter(a => a.type === 'guardian_added').length;
 
@@ -117,7 +117,7 @@ export function ActivityLogView() {
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-4">Total Deposits</p>
                     <div className="flex items-end gap-3">
                         <h3 className="text-3xl font-bold text-slate-900 dark:text-white">
-                            {formatEthFixed(totalDeposits, 4)} ETH
+                            {formatEthFixed(totalDeposits, 5)} ETH
                         </h3>
                     </div>
                 </div>

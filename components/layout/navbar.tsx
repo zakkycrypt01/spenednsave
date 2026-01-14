@@ -19,11 +19,11 @@ export function Navbar() {
     } = useSimulation();
 
     return (
-        <nav className="sticky top-0 z-50 w-full border-b border-surface-border bg-white/90 dark:bg-background-dark/90 backdrop-blur-xl">
+        <nav className="sticky top-0 z-50 w-full border-b border-surface-border bg-white/90 dark:bg-background-dark/90 backdrop-blur-xl" aria-label="Main Navigation">
             <div className="w-full px-6 md:px-8">
                 <div className="flex items-center justify-between h-16">
                     <div className="flex items-center gap-3">
-                        <Link href="/" className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md transition-shadow">
+                        <Link href="/" className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md transition-shadow" aria-label="Go to homepage">
                             <div className="flex items-center justify-center size-8 text-primary group-hover:scale-105 transition-transform">
                                 <svg
                                     className="w-full h-full drop-shadow-sm"
@@ -50,7 +50,7 @@ export function Navbar() {
                         </Link>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-1 p-1 bg-surface-light dark:bg-surface-border rounded-full border border-surface-border dark:border-gray-700/50 shadow-sm">
+                    <div className="hidden md:flex items-center gap-1 p-1 bg-surface-light dark:bg-surface-border rounded-full border border-surface-border dark:border-gray-700/50 shadow-sm" role="menubar" aria-label="Primary">
                         {[
                             { name: "Dashboard", href: "/dashboard" },
                             { name: "Guardians", href: "/guardians" },
@@ -70,8 +70,11 @@ export function Navbar() {
                                             ? "text-slate-900 dark:text-white bg-white dark:bg-surface-dark shadow font-semibold"
                                             : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
                                     )}
+                                    tabIndex={0}
+                                    role="menuitem"
+                                    aria-current={isActive ? "page" : undefined}
                                 >
-                                    {link.name}
+                                    <span className="sr-only">{isActive ? "Current page: " : "Go to "}</span>{link.name}
                                 </Link>
                             );
                         })}
@@ -83,6 +86,7 @@ export function Navbar() {
                                 smallScreen: 'avatar',
                                 largeScreen: 'full',
                             }}
+                            aria-label="Connect wallet"
                         />
                         <button
                             className={
@@ -99,19 +103,21 @@ export function Navbar() {
                                 }
                             }}
                             title="Toggle Simulation Mode"
+                            aria-pressed={simulationEnabled}
+                            aria-label="Toggle simulation mode"
                         >
                             {simulationEnabled ? "Simulation: ON" : "Simulation: OFF"}
                         </button>
                         <ThemeToggle />
-                        <button className="md:hidden text-slate-900 dark:text-white p-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-shadow" aria-label="Open menu">
-                            <span className="material-symbols-outlined">menu</span>
+                        <button className="md:hidden text-slate-900 dark:text-white p-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-shadow" aria-label="Open menu" tabIndex={0}>
+                            <span className="material-symbols-outlined" aria-hidden="true">menu</span>
                         </button>
                     </div>
                 </div>
 
                 {/* Mobile Navigation */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden py-4 border-t border-gray-200 dark:border-surface-border">
+                    <div className="md:hidden py-4 border-t border-gray-200 dark:border-surface-border" role="menu" aria-label="Mobile Navigation">
                         <div className="flex flex-col gap-2">
                             {[
                                 { name: "Dashboard", href: "/dashboard" },
@@ -133,8 +139,11 @@ export function Navbar() {
                                                 ? "text-slate-900 dark:text-white bg-gray-100 dark:bg-surface-dark font-semibold"
                                                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-surface-dark/50"
                                         )}
+                                        tabIndex={0}
+                                        role="menuitem"
+                                        aria-current={isActive ? "page" : undefined}
                                     >
-                                        {link.name}
+                                        <span className="sr-only">{isActive ? "Current page: " : "Go to "}</span>{link.name}
                                     </Link>
                                 );
                             })}

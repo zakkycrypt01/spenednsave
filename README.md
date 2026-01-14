@@ -180,7 +180,7 @@ NEXT_PUBLIC_VAULT_FACTORY_ADDRESS=0x...
 NEXT_PUBLIC_GUARDIAN_SBT_ADDRESS=0x...
 
 # WalletConnect Project ID (get from https://cloud.walletconnect.com)
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
+NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=2c744d31bd68644ba0831658bbd2f1d6
 
 # Optional: Analytics
 NEXT_PUBLIC_ANALYTICS_ID=
@@ -305,16 +305,39 @@ SpendVault:    [User-specific deployments]
 
 ### Tech Stack
 
-- **Framework**: Next.js 16.1 (App Router)
-- **Language**: TypeScript 5
-- **Styling**: TailwindCSS 3.4
-- **Web3**: 
-  - Wagmi 2.19 (React hooks for Ethereum)
-  - RainbowKit 2.2 (wallet connection)
-  - Viem 2.43 (TypeScript Ethereum library)
-- **State**: React Query (TanStack Query)
-- **Icons**: Lucide React
-- **Theme**: Next Themes (dark mode support)
+**Framework**: Next.js 16.1 (App Router)
+**Language**: TypeScript 5
+**Styling**: TailwindCSS 3.4
+**Web3**: 
+   - Wagmi 2.19 (React hooks for Ethereum)
+   - RainbowKit 2.2 (multi-wallet, WalletConnect v2, Zerion, etc.)
+   - Viem 2.43 (TypeScript Ethereum library)
+**Wallets**: WalletConnect v2 (Zerion, Rainbow, MetaMask, Coinbase, and more)
+**State**: React Query (TanStack Query)
+**Icons**: Lucide React
+**Theme**: Next Themes (dark mode support)
+## 🔗 WalletConnect v2 & Multi-Wallet Support
+
+This app uses RainbowKit and WalletConnect v2 for seamless multi-wallet support, including Zerion, Rainbow, MetaMask, Coinbase, Trust, and many more.
+
+**WalletConnect v2** is enabled by setting your project ID in `lib/config.ts` and `.env.local`:
+   - Project ID: `2c744d31bd68644ba0831658bbd2f1d6`
+   - Get your own at https://cloud.walletconnect.com
+**Zerion Wallet** and all major wallets are available in the connect modal by default—no extra setup required.
+To feature or prioritize a wallet, customize the RainbowKit config (see RainbowKit docs).
+
+**How to use:**
+1. Click "Connect Wallet" in the navbar or landing page.
+2. Choose from MetaMask, Zerion, Rainbow, Coinbase, Trust, and more.
+3. WalletConnect QR and mobile deep links are supported.
+
+**Config location:**
+`lib/config.ts` — RainbowKit/Wagmi config, including WalletConnect projectId and supported chains.
+`.env.local` — For environment-based overrides.
+
+**Docs:**
+[RainbowKit Wallets](https://www.rainbowkit.com/docs/introduction)
+[WalletConnect Cloud](https://cloud.walletconnect.com)
 
 ### Project Structure
 

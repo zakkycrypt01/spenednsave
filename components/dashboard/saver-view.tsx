@@ -229,6 +229,15 @@ export function DashboardSaverView() {
                             </div>
                             <p className="text-slate-400 text-sm">No recent activity</p>
                             <p className="text-slate-500 text-xs mt-2">Your transactions will appear here</p>
+                            <div className="mt-4 text-left text-xs text-slate-500 bg-slate-900/50 rounded p-2">
+                                <strong>Debug Info:</strong><br />
+                                vaultAddress: {String(vaultAddress)}<br />
+                                guardianTokenAddress: {String(guardianTokenAddress)}<br />
+                                activitiesLoading: {String(activitiesLoading)}<br />
+                                activities.length: {activities.length}<br />
+                                guardians.length: {guardians.length}<br />
+                                activities: <pre className="whitespace-pre-wrap break-all">{JSON.stringify(activities, null, 2)}</pre>
+                            </div>
                         </div>
                     ) : (
                         <div className="bg-surface-dark border border-surface-border rounded-2xl overflow-hidden divide-y divide-surface-border">

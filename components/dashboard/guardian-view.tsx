@@ -15,6 +15,13 @@ export function DashboardGuardianView() {
     const { address } = useAccount();
     const [vaults, setVaults] = useState<any[]>([]);
     const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
+    const [reputation, setReputation] = useState<any>(null);
+
+    useEffect(() => {
+        if (address) {
+            fetchGuardianReputation(address).then(setReputation);
+        }
+    }, [address]);
 
     useEffect(() => {
         async function fetchVaults() {
@@ -139,7 +146,7 @@ export function DashboardGuardianView() {
                 )}
             </div>
 
-            {/* Stats Cards */}
+            {/* Stats Cards: Reputation */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white dark:bg-surface-dark border border-surface-border rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-2">
@@ -150,27 +157,47 @@ export function DashboardGuardianView() {
                     </div>
                     <p className="text-3xl font-bold text-slate-900 dark:text-white">{pendingRequests.length}</p>
                 </div>
-
                 <div className="bg-white dark:bg-surface-dark border border-surface-border rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
                             <CheckCircle className="text-emerald-600 dark:text-emerald-400" size={20} />
                         </div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">Approved This Month</span>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">Total Approvals</span>
                     </div>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">12</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white">{reputation?.approvals ?? '-'}</p>
                 </div>
-
                 <div className="bg-white dark:bg-surface-dark border border-surface-border rounded-2xl p-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                             <Users className="text-blue-600 dark:text-blue-400" size={20} />
                         </div>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">Vaults Guarding</span>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">Avg. Response Time</span>
                     </div>
-                    <p className="text-3xl font-bold text-slate-900 dark:text-white">3</p>
+                    <p className="text-3xl font-bold text-slate-900 dark:text-white">
+                        {reputation?.avgResponseSeconds != null ? `${Math.round(reputation.avgResponseSeconds / 60)} min` : '-'}
+                    </p>
                 </div>
             </div>
+            {/* Guardian Approval History */}
+            {reputation?.history?.length > 0 && (
+                <div>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Approval History</h2>
+                    <div className="space-y-3">
+                        {reputation.history.map((item: any, idx: number) => (
+                            <div key={idx} className="bg-white dark:bg-surface-dark border border-surface-border rounded-xl p-4 flex items-center justify-between">
+                                <div>
+                                    <div className="font-medium text-slate-900 dark:text-white">{item.recipient}</div>
+                                    <div className="text-sm text-slate-500 dark:text-slate-400">{item.reason}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="font-bold text-slate-900 dark:text-white">{item.amount}</div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">{item.timestamp ? new Date(item.timestamp).toLocaleString() : ''}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
 
             {/* Vaults Guarding */}
             <div>

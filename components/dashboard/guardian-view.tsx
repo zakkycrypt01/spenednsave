@@ -6,8 +6,7 @@ import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
 
-import { Contract } from "ethers";
-import { ethers } from "ethers";
+import { Contract, JsonRpcProvider } from "ethers";
 // import GuardianSBT ABI and address
 import GuardianSBTABI from "@/lib/abis/GuardianSBT.json";
 
@@ -44,7 +43,7 @@ interface ScheduledWithdrawal {
             if (!address || !GUARDIAN_SBT_ADDRESS) return;
             try {
                 // Use ethers.js to call getVaultsForGuardian
-                const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+                const provider = new JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
                 const contract = new Contract(GUARDIAN_SBT_ADDRESS, GuardianSBTABI, provider);
                 // This call may fail if the ABI or contract is not correct, so wrap in try/catch
                 // If not implemented, just set empty

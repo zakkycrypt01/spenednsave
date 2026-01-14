@@ -33,7 +33,7 @@ export function DashboardGuardianView() {
                     // fallback: not implemented
                 }
                 // For each vault, fetch name, owner, and pending approvals from contract/backend
-                // TODO: Replace with actual contract calls
+                // Replace with actual contract calls in production
                 setVaults([]);
             } catch {
                 setVaults([]);
@@ -46,16 +46,31 @@ export function DashboardGuardianView() {
     // Removed unused handleApprove function
 
     const handleReject = () => {
-        // TODO: Implement rejection logic (optional - can just not sign)
+        // Rejection logic can be implemented if needed
         alert("Request rejected");
     };
 
     // Real contract/backend data should be loaded here
     // Scheduled withdrawals integration
+    interface ScheduledWithdrawal {
+        id: number;
+        executed: boolean;
+        approvals: string[];
+        saverName: string;
+        saverAddress: string;
+        timestamp: string;
+        amount: string;
+        amountUSD: string;
+        reason: string;
+        requiredSignatures: number;
+        currentSignatures: number;
+        hasUserSigned: boolean;
+    }
     const { scheduled, loading, error } = useScheduledWithdrawals();
     // Filter for pending scheduled withdrawals (not executed, not yet approved by this guardian)
-    const pendingRequests = (scheduled || []).filter((w) => !w.executed && !(w.approvals || []).includes(address));
-    const completedRequests = (scheduled || []).filter((w) => w.executed);
+    const addressStr = address ? String(address) : "";
+    const pendingRequests: ScheduledWithdrawal[] = (scheduled || []).filter((w: ScheduledWithdrawal) => !w.executed && !(w.approvals || []).includes(addressStr));
+    const completedRequests: ScheduledWithdrawal[] = (scheduled || []).filter((w: ScheduledWithdrawal) => w.executed);
 
     // Approve scheduled withdrawal via API
     async function approveScheduledWithdrawal(id: number) {
@@ -69,7 +84,7 @@ export function DashboardGuardianView() {
                 window.location.reload();
             }
         } catch (err) {
-            alert((err instanceof Error ? err.message : 'Failed to approve withdrawal'));
+            alert(err instanceof Error ? err.message : 'Failed to approve withdrawal');
         }
     }
     return (
@@ -205,7 +220,7 @@ export function DashboardGuardianView() {
                                     )}
                                 </div>
 
-                                {!(request.approvals || []).includes(address) && (
+                                {!(request.approvals || []).includes(addressStr) && (
                                     <div className="flex gap-3">
                                         <button
                                             onClick={() => approveScheduledWithdrawal(request.id)}

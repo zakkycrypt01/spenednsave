@@ -186,7 +186,16 @@ export function DashboardGuardianView() {
                         {reputation.history.map((item: any, idx: number) => (
                             <div key={idx} className="bg-white dark:bg-surface-dark border border-surface-border rounded-xl p-4 flex items-center justify-between">
                                 <div>
-                                    <div className="font-medium text-slate-900 dark:text-white">{item.recipient}</div>
+                                    <div className="flex items-center gap-1 font-medium text-slate-900 dark:text-white">
+                                        <span>{item.recipient.slice(0, 6)}...{item.recipient.slice(-4)}</span>
+                                        <button
+                                            onClick={() => navigator.clipboard.writeText(item.recipient)}
+                                            title="Copy address"
+                                            className="ml-1 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="3" y="3" width="13" height="13" rx="2"/></svg>
+                                        </button>
+                                    </div>
                                     <div className="text-sm text-slate-500 dark:text-slate-400">{item.reason}</div>
                                 </div>
                                 <div className="text-right">

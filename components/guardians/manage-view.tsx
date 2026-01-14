@@ -7,6 +7,7 @@ import { useGuardians } from "@/lib/hooks/useVaultData";
 import { useGuardianBadges } from "@/lib/hooks/useGuardianBadges";
 import { Users, ShieldCheck, Clock, Plus, Trash2, Key, History } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { useSimulation } from "@/components/simulation/SimulationContext";
 import { type Address } from "viem";
 
 export function ManageGuardiansView() {
@@ -39,8 +40,15 @@ export function ManageGuardiansView() {
         }
     }, [isSuccess]);
 
+    const { enabled: simulationEnabled } = useSimulation();
     const handleAdd = () => {
         if (!newGuardian.address || !guardianTokenAddress) return;
+        if (simulationEnabled) {
+            alert('Simulation mode: No onchain transaction sent. This is a demo.');
+            setIsAdding(false);
+            setNewGuardian({ name: "", address: "" });
+            return;
+        }
         try {
             addGuardian(newGuardian.address as any);
         } catch (error) {

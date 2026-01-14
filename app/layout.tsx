@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
+import { SimulationDemo } from "@/components/simulation/SimulationDemo";
 import "@rainbow-me/rainbowkit/styles.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -36,6 +37,7 @@ export default function RootLayout({
           <Providers>
             <AuthGuard>
               {children}
+              <SimulationDemo />
             </AuthGuard>
           </Providers>
         </ThemeProvider>

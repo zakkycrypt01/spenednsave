@@ -384,6 +384,33 @@ npx hardhat test         # Run contract tests
 npx hardhat node         # Start local blockchain
 ```
 
+## 🔐 Server & Encrypted DB
+
+- The app now stores guardian pending requests and account activities server-side using a SQLite database (server-only). The DB is encrypted using AES-256-GCM; the encryption key must be provided via `DB_ENCRYPTION_KEY` in your environment.
+- Install the native SQLite dependency on the server: `better-sqlite3` is required for the server-side service.
+- Migration: if you have existing on-chain cached activity data, an import endpoint and helper script are provided. To re-encrypt or import data, run the migration script (if present) and set `DB_ENCRYPTION_KEY` prior to running:
+
+```bash
+# Ensure env contains DB_ENCRYPTION_KEY
+npm run encrypt-db
+```
+
+Files of interest:
+- `lib/services/guardian-signature-db.ts` — encrypted DB layer and API helpers
+- `app/api/activities` — server endpoints for listing/importing activities
+
+## 🛡️ GuardianBadge (Soulbound NFT)
+
+- A non-transferable `GuardianBadge` ERC-721 contract (soulbound) was added to help surface guardian achievements in the UI.
+- To enable badge display in the dashboard, set the deployed contract address for your network in `lib/contracts.ts` under `GUARDIAN_BADGE_ADDRESS` (e.g. `baseSepolia: '0xYOUR_ADDRESS'`).
+- There is a server endpoint that computes badge eligibility recommendations at `/api/badges/eligible` — minting is manual (owner) or can be automated with a secure signer.
+
+Files of interest:
+- `contracts/GuardianBadge.sol` — the soulbound badge contract
+- `lib/abis/GuardianBadge.json` and `lib/abis/GuardianBadge.ts` — ABI and wrapper
+- `lib/hooks/useContracts.ts` — client hooks for reading badges and minting (owner)
+
+
 ### Adding New Features
 
 1. **New Contract Function**:

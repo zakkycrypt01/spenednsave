@@ -230,7 +230,16 @@ export function DashboardGuardianView() {
                                         </div>
                                         <div>
                                             <h3 className="font-bold text-slate-900 dark:text-white">{request.saverName}</h3>
-                                            <p className="text-sm text-slate-500 dark:text-slate-400">{request.saverAddress.slice(0, 6)}...{request.saverAddress.slice(-4)}</p>
+                                            <span className="flex items-center gap-1">
+                                                <p className="text-sm text-slate-500 dark:text-slate-400">{request.saverAddress.slice(0, 6)}...{request.saverAddress.slice(-4)}</p>
+                                                <button
+                                                    onClick={() => navigator.clipboard.writeText(request.saverAddress)}
+                                                    title="Copy address"
+                                                    className="ml-1 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="3" y="3" width="13" height="13" rx="2"/></svg>
+                                                </button>
+                                            </span>
                                             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{request.timestamp}</p>
                                         </div>
                                     </div>
@@ -327,7 +336,16 @@ export function DashboardGuardianView() {
                                         <AvatarBlockie address={request.saverAddress} size={24} />
                                     </div>
                                     <div>
-                                        <p className="font-medium text-slate-900 dark:text-white">{request.saverName}</p>
+                                        <p className="font-medium text-slate-900 dark:text-white flex items-center gap-1">
+                                            {request.saverName}
+                                            <button
+                                                onClick={() => navigator.clipboard.writeText(request.saverAddress)}
+                                                title="Copy address"
+                                                className="ml-1 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="3" y="3" width="13" height="13" rx="2"/></svg>
+                                            </button>
+                                        </p>
                                         <p className="text-sm text-slate-500 dark:text-slate-400">{request.reason}</p>
                                     </div>
                                 </div>

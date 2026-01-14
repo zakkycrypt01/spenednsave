@@ -4,7 +4,6 @@ import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from
 import { AvatarBlockie } from "@/components/ui/avatar-blockie";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
-import AvatarBlockie from "../ui/avatar-blockie";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
 
 import { Contract } from "ethers";
@@ -55,7 +54,6 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
     const [vaults, setVaults] = useState<VaultInfo[]>([]);
     const [reputation, setReputation] = useState<Reputation | null>(null);
     // BadgeData: [tokenIds: string[], types: string[], timestamps: string[]]
-    const badgeData: [string[], string[], string[]] | null = null;
 
     // Replace with actual data fetching logic for reputation and badgeData
 

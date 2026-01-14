@@ -9,8 +9,7 @@ import React from 'react';
 // npm install chart.js react-chartjs-2
 
 
-export function VaultAnalyticsDashboard({ vaultAddress, guardianTokenAddress }: { vaultAddress?: string, guardianTokenAddress?: string }) {
-  const analytics = useVaultAnalytics(vaultAddress, guardianTokenAddress);
+  const analytics = useVaultAnalytics(vaultAddress as `0x${string}` | undefined, guardianTokenAddress as `0x${string}` | undefined);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 

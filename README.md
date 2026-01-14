@@ -410,6 +410,44 @@ Files of interest:
 - `lib/abis/GuardianBadge.json` and `lib/abis/GuardianBadge.ts` — ABI and wrapper
 - `lib/hooks/useContracts.ts` — client hooks for reading badges and minting (owner)
 
+## 🧭 Activity Log Troubleshooting
+
+If the Activity page shows "No Activity Yet" even when you expect events, try the following steps:
+
+- 1) Verify Vault addresses are discovered
+   - Open the browser console and look for logs prefixed with `[ActivityLogView]` and `[useVaultActivity]` to confirm `vaultAddress` and `guardianTokenAddress` are populated.
+
+- 2) Check the server API
+   - Request server-side activities for a vault:
+
+```bash
+curl "http://localhost:3000/api/activities?account=0xYOUR_VAULT_ADDRESS" | jq '.'
+```
+
+   - A non-empty JSON array indicates the server has activity records. If the array is empty, the UI will fall back to on-chain event scanning.
+
+- 3) Confirm on-chain events are being fetched
+   - The client scans the vault contract for `Deposited` and `Withdrawn` events. Look for logs like `[useDepositHistory] Decoded log:` in the browser console.
+   - If no logs appear, ensure `NEXT_PUBLIC_RPC_URL` points to a working Base Sepolia RPC and that the vault has emitted events.
+
+- 4) Check local caches and auto-import
+   - The client stores caches under keys like `deposits-cache-<vault>` and `deposits-debug-<vault>` in `localStorage`. Inspect these keys if you want debug information.
+   - On first load the app attempts an automatic import of recent on-chain activity to the server. It sets a local flag `activities-migrated-<vaultAddress>` to avoid repeating imports.
+
+- 5) Server-side DB & encryption
+   - Make sure the server process has `DB_ENCRYPTION_KEY` set; otherwise encrypted DB access will fail.
+   - If you recently changed the key, run the migration/encrypt script:
+
+```bash
+# Set DB_ENCRYPTION_KEY in your environment, then:
+npm run encrypt-db
+```
+
+- 6) Force import (advanced)
+   - The client calls an import endpoint to persist activities server-side. If needed, you can POST activity objects to `/api/activities/import` (JSON array) to seed the DB.
+
+If you still see no activity after these checks, paste the browser console logs and the output of the `curl` command above and I will help diagnose further.
+
 
 ### Adding New Features
 

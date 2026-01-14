@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { ArrowLeft, Check, Copy, Share2, Info, AlertCircle } from "lucide-react";
@@ -74,42 +75,49 @@ export function WithdrawalForm() {
         setIsSubmitting(true);
         try {
             if (!isConnected || !address || !vaultAddress) {
-                alert("Please connect your wallet first");
+                toast.error("Please connect your wallet first");
                 return;
             }
             if (!amount || parseFloat(amount) <= 0) {
-                alert("Please enter a valid amount");
+                toast.error("Please enter a valid amount");
                 return;
             }
             const amountInWei = parseEther(amount);
             if (vaultBalance && typeof vaultBalance === 'bigint' && amountInWei > vaultBalance) {
-                alert("Insufficient vault balance");
+                toast.error("Insufficient vault balance");
                 return;
             }
             if (isScheduled) {
                 if (!scheduledDate || scheduledDate.getTime() <= Date.now()) {
-                    alert("Please select a valid future date/time");
+                    toast.error("Please select a valid future date/time");
                     return;
                 }
-                // Call API to schedule withdrawal
-                const res = await fetch('/api/scheduled-withdrawals', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        token: '0x0000000000000000000000000000000000000000',
-                        amount: amountInWei.toString(),
-                        recipient: address,
-                        reason: reason || "Scheduled withdrawal",
-                        category: "General",
-                        scheduledFor: Math.floor(scheduledDate.getTime() / 1000)
-                    })
-                });
-                if (res.ok) {
-                    setStep('success');
-                } else {
-                    const err = await res.json();
-                    alert(err.error || 'Failed to schedule withdrawal');
-                }
+                toast.promise(
+                  (async () => {
+                    const res = await fetch('/api/scheduled-withdrawals', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: '0x0000000000000000000000000000000000000000',
+                            amount: amountInWei.toString(),
+                            recipient: address,
+                            reason: reason || "Scheduled withdrawal",
+                            category: "General",
+                            scheduledFor: Math.floor(scheduledDate.getTime() / 1000)
+                        })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || 'Failed to schedule withdrawal');
+                    }
+                  })(),
+                  {
+                    loading: 'Scheduling withdrawal...',
+                    success: 'Withdrawal scheduled!',
+                    error: (err) => err?.message || 'Failed to schedule withdrawal',
+                  }
+                );
+                setStep('success');
                 setIsSubmitting(false);
                 return;
             }

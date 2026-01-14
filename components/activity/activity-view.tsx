@@ -25,7 +25,7 @@ export function ActivityLogView() {
     // Calculate stats from activities
     const totalDeposits = activities
         .filter(a => a.type === 'deposit' && a.data?.amount)
-        .reduce((sum, a) => sum + (a.data.amount || 0n), 0n);
+        .reduce((sum, a) => sum + (a.data.amount ?? 0n), 0n);
     
     const totalGuardians = activities.filter(a => a.type === 'guardian_added').length;
 
@@ -37,6 +37,13 @@ export function ActivityLogView() {
         if (filterStatus === 'guardians') return activity.type === 'guardian_added';
         return true;
     });
+
+    // Pagination
+    const pageSize = 10;
+    const [page, setPage] = useState(1);
+    const totalPages = Math.max(1, Math.ceil(filteredActivities.length / pageSize));
+    const pageStart = (page - 1) * pageSize;
+    const pageActivities = filteredActivities.slice(pageStart, pageStart + pageSize);
 
     const formatDate = (timestamp: number) => {
         const date = new Date(timestamp);
@@ -147,7 +154,7 @@ export function ActivityLogView() {
                 </div>
             ) : (
                 <div className="flex flex-col gap-4">
-                    {filteredActivities.map((activity, idx) => {
+                    {pageActivities.map((activity, idx) => {
                         const isDeposit = activity.type === 'deposit';
                         const isWithdrawal = activity.type === 'withdrawal';
                         const isGuardian = activity.type === 'guardian_added';
@@ -210,6 +217,23 @@ export function ActivityLogView() {
                             </div>
                         );
                     })}
+                    {/* Pagination controls */}
+                    <div className="flex items-center justify-between mt-6">
+                        <div className="text-sm text-slate-500 dark:text-slate-400">Showing {pageStart + 1} - {Math.min(pageStart + pageSize, filteredActivities.length)} of {filteredActivities.length}</div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="px-3 py-1 rounded-md bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border text-sm disabled:opacity-50"
+                            >Previous</button>
+                            <div className="text-sm text-slate-500 dark:text-slate-400">Page {page} / {totalPages}</div>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page >= totalPages}
+                                className="px-3 py-1 rounded-md bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border text-sm disabled:opacity-50"
+                            >Next</button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

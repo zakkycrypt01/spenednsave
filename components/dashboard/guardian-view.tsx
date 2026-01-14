@@ -13,10 +13,25 @@ import GuardianSBTABI from "@/lib/abis/GuardianSBT.json";
 
 const GUARDIAN_SBT_ADDRESS = process.env.NEXT_PUBLIC_GUARDIAN_SBT_ADDRESS;
 
+// Move interface outside component to avoid redeclaration on every render
+interface ScheduledWithdrawal {
+    id: number;
+    executed: boolean;
+    approvals: string[];
+    saverName: string;
+    saverAddress: string;
+    timestamp: string;
+    amount: string;
+    amountUSD: string;
+    reason: string;
+    requiredSignatures: number;
+    currentSignatures: number;
+    hasUserSigned: boolean;
+}
+
 export function DashboardGuardianView() {
     const { address } = useAccount();
     const [vaults, setVaults] = useState<Array<{ vaultAddress: string; vaultName: string; owner: string; pendingApprovals: number }>>([]);
-    // Removed unused selectedRequest state
 
     useEffect(() => {
         async function fetchVaults() {
@@ -43,8 +58,6 @@ export function DashboardGuardianView() {
     }, [address]);
 
     // EIP-712 signing for gasless guardian approval
-    // Removed unused handleApprove function
-
     const handleReject = () => {
         // Rejection logic can be implemented if needed
         alert("Request rejected");
@@ -52,22 +65,13 @@ export function DashboardGuardianView() {
 
     // Real contract/backend data should be loaded here
     // Scheduled withdrawals integration
-    interface ScheduledWithdrawal {
-        id: number;
-        executed: boolean;
-        approvals: string[];
-        saverName: string;
-        saverAddress: string;
-        timestamp: string;
-        amount: string;
-        amountUSD: string;
-        reason: string;
-        requiredSignatures: number;
-        currentSignatures: number;
-        hasUserSigned: boolean;
-    }
     const { scheduled, loading, error } = useScheduledWithdrawals();
-    const errorMsg = typeof error === 'string' ? error : (error && typeof error.message === 'string' ? error.message : '');
+    let errorMsg = '';
+    if (typeof error === 'string') {
+        errorMsg = error;
+    } else if (error && typeof (error as any).message === 'string') {
+        errorMsg = (error as any).message;
+    }
     // Filter for pending scheduled withdrawals (not executed, not yet approved by this guardian)
     const addressStr = address ? String(address) : "";
     const pendingRequests: ScheduledWithdrawal[] = (scheduled || []).filter((w: ScheduledWithdrawal) => !w.executed && !(w.approvals || []).includes(addressStr));

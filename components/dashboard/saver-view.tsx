@@ -17,7 +17,6 @@ export function DashboardSaverView() {
         // Timer for stable current time in render
         const [now, setNow] = useState(() => Date.now());
         useEffect(() => {
-            setNow(Date.now()); // set initial value after mount
             const interval = setInterval(() => setNow(Date.now()), 60000); // update every minute
             return () => clearInterval(interval);
         }, []);

@@ -7,6 +7,7 @@ import { useSimulation } from "../simulation/SimulationContext";
 import { cn } from "@/lib/utils"; // We need to create this utility
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Shield, X, Menu } from "lucide-react"; // Using Lucide for the logo icon for now, or SVG
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function Navbar() {
     const pathname = usePathname();
@@ -101,6 +102,7 @@ export function Navbar() {
                         >
                             {simulationEnabled ? "Simulation: ON" : "Simulation: OFF"}
                         </button>
+                        <ThemeToggle />
                         <button className="md:hidden text-slate-900 dark:text-white p-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-shadow" aria-label="Open menu">
                             <span className="material-symbols-outlined">menu</span>
                         </button>

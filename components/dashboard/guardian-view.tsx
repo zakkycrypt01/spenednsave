@@ -6,7 +6,8 @@ import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
 
-import { Contract, JsonRpcProvider } from "ethers";
+import { Contract } from "ethers";
+import { JsonRpcProvider } from "@ethersproject/providers";
 // import GuardianSBT ABI and address
 import GuardianSBTABI from "@/lib/abis/GuardianSBT.json";
 

@@ -106,10 +106,9 @@ export function WithdrawalForm() {
         }
 
         const amountInWei = parseEther(amount);
+
         // Check temporal caps (client-side hint)
         try {
-            const capsRes = useGetWithdrawalCaps(vaultAddress as any, '0x0000000000000000000000000000000000000000' as any);
-            const dailyUsedRes = useVaultWithdrawnInPeriod(vaultAddress as any, '0x0000000000000000000000000000000000000000' as any, 'daily');
             if (capsRes && (capsRes as any).data) {
                 const cap = (capsRes as any).data;
                 const capDaily = cap.daily ? BigInt(cap.daily) : 0n;

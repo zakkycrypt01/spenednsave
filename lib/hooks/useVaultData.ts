@@ -643,6 +643,19 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
             try {
                 const migratedFlag = typeof window !== 'undefined' ? localStorage.getItem(`activities-migrated-${String(vaultAddress).toLowerCase()}`) : null;
                 if (serverActivities !== null && Array.isArray(serverActivities) && serverActivities.length === 0 && !migrated && !migratedFlag) {
+
+                    // Helper to recursively convert all bigint values to strings
+                    function convertBigInts(obj: any): any {
+                        if (typeof obj === 'bigint') return obj.toString();
+                        if (Array.isArray(obj)) return obj.map(convertBigInts);
+                        if (obj && typeof obj === 'object') {
+                            const res: any = {};
+                            for (const k in obj) res[k] = convertBigInts(obj[k]);
+                            return res;
+                        }
+                        return obj;
+                    }
+
                     const payload = limited.map((act) => ({
                         id: `${String(vaultAddress)}-${act.type}-${String(act.blockNumber ?? '0')}-${act.timestamp}`,
                         account: String(vaultAddress),

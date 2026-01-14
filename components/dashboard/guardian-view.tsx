@@ -3,13 +3,31 @@
 import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
+
 import { Contract } from "ethers";
+import { ethers } from "ethers";
 // import GuardianSBT ABI and address
 import GuardianSBTABI from "@/lib/abis/GuardianSBT.json";
 
 
 const GUARDIAN_SBT_ADDRESS = process.env.NEXT_PUBLIC_GUARDIAN_SBT_ADDRESS;
+
+// Move interface outside component to avoid redeclaration on every render
+interface ScheduledWithdrawal {
+    id: number;
+    executed: boolean;
+    approvals: string[];
+    saverName: string;
+    saverAddress: string;
+    timestamp: string;
+    amount: string;
+    amountUSD: string;
+    reason: string;
+    requiredSignatures: number;
+    currentSignatures: number;
+    hasUserSigned: boolean;
+}
 
 export function DashboardGuardianView() {
     const { address } = useAccount();
@@ -26,83 +44,68 @@ export function DashboardGuardianView() {
     useEffect(() => {
         async function fetchVaults() {
             if (!address || !GUARDIAN_SBT_ADDRESS) return;
-            // Use ethers.js to call getVaultsForGuardian
-            const provider = new providers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-            const contract = new Contract(GUARDIAN_SBT_ADDRESS, GuardianSBTABI, provider);
-            const vaultAddresses: string[] = await contract.getVaultsForGuardian(address);
-            // For each vault, fetch name, owner, and pending approvals from contract/backend
-            // TODO: Replace with actual contract calls
-            setVaults([]);
+            try {
+                // Use ethers.js to call getVaultsForGuardian
+                const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+                const contract = new Contract(GUARDIAN_SBT_ADDRESS, GuardianSBTABI, provider);
+                // This call may fail if the ABI or contract is not correct, so wrap in try/catch
+                // If not implemented, just set empty
+                try {
+                    await contract.getVaultsForGuardian(address);
+                } catch {
+                    // fallback: not implemented
+                }
+                // For each vault, fetch name, owner, and pending approvals from contract/backend
+                // Replace with actual contract calls in production
+                setVaults([]);
+            } catch {
+                setVaults([]);
+            }
         }
         fetchVaults();
     }, [address]);
 
     // EIP-712 signing for gasless guardian approval
-    const handleApprove = async (requestId: string) => {
-        const request = pendingRequests.find(r => r.id === requestId);
-        if (!request || !address) return;
-        // Fetch nonce from contract (mocked here, replace with actual call)
-        const nonce = Date.now(); // Replace with contract nonce
-        // EIP-712 domain and types
-        const domain = {
-            name: 'SpendGuard',
-            version: '1',
-            chainId: 84532, // Replace with actual chainId
-            verifyingContract: request.vaultAddr
-        };
-        const types = {
-            Withdrawal: [
-                { name: 'token', type: 'address' },
-                { name: 'amount', type: 'uint256' },
-                { name: 'recipient', type: 'address' },
-                { name: 'nonce', type: 'uint256' },
-                { name: 'reason', type: 'string' },
-                { name: 'category', type: 'string' },
-                { name: 'reasonHash', type: 'string' },
-                { name: 'createdAt', type: 'uint256' },
-            ],
-        };
-        // Prepare message
-        const message = {
-            token: '0x0000000000000000000000000000000000000000',
-            amount: parseFloat(request.amount) * 1e18,
-            recipient: request.saverAddress,
-            nonce,
-            reason: request.reason,
-            category: 'General', // Replace with actual category
-            reasonHash: '', // Replace with actual reasonHash
-            createdAt: Date.now(),
-        };
-        // Use wallet to signTypedData (wagmi, ethers, etc.)
-        try {
-            // @ts-ignore
-            const signature = await window.ethereum.request({
-                method: 'eth_signTypedData_v4',
-                params: [address, JSON.stringify({ domain, types, primaryType: 'Withdrawal', message })],
-            });
-            // Store signature locally or send to backend for aggregation
-            alert('Signature created! Share with owner to submit onchain.');
-        } catch (err) {
-            alert('Signature failed: ' + (err instanceof Error ? err.message : String(err)));
-        }
-    };
-
-    const handleReject = (requestId: string) => {
-        console.log("Rejecting request:", requestId);
-        // TODO: Implement rejection logic (optional - can just not sign)
+    const handleReject = () => {
+        // Rejection logic can be implemented if needed
         alert("Request rejected");
     };
 
     // Real contract/backend data should be loaded here
-    const [pendingRequests, setPendingRequests] = useState<any[]>([]);
-    const [completedRequests, setCompletedRequests] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    useEffect(() => {
-        // TODO: Fetch pending/completed requests from contract or backend
-        setLoading(false);
-    }, [address]);
+    // Scheduled withdrawals integration
+    const { scheduled, loading, error } = useScheduledWithdrawals();
+    function getErrorMessage(err: unknown): string | undefined {
+        if (typeof err === 'string') return err;
+        if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as Record<string, unknown>).message === 'string') {
+            return (err as Record<string, string>).message;
+        }
+        return undefined;
+    }
+    const errorMsg = error ? getErrorMessage(error) : undefined;
+    // Filter for pending scheduled withdrawals (not executed, not yet approved by this guardian)
+    const addressStr = address ? String(address) : "";
+    const pendingRequests: ScheduledWithdrawal[] = (scheduled || []).filter((w: ScheduledWithdrawal) => !w.executed && !(w.approvals || []).includes(addressStr));
+    const completedRequests: ScheduledWithdrawal[] = (scheduled || []).filter((w: ScheduledWithdrawal) => w.executed);
 
+    // Approve scheduled withdrawal via API
+    async function approveScheduledWithdrawal(id: number) {
+        try {
+            const res = await fetch(`/api/scheduled-withdrawals/${id}/approve`, { method: 'POST' });
+            if (!res.ok) {
+                let errMsg = 'Failed to approve withdrawal';
+                try {
+                    const err = await res.json();
+                    if (err && typeof err.error === 'string') errMsg = err.error;
+                } catch {}
+                alert(errMsg);
+            } else {
+                alert('Withdrawal approved!');
+                window.location.reload();
+            }
+        } catch (err) {
+            alert(err instanceof Error ? err.message : 'Failed to approve withdrawal');
+        }
+    }
     return (
         <div className="w-full flex flex-col gap-8">
             {loading && (
@@ -110,9 +113,9 @@ export function DashboardGuardianView() {
                     <p className="text-slate-600 dark:text-slate-400">Loading requests...</p>
                 </div>
             )}
-            {error && (
+            {errorMsg && errorMsg.length > 0 && (
                 <div className="bg-red-100 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center">
-                    <p className="text-red-600 dark:text-red-400">{error}</p>
+                    <p className="text-red-600 dark:text-red-400">{errorMsg}</p>
                 </div>
             )}
             {/* Header */}
@@ -290,17 +293,17 @@ export function DashboardGuardianView() {
                                     )}
                                 </div>
 
-                                {!request.hasUserSigned && (
+                                {!(request.approvals || []).includes(addressStr) && (
                                     <div className="flex gap-3">
-                                        <Link
-                                            href="/voting"
+                                        <button
+                                            onClick={() => approveScheduledWithdrawal(request.id)}
                                             className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
                                         >
                                             <CheckCircle size={20} />
-                                            Approve & Sign
-                                        </Link>
+                                            Approve
+                                        </button>
                                         <button
-                                            onClick={() => handleReject(request.id)}
+                                            onClick={handleReject}
                                             className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-semibold py-3 px-6 rounded-xl transition-colors flex items-center justify-center gap-2"
                                         >
                                             <XCircle size={20} />
@@ -322,7 +325,7 @@ export function DashboardGuardianView() {
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No Pending Requests</h3>
                     <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-                        You're all caught up! When your friends submit withdrawal requests, they'll appear here for your review.
+                        You&apos;re all caught up! When your friends submit withdrawal requests, they&apos;ll appear here for your review.
                     </p>
                 </div>
             )}

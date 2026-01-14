@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import toast from "react-hot-toast";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 import { ArrowLeft, Check, Copy, Share2, Info, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Spinner } from "@/components/ui/spinner";
@@ -15,6 +18,9 @@ export function WithdrawalForm() {
     const [amount, setAmount] = useState("");
     const [reason, setReason] = useState("");
     const [withdrawalData, setWithdrawalData] = useState<any>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isScheduled, setIsScheduled] = useState(false);
+    const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
 
     const { address, isConnected } = useAccount();
     const chainId = useChainId();
@@ -172,39 +178,70 @@ export function WithdrawalForm() {
 
         // Sign the withdrawal request
         try {
-            signTypedData({
-                domain,
-                types,
-                primaryType: 'Withdrawal',
-                message: {
-                    token: withdrawalRequest.token,
-                    amount: withdrawalRequest.amount,
-                    recipient: withdrawalRequest.recipient,
-                    nonce: withdrawalRequest.nonce,
-                    reason: withdrawalRequest.reason,
-                },
-            });
-        } catch (error) {
-            console.error("Signature failed", error);
-            alert("Failed to sign withdrawal request");
-            setStep('form');
+            if (!isConnected || !address || !vaultAddress) {
+                toast.error("Please connect your wallet first");
+                return;
+            }
+            if (!amount || parseFloat(amount) <= 0) {
+                toast.error("Please enter a valid amount");
+                return;
+            }
+            const amountInWei = parseEther(amount);
+            if (vaultBalance && typeof vaultBalance === 'bigint' && amountInWei > vaultBalance) {
+                toast.error("Insufficient vault balance");
+                return;
+            }
+            if (isScheduled) {
+                if (!scheduledDate || scheduledDate.getTime() <= Date.now()) {
+                    toast.error("Please select a valid future date/time");
+                    return;
+                }
+                toast.promise(
+                  (async () => {
+                    const res = await fetch('/api/scheduled-withdrawals', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: '0x0000000000000000000000000000000000000000',
+                            amount: amountInWei.toString(),
+                            recipient: address,
+                            reason: reason || "Scheduled withdrawal",
+                            category: "General",
+                            scheduledFor: Math.floor(scheduledDate.getTime() / 1000)
+                        })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        throw new Error(err.error || 'Failed to schedule withdrawal');
+                    }
+                  })(),
+                  {
+                    loading: 'Scheduling withdrawal...',
+                    success: 'Withdrawal scheduled!',
+                    error: (err) => err?.message || 'Failed to schedule withdrawal',
+                  }
+                );
+                setStep('success');
+                setIsSubmitting(false);
+                return;
+            }
+            // ...existing immediate withdrawal logic...
+            const withdrawalRequest = {
+                token: '0x0000000000000000000000000000000000000000' as Address, // ETH
+                amount: amountInWei,
+                recipient: address,
+                nonce: (typeof currentNonce === 'bigint' ? currentNonce : 0n), // Use contract nonce
+                reason: reason || "Withdrawal request"
+            };
+            setWithdrawalData(withdrawalRequest);
+            setStep('signing');
+            // ...existing EIP-712 logic...
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-    };
-
-    const shareViaWhatsApp = () => {
-        const text = `I need approval for a withdrawal request: ${window.location.origin}/voting`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-    };
-
-    const shareViaTelegram = () => {
-        const text = `I need approval for a withdrawal request: ${window.location.origin}/voting`;
-        window.open(`https://t.me/share/url?url=${encodeURIComponent(window.location.origin + '/voting')}&text=${encodeURIComponent(text)}`, '_blank');
-    };
-
+    // ...existing code...
     if (!isConnected) {
         return (
             <div className="w-full max-w-md mx-auto">
@@ -406,6 +443,36 @@ export function WithdrawalForm() {
                     ></textarea>
                 </div>
 
+                {/* Scheduled Withdrawal Option */}
+                <div className="flex items-center gap-3">
+                    <input
+                        type="checkbox"
+                        id="schedule-withdrawal"
+                        checked={isScheduled}
+                        onChange={() => setIsScheduled(!isScheduled)}
+                        className="form-checkbox h-4 w-4 text-primary"
+                    />
+                    <label htmlFor="schedule-withdrawal" className="text-sm text-slate-700 dark:text-slate-300 font-medium">
+                        Schedule for future date/time
+                    </label>
+                </div>
+                {isScheduled && (
+                    <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-4 shadow-sm">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 block">Scheduled For</label>
+                        <DatePicker
+                            selected={scheduledDate}
+                            onChange={setScheduledDate}
+                            showTimeSelect
+                            timeFormat="HH:mm"
+                            timeIntervals={15}
+                            dateFormat="MMMM d, yyyy h:mm aa"
+                            minDate={new Date()}
+                            className="w-full bg-transparent text-lg font-bold text-slate-900 dark:text-white outline-none border-b border-gray-200 dark:border-slate-700 py-2"
+                            placeholderText="Select date and time"
+                        />
+                    </div>
+                )}
+
                 <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
                     <Info size={16} className="text-blue-500 mt-0.5 shrink-0" />
                     <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
@@ -418,7 +485,7 @@ export function WithdrawalForm() {
                     disabled={!amount || isSubmitting}
                     className="w-full bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-[0.99] flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                    Create Withdrawal Request
+                    {isScheduled ? 'Schedule Withdrawal' : 'Create Withdrawal Request'}
                 </button>
             </form>
         </div>

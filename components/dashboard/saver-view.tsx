@@ -2,7 +2,7 @@
 "use client";
 import { AvatarBlockie } from '@/components/ui/avatar-blockie';
 
-import { Users, Lock, CreditCard, ArrowRight, ShieldCheck } from "lucide-react";
+import { Users, Lock, CreditCard, ShieldCheck } from "lucide-react";
 import { useAccount, useWatchContractEvent } from "wagmi";
 import { useDepositETH, useVaultETHBalance, useUserContracts, useVaultQuorum } from "@/lib/hooks/useContracts";
 import { useGuardians, useVaultActivity } from "@/lib/hooks/useVaultData";
@@ -16,20 +16,27 @@ import Link from "next/link";
 import PolicyConfig from '@/components/dashboard/policy-config';
 
 export function DashboardSaverView() {
+        // Timer for stable current time in render
+        const [now, setNow] = useState(() => Date.now());
+        // Only one timer effect needed for stable now
+        useEffect(() => {
+            const interval = setInterval(() => setNow(Date.now()), 60000); // update every minute
+            return () => clearInterval(interval);
+        }, []);
     const { address } = useAccount();
-    const { data: userContracts } = useUserContracts(address as any);
-    const guardianTokenAddress = userContracts ? (userContracts as any)[0] : undefined;
-    const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
+    const { data: userContracts } = useUserContracts(address as Address);
+    const guardianTokenAddress: Address | undefined = userContracts ? (userContracts as [Address, Address])[0] : undefined;
+    const vaultAddress: Address | undefined = userContracts ? (userContracts as [Address, Address])[1] : undefined;
 
     // Only call useVaultHealth after vaultAddress is available
     const { data: vaultHealth } = useVaultHealth(vaultAddress);
-    const healthScore = vaultHealth?.[0] ?? 100;
-    const healthStatus = vaultHealth?.[1] ?? "Healthy";
+    const healthScore: number = Array.isArray(vaultHealth) ? vaultHealth[0] : 100;
+    const healthStatus: string = Array.isArray(vaultHealth) ? vaultHealth[1] : "Healthy";
     let healthColor = "bg-emerald-500";
     if (healthStatus === "Warning") healthColor = "bg-yellow-400";
     if (healthStatus === "Critical") healthColor = "bg-red-500";
     
-    const { deposit, isPending, isConfirming, isSuccess, hash } = useDepositETH(vaultAddress);
+    const { deposit, isPending, isConfirming, isSuccess } = useDepositETH(vaultAddress);
     const { data: vaultBalance, refetch: refetchBalance } = useVaultETHBalance(vaultAddress);
     const { data: quorum } = useVaultQuorum(vaultAddress);
     const [depositAmount, setDepositAmount] = useState("0.01");
@@ -55,8 +62,8 @@ export function DashboardSaverView() {
         abi: SpendVaultABI,
         eventName: 'Deposited',
         enabled: !!vaultAddress,
-        onLogs(logs) {
-            console.log('[DashboardSaverView] Deposited event detected!', logs);
+        onLogs() {
+            console.log('[DashboardSaverView] Deposited event detected!');
             // Refetch balance and activities when new deposits come in
             refetchBalance();
             refetchActivities();
@@ -69,7 +76,7 @@ export function DashboardSaverView() {
         abi: GuardianSBTABI,
         eventName: 'GuardianAdded',
         enabled: !!guardianTokenAddress,
-        onLogs(logs) {
+        onLogs() {
             // Refetch activities when guardians are added
             refetchActivities();
         },
@@ -101,6 +108,52 @@ export function DashboardSaverView() {
     const ethBalance = vaultBalance && typeof vaultBalance === 'bigint' ? formatEther(vaultBalance) : "0";
     const formattedEthBalance = parseFloat(ethBalance).toFixed(4);
     const totalGuardians = guardians.length;
+
+    // Vault transfer state
+    const [showTransferModal, setShowTransferModal] = useState(false);
+    const [transferAddress, setTransferAddress] = useState("");
+    type TransferRequest = {
+        id: number;
+        newOwner: string;
+        approvals: string[];
+        executed: boolean;
+    };
+    const [transferRequests, setTransferRequests] = useState<TransferRequest[]>([]);
+    // Fetch transfer requests (mocked, replace with actual contract call)
+    useEffect(() => {
+        // TODO: Replace with actual fetch from contract/backend
+        setTransferRequests([]);
+    }, [vaultAddress]);
+
+    // Handler to request transfer
+    const handleRequestTransfer = async () => {
+        if (!transferAddress) return alert("Enter new owner address");
+        try {
+            const res = await fetch("/api/vault-transfer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ newOwner: transferAddress }),
+            });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || "Failed");
+            alert("Transfer request submitted!");
+            setShowTransferModal(false);
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to request transfer");
+        }
+    };
+
+    // Handler to execute transfer (owner only)
+    const handleExecuteTransfer = async (id: number) => {
+        try {
+            const res = await fetch(`/api/vault-transfer/${id}/execute`, { method: "POST" });
+            const data = await res.json();
+            if (!data.success) throw new Error(data.message || "Failed");
+            alert("Vault ownership transferred!");
+        } catch (err) {
+            alert(err instanceof Error ? err.message : "Failed to execute transfer");
+        }
+    };
 
     return (
         <div className="w-full flex flex-col gap-8">
@@ -245,6 +298,15 @@ export function DashboardSaverView() {
                             </div>
                             <p className="text-slate-400 text-sm">No recent activity</p>
                             <p className="text-slate-500 text-xs mt-2">Your transactions will appear here</p>
+                            <div className="mt-4 text-left text-xs text-slate-500 bg-slate-900/50 rounded p-2">
+                                <strong>Debug Info:</strong><br />
+                                vaultAddress: {String(vaultAddress)}<br />
+                                guardianTokenAddress: {String(guardianTokenAddress)}<br />
+                                activitiesLoading: {String(activitiesLoading)}<br />
+                                activities.length: {activities.length}<br />
+                                guardians.length: {guardians.length}<br />
+                                activities: <pre className="whitespace-pre-wrap break-all">{JSON.stringify(activities, null, 2)}</pre>
+                            </div>
                         </div>
                     ) : (
                         <div className="bg-surface-dark border border-surface-border rounded-2xl overflow-hidden divide-y divide-surface-border">
@@ -254,7 +316,7 @@ export function DashboardSaverView() {
                                 const isWithdrawal = activity.type === 'withdrawal';
                                 
                                 const amount = activity.data?.amount ? formatEther(activity.data.amount) : '0';
-                                const timeAgo = Math.floor((Date.now() - activity.timestamp) / 1000);
+                                const timeAgo = Math.floor((now - activity.timestamp) / 1000);
                                 const timeString = timeAgo < 60 ? 'Just now' : 
                                                  timeAgo < 3600 ? `${Math.floor(timeAgo / 60)}m ago` :
                                                  timeAgo < 86400 ? `${Math.floor(timeAgo / 3600)}h ago` :
@@ -349,6 +411,76 @@ export function DashboardSaverView() {
                 </section>
             </div>
 
+
+            {/* Vault Transfer Section */}
+            <div className="mt-8">
+                <VaultAnalyticsDashboard vaultAddress={vaultAddress} guardianTokenAddress={guardianTokenAddress} />
+
+                <div className="mt-8 bg-surface-dark border border-surface-border rounded-2xl p-6">
+                    <h3 className="text-white text-lg font-bold mb-2">Transfer Vault Ownership</h3>
+                    <p className="text-slate-400 text-sm mb-4">Transfer vault ownership to a new address. Requires guardian approval.</p>
+                    <button
+                        onClick={() => setShowTransferModal(true)}
+                        className="bg-primary hover:bg-primary-hover text-white font-bold py-2 px-4 rounded-xl mb-4"
+                    >
+                        Request Transfer
+                    </button>
+                    {/* List pending transfer requests (mocked) */}
+                    {transferRequests.length > 0 && (
+                        <div className="mt-4">
+                            <h4 className="text-white font-semibold mb-2">Pending Transfer Requests</h4>
+                            {transferRequests.map((tr) => (
+                                <div key={tr.id} className="flex items-center justify-between bg-slate-800 rounded-lg p-3 mb-2">
+                                    <span className="text-slate-200 text-sm">To: {tr.newOwner}</span>
+                                    <span className="text-slate-400 text-xs">Approvals: {tr.approvals?.length || 0}</span>
+                                    {!tr.executed && (
+                                        <button
+                                            onClick={() => handleExecuteTransfer(tr.id)}
+                                            className="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1 rounded-lg text-xs"
+                                        >
+                                            Execute Transfer
+                                        </button>
+                                    )}
+                                    {tr.executed && <span className="text-emerald-400 text-xs">Executed</span>}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Transfer Modal */}
+            {showTransferModal && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowTransferModal(false)}>
+                    <div className="bg-surface-dark border border-surface-border rounded-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-white text-xl font-bold">Request Vault Transfer</h3>
+                            <button onClick={() => setShowTransferModal(false)} className="text-slate-400 hover:text-white">
+                                <span className="material-symbols-outlined">close</span>
+                            </button>
+                        </div>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm text-slate-400 mb-2">New Owner Address</label>
+                                <input
+                                    type="text"
+                                    value={transferAddress}
+                                    onChange={e => setTransferAddress(e.target.value)}
+                                    className="w-full bg-background-dark border border-border-dark rounded-xl px-4 py-3 text-white focus:ring-2 focus:ring-primary outline-none"
+                                    placeholder="0x..."
+                                />
+                            </div>
+                            <button
+                                onClick={handleRequestTransfer}
+                                className="w-full bg-primary hover:bg-primary-hover text-white font-bold py-3 rounded-xl transition-colors"
+                            >
+                                Submit Transfer Request
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Deposit Modal */}
             {showDepositModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowDepositModal(false)}>
@@ -395,12 +527,10 @@ export function DashboardSaverView() {
                     </div>
                 </div>
             )}
+            {/* Emergency Contacts Section */}
+            <EmergencyContacts />
         </div>
     );
 }
 
-function PlusIcon() {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /><path d="M12 5v14" /></svg>
-    )
-}
+// PlusIcon removed (unused)

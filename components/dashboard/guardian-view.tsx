@@ -54,7 +54,7 @@ export function DashboardGuardianView() {
     const [vaults, setVaults] = useState<VaultInfo[]>([]);
     const [reputation, setReputation] = useState<Reputation | null>(null);
     // BadgeData: [tokenIds: string[], types: string[], timestamps: string[]]
-    const [badgeData] = useState<[string[], string[], string[]] | null>(null);
+    const badgeData: [string[], string[], string[]] | null = null;
 
     useEffect(() => {
         if (address) {

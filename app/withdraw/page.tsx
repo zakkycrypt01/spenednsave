@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { WithdrawalForm } from "@/components/withdrawal/withdraw-form";
 import { ScheduledWithdrawalsList } from "@/components/withdrawal/scheduled-list";
 
+function WithdrawPage() {
     // Handler to execute a scheduled withdrawal (calls API)
     const handleExecute = async (id: number) => {
         try {
@@ -32,3 +33,5 @@ import { ScheduledWithdrawalsList } from "@/components/withdrawal/scheduled-list
         </div>
     );
 }
+
+export default WithdrawPage;

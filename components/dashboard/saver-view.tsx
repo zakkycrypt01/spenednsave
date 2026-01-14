@@ -1,4 +1,6 @@
+
 "use client";
+import { AvatarBlockie } from '@/components/ui/avatar-blockie';
 
 import { Users, Lock, CreditCard, ArrowRight, ShieldCheck } from "lucide-react";
 import { useAccount, useWatchContractEvent } from "wagmi";
@@ -312,7 +314,8 @@ export function DashboardSaverView() {
                                 {guardians.length > 0 && (
                                     <div className="mt-4 space-y-2">
                                         {guardians.slice(0, 3).map((guardian) => (
-                                            <div key={guardian.address} className="text-xs text-slate-500 text-center font-mono">
+                                            <div key={guardian.address} className="flex items-center justify-center gap-2 text-xs text-slate-500 text-center font-mono">
+                                                <AvatarBlockie address={guardian.address} size={20} />
                                                 {guardian.address.slice(0, 6)}...{guardian.address.slice(-4)}
                                             </div>
                                         ))}

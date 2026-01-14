@@ -37,6 +37,23 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
     WithdrawalPolicy[] public withdrawalPolicies;
     mapping(address => mapping(uint256 => uint256)) public lastWithdrawalTime; // recipient => policyIdx => last timestamp
 
+    // ============ Temporal Withdrawal Caps (per-vault, per-token) ============
+    struct WithdrawalCap {
+        uint256 daily;   // cap per 24h window (0 = no cap)
+        uint256 weekly;  // cap per 7-day window (0 = no cap)
+        uint256 monthly; // cap per 30-day window (0 = no cap)
+    }
+
+    // caps configured by owner per token (use address(0) for native ETH)
+    mapping(address => WithdrawalCap) public withdrawalCaps;
+
+    // tracked withdrawn amounts for current period
+    mapping(address => mapping(uint256 => uint256)) public withdrawnDaily;   // token => day => amount
+    mapping(address => mapping(uint256 => uint256)) public withdrawnWeekly;  // token => week => amount
+    mapping(address => mapping(uint256 => uint256)) public withdrawnMonthly; // token => month => amount
+
+    event WithdrawalCapsSet(address indexed token, uint256 daily, uint256 weekly, uint256 monthly);
+
     event WithdrawalPolicySet(uint256 indexed policyIdx, uint256 minAmount, uint256 maxAmount, uint256 requiredApprovals, uint256 cooldown);
     event WithdrawalPoliciesCleared();
 
@@ -53,6 +70,18 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
             emit WithdrawalPolicySet(i, p.minAmount, p.maxAmount, p.requiredApprovals, p.cooldown);
         }
         emit WithdrawalPoliciesCleared();
+    }
+
+    /**
+     * @notice Set per-token temporal withdrawal caps (owner only)
+     * @param token Token address (address(0) for native ETH)
+     * @param daily Daily cap (in wei/token units) - 0 to disable
+     * @param weekly Weekly cap (in wei/token units) - 0 to disable
+     * @param monthly Monthly cap (in wei/token units) - 0 to disable
+     */
+    function setWithdrawalCaps(address token, uint256 daily, uint256 weekly, uint256 monthly) external onlyOwner {
+        withdrawalCaps[token] = WithdrawalCap({ daily: daily, weekly: weekly, monthly: monthly });
+        emit WithdrawalCapsSet(token, daily, weekly, monthly);
     }
 
     /**

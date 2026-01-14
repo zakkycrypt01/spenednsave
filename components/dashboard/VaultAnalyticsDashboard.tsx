@@ -9,7 +9,10 @@ import React from 'react';
 // npm install chart.js react-chartjs-2
 
 
-  const analytics = useVaultAnalytics(vaultAddress as `0x${string}` | undefined, guardianTokenAddress as `0x${string}` | undefined);
+import { type Address } from 'viem';
+
+export function VaultAnalyticsDashboard({ vaultAddress, guardianTokenAddress }: { vaultAddress?: Address, guardianTokenAddress?: Address }) {
+  const analytics = useVaultAnalytics(vaultAddress, guardianTokenAddress);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 

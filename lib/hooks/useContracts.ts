@@ -452,3 +452,55 @@ export function useExecuteWithdrawal(vaultAddress?: Address) {
         error,
     };
 }
+
+/**
+ * Hook to set withdrawal policies (owner only)
+ */
+export function useSetWithdrawalPolicies(vaultAddress?: Address) {
+    const { writeContract, data: hash, isPending, error } = useWriteContract();
+
+    const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
+        hash,
+    });
+
+    const setPolicies = (policies: { minAmount: bigint | number | string; maxAmount: bigint | number | string; requiredApprovals: bigint | number | string; cooldown: bigint | number | string; }[]) => {
+        if (!vaultAddress) throw new Error('No vault address provided');
+
+        // Convert to tuple[] expected by the contract
+        const tuples = policies.map(p => [BigInt(p.minAmount), BigInt(p.maxAmount), BigInt(p.requiredApprovals), BigInt(p.cooldown)]);
+
+        writeContract({
+            address: vaultAddress,
+            abi: SpendVaultABI,
+            functionName: 'setWithdrawalPolicies',
+            args: [tuples],
+        } as any);
+    };
+
+    return { setPolicies, hash, isPending, isConfirming, isSuccess, error };
+}
+
+/**
+ * Hook to read number of withdrawal policies
+ */
+export function useWithdrawalPoliciesCount(vaultAddress?: Address) {
+    return useReadContract({
+        address: vaultAddress as Address,
+        abi: SpendVaultABI,
+        functionName: 'withdrawalPoliciesCount',
+        query: { enabled: !!vaultAddress },
+    });
+}
+
+/**
+ * Hook to read a single withdrawal policy by index
+ */
+export function useWithdrawalPolicyAt(vaultAddress?: Address, index?: bigint | number) {
+    return useReadContract({
+        address: vaultAddress as Address,
+        abi: SpendVaultABI,
+        functionName: 'withdrawalPolicies',
+        args: index !== undefined && index !== null ? [BigInt(index as any)] : undefined,
+        query: { enabled: !!vaultAddress && index !== undefined && index !== null },
+    }) as any;
+}

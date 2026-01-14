@@ -3,6 +3,7 @@
 import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from "lucide-react";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
+import AvatarBlockie from "../ui/avatar-blockie";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
 
 import { Contract } from "ethers";
@@ -31,9 +32,29 @@ interface ScheduledWithdrawal {
 
 export function DashboardGuardianView() {
     const { address } = useAccount();
-    const [vaults, setVaults] = useState<any[]>([]);
-    const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
-    const [reputation, setReputation] = useState<any>(null);
+
+    interface VaultInfo {
+        vaultAddress: string;
+        vaultName: string;
+        owner: string;
+        pendingApprovals: number;
+    }
+    interface ReputationHistoryItem {
+        recipient: string;
+        reason: string;
+        amount: string;
+        timestamp: string;
+    }
+    interface Reputation {
+        approvals: number;
+        avgResponseSeconds: number;
+        history: ReputationHistoryItem[];
+    }
+    // Remove unused selectedRequest and setSelectedRequest
+    const [vaults, setVaults] = useState<VaultInfo[]>([]);
+    const [reputation, setReputation] = useState<Reputation | null>(null);
+    // BadgeData: [tokenIds: string[], types: string[], timestamps: string[]]
+    const [badgeData] = useState<[string[], string[], string[]] | null>(null);
 
     useEffect(() => {
         if (address) {
@@ -135,7 +156,7 @@ export function DashboardGuardianView() {
                     <div className="flex items-center gap-3">
                         <div className="text-sm text-slate-500">Badges</div>
                         <div className="flex items-center gap-2">
-                            {(badgeData[0] || []).map((tid: any, i: number) => (
+                            {(badgeData[0] || []).map((tid, i) => (
                                 <div key={String(tid)} className="inline-flex items-center gap-2 bg-white dark:bg-surface-dark border border-surface-border rounded-xl px-3 py-1 text-xs">
                                     <Award size={16} className="text-amber-500" />
                                     <div>
@@ -186,7 +207,7 @@ export function DashboardGuardianView() {
                 <div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Approval History</h2>
                     <div className="space-y-3">
-                        {reputation.history.map((item: any, idx: number) => (
+                        {reputation.history.map((item, idx) => (
                             <div key={idx} className="bg-white dark:bg-surface-dark border border-surface-border rounded-xl p-4 flex items-center justify-between">
                                 <div>
                                     <div className="flex items-center gap-1 font-medium text-slate-900 dark:text-white">

@@ -1,12 +1,26 @@
 import { NextResponse } from 'next/server';
 import { GuardianSignatureDB } from '@/lib/services/guardian-signature-db';
 
+// Helper to convert BigInt values to strings for JSON serialization
+function serializeResponse(obj: any): any {
+  if (typeof obj === 'bigint') return obj.toString();
+  if (Array.isArray(obj)) return obj.map(serializeResponse);
+  if (obj && typeof obj === 'object') {
+    const result: any = {};
+    for (const key in obj) {
+      result[key] = serializeResponse(obj[key]);
+    }
+    return result;
+  }
+  return obj;
+}
+
 export async function GET(request: Request, context: any) {
   try {
     const { id } = context?.params ?? {};
     const row = GuardianSignatureDB.getPendingRequest(id);
     if (!row) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    return NextResponse.json(row);
+    return NextResponse.json(serializeResponse(row));
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
@@ -55,7 +69,7 @@ export async function PUT(request: Request, context: any) {
       console.error('Email notification error:', e);
     }
 
-    return NextResponse.json(saved);
+    return NextResponse.json(serializeResponse(saved));
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }

@@ -9,6 +9,7 @@ import { SimulationDemo } from "@/components/simulation/SimulationDemo";
 import Toaster from "@/components/ui/toaster";
 import "@rainbow-me/rainbowkit/styles.css";
 import maintenanceConfig from "@/lib/maintenanceConfig";
+import { FeatureRequestButton } from "@/components/feature-request-button";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -45,6 +46,7 @@ export default function RootLayout({
                 </div>
               )}
               {children}
+              <FeatureRequestButton />
               <SimulationDemo />
               <Toaster />
             </AuthGuard>

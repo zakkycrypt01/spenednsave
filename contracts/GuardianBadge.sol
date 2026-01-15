@@ -8,12 +8,25 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 /**
  * @title GuardianBadge
  * @dev Non-transferable (soulbound) NFT for guardians, awarded based on activity.
-
-
-
+ */
 contract GuardianBadge is ERC721Enumerable, Ownable {
+    enum BadgeType { Approvals, ResponseTime, Longevity }
 
-    constructor() ERC721("GuardianBadge", "GBADGE") {}
+    struct Badge {
+        BadgeType badgeType;
+        uint256 level;
+        uint256 timestamp;
+    }
+
+    // tokenId => Badge
+    mapping(uint256 => Badge) public badges;
+    // guardian => badge type => tokenId
+    mapping(address => mapping(BadgeType => uint256)) public guardianBadges;
+    uint256 private _tokenIdCounter;
+
+    event BadgeMinted(address indexed guardian, BadgeType badgeType, uint256 level, uint256 tokenId);
+
+    constructor() ERC721("GuardianBadge", "GBADGE") Ownable(msg.sender) {}
 
     // --- Emergency Contact List ---
     mapping(address => bool) public emergencyContacts;
@@ -97,21 +110,6 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
     }
-    enum BadgeType { Approvals, ResponseTime, Longevity }
-
-    struct Badge {
-        BadgeType badgeType;
-        uint256 level;
-        uint256 timestamp;
-    }
-
-    // tokenId => Badge
-    mapping(uint256 => Badge) badges;
-    // guardian => badge type => tokenId
-    mapping(address => mapping(BadgeType => uint256)) guardianBadges;
-    private uint256 _tokenIdCounter;
-
-    event BadgeMinted(address indexed guardian, BadgeType badgeType, uint256 level, uint256 tokenId);
 
     function mintBadge(address guardian, BadgeType badgeType, uint256 level) external onlyOwner {
         require(guardian != address(0), "Invalid guardian address");

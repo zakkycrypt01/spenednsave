@@ -142,15 +142,15 @@ export function DashboardSaverView() {
                 </div>
 
                 {/* Vault Info */}
-                <div className="bg-surface-dark border border-surface-border rounded-3xl p-8 flex flex-col justify-between">
+                <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-3xl p-8 flex flex-col justify-between">
                     <div>
                         <div className="flex justify-between items-start mb-4">
                             <div>
-                                <p className="text-slate-400 text-xs uppercase font-bold tracking-wider">Vault Health</p>
+                                <p className="text-slate-600 dark:text-slate-400 text-xs uppercase font-bold tracking-wider">Vault Health</p>
                                 <div className="flex items-center gap-2">
                                     <span className={`size-3 rounded-full inline-block ${healthColor}`} title={healthStatus}></span>
-                                    <h3 className="text-white font-bold text-lg">{healthStatus}</h3>
-                                    <span className="text-xs text-slate-400" title="Vault health score considers guardians, quorum, activity, and emergency mode.">{healthScore}/100</span>
+                                    <h3 className="text-slate-900 dark:text-white font-bold text-lg">{healthStatus}</h3>
+                                    <span className="text-xs text-slate-600 dark:text-slate-400" title="Vault health score considers guardians, quorum, activity, and emergency mode.">{healthScore}/100</span>
                                 </div>
                             </div>
                             <div className={`size-12 rounded-xl flex items-center justify-center ${healthColor}/10 text-white`} title={healthStatus}>
@@ -159,9 +159,9 @@ export function DashboardSaverView() {
                         </div>
                         <div className="space-y-3">
                             <div className="flex justify-between items-center text-sm gap-2">
-                                <span className="text-slate-400">Vault Address</span>
+                                <span className="text-slate-600 dark:text-slate-400">Vault Address</span>
                                 <span className="flex items-center gap-1">
-                                    <span className="text-white font-mono text-xs">
+                                    <span className="text-slate-900 dark:text-white font-mono text-xs">
                                         {vaultAddress ? `${vaultAddress.slice(0, 6)}...${vaultAddress.slice(-4)}` : "Loading..."}
                                     </span>
                                     {vaultAddress && (
@@ -170,7 +170,7 @@ export function DashboardSaverView() {
                                                 navigator.clipboard.writeText(vaultAddress);
                                             }}
                                             title="Copy address"
-                                            className="ml-1 p-1 rounded hover:bg-slate-700 transition-colors"
+                                            className="ml-1 p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><rect x="3" y="3" width="13" height="13" rx="2"/></svg>
                                         </button>
@@ -178,8 +178,8 @@ export function DashboardSaverView() {
                                 </span>
                             </div>
                             <div className="flex justify-between text-sm">
-                                <span className="text-slate-400">Network</span>
-                                <span className="text-white">Base Sepolia</span>
+                                <span className="text-slate-600 dark:text-slate-400">Network</span>
+                                <span className="text-slate-900 dark:text-white">Base Sepolia</span>
                             </div>
                         </div>
                     </div>
@@ -190,8 +190,8 @@ export function DashboardSaverView() {
                                 <Users size={16} />
                             </div>
                             <div>
-                                <p className="text-white font-medium">Multi-Sig Active</p>
-                                <p className="text-slate-500 text-xs">
+                                <p className="text-slate-900 dark:text-white font-medium">Multi-Sig Active</p>
+                                <p className="text-slate-600 dark:text-slate-500 text-xs">
                                     {quorum ? `${quorum} of ${totalGuardians} Guardians required` : "Loading..."}
                                 </p>
                             </div>
@@ -204,7 +204,7 @@ export function DashboardSaverView() {
                 {/* Main Activity Area */}
                 <section className="lg:col-span-2 flex flex-col gap-6">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-white text-xl font-bold">Recent Activity</h3>
+                        <h3 className="text-slate-900 dark:text-white text-xl font-bold">Recent Activity</h3>
                         <div className="flex items-center gap-3">
                         <button 
                             onClick={() => {
@@ -241,17 +241,17 @@ export function DashboardSaverView() {
                     </div>
 
                     {activitiesLoading ? (
-                        <div className="bg-surface-dark border border-surface-border rounded-2xl p-8 text-center">
-                            <p className="text-slate-400 text-sm">Loading activity...</p>
+                        <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl p-8 text-center">
+                            <p className="text-slate-600 dark:text-slate-400 text-sm">Loading activity...</p>
                         </div>
                     ) : activities.length === 0 ? (
-                        <div className="bg-surface-dark border border-surface-border rounded-2xl p-8 text-center">
-                            <div className="size-16 rounded-full bg-surface-border/50 flex items-center justify-center text-slate-500 mx-auto mb-4">
+                        <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl p-8 text-center">
+                            <div className="size-16 rounded-full bg-gray-100 dark:bg-surface-border/50 flex items-center justify-center text-slate-500 mx-auto mb-4">
                                 <CreditCard size={24} />
                             </div>
-                            <p className="text-slate-400 text-sm">No recent activity</p>
-                            <p className="text-slate-500 text-xs mt-2">Your transactions will appear here</p>
-                            <div className="mt-4 text-left text-xs text-slate-500 bg-slate-900/50 rounded p-2">
+                            <p className="text-slate-600 dark:text-slate-400 text-sm">No recent activity</p>
+                            <p className="text-slate-500 dark:text-slate-500 text-xs mt-2">Your transactions will appear here</p>
+                            <div className="mt-4 text-left text-xs text-slate-600 dark:text-slate-500 bg-slate-100 dark:bg-slate-900/50 rounded p-2">
                                 <strong>Debug Info:</strong><br />
                                 vaultAddress: {String(vaultAddress)}<br />
                                 guardianTokenAddress: {String(guardianTokenAddress)}<br />
@@ -276,7 +276,7 @@ export function DashboardSaverView() {
                                                  `${Math.floor(timeAgo / 86400)}d ago`;
                                 
                                 return (
-                                    <div key={`${activity.blockNumber}-${i}`} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
+                                    <div key={`${activity.blockNumber}-${i}`} className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
                                         <div className="flex items-center gap-4">
                                             <div className={`size-10 rounded-full flex items-center justify-center ${
                                                 isDeposit ? 'bg-emerald-500/10 text-emerald-500' : 

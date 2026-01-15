@@ -822,7 +822,7 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
                         type: act.type,
                         details: convertBigInts(act.data ?? {}),
                         relatedRequestId: (act.data as any)?.id ?? (act.data as any)?.requestId ?? null,
-                        blockNumber: act.blockNumber ?? 0,
+                        blockNumber: convertBigInts(act.blockNumber ?? 0),
                         timestamp: act.timestamp,
                     }));
 
@@ -831,7 +831,7 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
                         const resp = await fetch('/api/activities/import', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
+                            body: JSON.stringify(convertBigInts(payload)),
                         });
                         if (resp.ok) {
                             setMigrated(true);

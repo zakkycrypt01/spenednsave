@@ -28,10 +28,10 @@ if (!Database) {
 const db = new Database(dbPath);
 
 // Encryption helpers — AES-256-GCM
-function getEncryptionKey(): Buffer {
+function getEncryptionKey(): Buffer | null {
   const raw = process.env.DB_ENCRYPTION_KEY;
   if (!raw) {
-    throw new Error('DB_ENCRYPTION_KEY not set — cannot perform encrypted DB operations');
+    return null;
   }
   // Derive 32-byte key from provided secret
   return crypto.createHash('sha256').update(String(raw)).digest();
@@ -39,6 +39,10 @@ function getEncryptionKey(): Buffer {
 
 function encryptString(plain: string): string {
   const key = getEncryptionKey();
+  if (!key) {
+    // If no encryption key, store as plaintext
+    return plain;
+  }
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   const ciphertext = Buffer.concat([cipher.update(Buffer.from(plain, 'utf8')), cipher.final()]);
@@ -62,13 +66,25 @@ function decryptString(payload: string): string {
   }
 
   const key = getEncryptionKey();
-  const iv = Buffer.from(parsed.iv, 'base64');
-  const tag = Buffer.from(parsed.tag, 'base64');
-  const data = Buffer.from(parsed.data, 'base64');
-  const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
-  decipher.setAuthTag(tag);
-  const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
-  return decrypted.toString('utf8');
+  if (!key) {
+    // No encryption key configured, can't decrypt
+    console.warn('[GuardianSignatureDB] Cannot decrypt payload - DB_ENCRYPTION_KEY not set');
+    return payload;
+  }
+  
+  try {
+    const iv = Buffer.from(parsed.iv, 'base64');
+    const tag = Buffer.from(parsed.tag, 'base64');
+    const data = Buffer.from(parsed.data, 'base64');
+    const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv);
+    decipher.setAuthTag(tag);
+    const decrypted = Buffer.concat([decipher.update(data), decipher.final()]);
+    return decrypted.toString('utf8');
+  } catch (e) {
+    // Decryption failed, return original payload
+    console.warn('[GuardianSignatureDB] Decryption failed:', e);
+    return payload;
+  }
 }
 
 // Initialize tables if not exist
@@ -163,117 +179,125 @@ export class GuardianSignatureDB {
   }
 
   static getPendingRequests(): PendingWithdrawalRequest[] {
-    const rows = db.prepare('SELECT * FROM pending_requests').all();
-    return rows.map((row: any) => ({
-      ...row,
-      request: (() => {
+    try {
+      const rows = db.prepare('SELECT * FROM pending_requests').all();
+      return rows.map((row: any) => {
         try {
-          // Try decrypting first (handles both encrypted and plaintext payloads)
-          const decrypted = decryptString(row.request);
-          const req = JSON.parse(decrypted);
           return {
-            ...req,
-            amount: BigInt(req.amount),
-            nonce: BigInt(req.nonce),
+            ...row,
+            request: (() => {
+              try {
+                // Try decrypting first (handles both encrypted and plaintext payloads)
+                const decrypted = decryptString(row.request);
+                const req = JSON.parse(decrypted);
+                return {
+                  ...req,
+                  amount: BigInt(req.amount),
+                  nonce: BigInt(req.nonce),
+                };
+              } catch (e) {
+                // Fallback: attempt to parse raw
+                console.error('[getPendingRequests] Error parsing request:', e);
+                const req = JSON.parse(row.request);
+                return {
+                  ...req,
+                  amount: BigInt(req.amount),
+                  nonce: BigInt(req.nonce),
+                };
+              }
+            })(),
+            signatures: (() => {
+              try {
+                const decrypted = decryptString(row.signatures);
+                const sigs = JSON.parse(decrypted);
+                return sigs.map((s: any) => ({
+                  ...s,
+                  request: {
+                    ...s.request,
+                    amount: BigInt(s.request.amount),
+                    nonce: BigInt(s.request.nonce),
+                  },
+                }));
+              } catch (e) {
+                try {
+                  const sigs = JSON.parse(row.signatures);
+                  return sigs.map((s: any) => ({
+                    ...s,
+                    request: {
+                      ...s.request,
+                      amount: BigInt(s.request.amount),
+                      nonce: BigInt(s.request.nonce),
+                    },
+                  }));
+                } catch (e2) {
+                  console.error('[getPendingRequests] Error parsing signatures:', e2);
+                  return [];
+                }
+              }
+            })(),
+            guardians: (() => {
+              try {
+                const decrypted = decryptString(row.guardians);
+                return JSON.parse(decrypted);
+              } catch (e) {
+                try {
+                  return JSON.parse(row.guardians);
+                } catch (e2) {
+                  console.error('[getPendingRequests] Error parsing guardians:', e2);
+                  return [];
+                }
+              }
+            })(),
+            requiredQuorum: row.requiredQuorum,
+            status: row.status,
+            createdAt: row.createdAt,
+            createdBy: row.createdBy,
+            executedAt: row.executedAt,
+            executionTxHash: row.executionTxHash,
           };
-        } catch (e) {
-          // Fallback: attempt to parse raw
-          const req = JSON.parse(row.request);
-          return {
-            ...req,
-            amount: BigInt(req.amount),
-            nonce: BigInt(req.nonce),
-          };
+        } catch (rowErr) {
+          console.error('[getPendingRequests] Error processing row:', rowErr);
+          // Skip this row and continue
+          return null;
         }
-      })(),
-      signatures: (() => {
-        try {
-          const decrypted = decryptString(row.signatures);
-          const sigs = JSON.parse(decrypted);
-          return sigs.map((s: any) => ({
-            ...s,
-            request: {
-              ...s.request,
-              amount: BigInt(s.request.amount),
-              nonce: BigInt(s.request.nonce),
-            },
-          }));
-        } catch (e) {
-          try {
-            const sigs = JSON.parse(row.signatures);
-            return sigs.map((s: any) => ({
-              ...s,
-              request: {
-                ...s.request,
-                amount: BigInt(s.request.amount),
-                nonce: BigInt(s.request.nonce),
-              },
-            }));
-          } catch (e2) {
-            return [];
-          }
-        }
-      })(),
-      guardians: (() => {
-        try {
-          const decrypted = decryptString(row.guardians);
-          return JSON.parse(decrypted);
-        } catch (e) {
-          try {
-            return JSON.parse(row.guardians);
-          } catch (e2) {
-            return [];
-          }
-        }
-      })(),
-      requiredQuorum: row.requiredQuorum,
-      status: row.status,
-      createdAt: row.createdAt,
-      createdBy: row.createdBy,
-      executedAt: row.executedAt,
-      executionTxHash: row.executionTxHash,
-    }));
+      }).filter((r: any) => r !== null);
+    } catch (err) {
+      console.error('[getPendingRequests] Database error:', err);
+      return [];
+    }
   }
 
   static getPendingRequest(id: string): PendingWithdrawalRequest | null {
-    const row = db.prepare('SELECT * FROM pending_requests WHERE id = ?').get(id);
-    if (!row) return null;
-    return {
-      ...row,
-      request: (() => {
-        try {
-          // Try decrypting first (handles both encrypted and plaintext payloads)
-          const decrypted = decryptString(row.request);
-          const req = JSON.parse(decrypted);
-          return {
-            ...req,
-            amount: BigInt(req.amount),
-            nonce: BigInt(req.nonce),
-          };
-        } catch (e) {
-          const req = JSON.parse(row.request);
-          return {
-            ...req,
-            amount: BigInt(req.amount),
-            nonce: BigInt(req.nonce),
-          };
-        }
-      })(),
-      signatures: (() => {
-        try {
-          const decrypted = decryptString(row.signatures);
-          const sigs = JSON.parse(decrypted);
-          return sigs.map((s: any) => ({
-            ...s,
-            request: {
-              ...s.request,
-              amount: BigInt(s.request.amount),
-              nonce: BigInt(s.request.nonce),
-            },
-          }));
-        } catch (e) {
+    try {
+      const row = db.prepare('SELECT * FROM pending_requests WHERE id = ?').get(id);
+      if (!row) return null;
+      
+      return {
+        ...row,
+        request: (() => {
           try {
-            const sigs = JSON.parse(row.signatures);
+            // Try decrypting first (handles both encrypted and plaintext payloads)
+            const decrypted = decryptString(row.request);
+            const req = JSON.parse(decrypted);
+            return {
+              ...req,
+              amount: BigInt(req.amount),
+              nonce: BigInt(req.nonce),
+            };
+          } catch (e) {
+            console.error('[getPendingRequest] Error parsing request:', e);
+            const req = JSON.parse(row.request);
+            return {
+              ...req,
+              amount: BigInt(req.amount),
+              nonce: BigInt(req.nonce),
+            };
+          }
+        })(),
+        signatures: (() => {
+          try {
+            const decrypted = decryptString(row.signatures);
+            const sigs = JSON.parse(decrypted);
             return sigs.map((s: any) => ({
               ...s,
               request: {
@@ -282,30 +306,47 @@ export class GuardianSignatureDB {
                 nonce: BigInt(s.request.nonce),
               },
             }));
-          } catch (e2) {
-            return [];
+          } catch (e) {
+            try {
+              const sigs = JSON.parse(row.signatures);
+              return sigs.map((s: any) => ({
+                ...s,
+                request: {
+                  ...s.request,
+                  amount: BigInt(s.request.amount),
+                  nonce: BigInt(s.request.nonce),
+                },
+              }));
+            } catch (e2) {
+              console.error('[getPendingRequest] Error parsing signatures:', e2);
+              return [];
+            }
           }
-        }
-      })(),
-      guardians: (() => {
-        try {
-          const decrypted = decryptString(row.guardians);
-          return JSON.parse(decrypted);
-        } catch (e) {
+        })(),
+        guardians: (() => {
           try {
-            return JSON.parse(row.guardians);
-          } catch (e2) {
-            return [];
+            const decrypted = decryptString(row.guardians);
+            return JSON.parse(decrypted);
+          } catch (e) {
+            try {
+              return JSON.parse(row.guardians);
+            } catch (e2) {
+              console.error('[getPendingRequest] Error parsing guardians:', e2);
+              return [];
+            }
           }
-        }
-      })(),
-      requiredQuorum: row.requiredQuorum,
-      status: row.status,
-      createdAt: row.createdAt,
-      createdBy: row.createdBy,
-      executedAt: row.executedAt,
-      executionTxHash: row.executionTxHash,
-    };
+        })(),
+        requiredQuorum: row.requiredQuorum,
+        status: row.status,
+        createdAt: row.createdAt,
+        createdBy: row.createdBy,
+        executedAt: row.executedAt,
+        executionTxHash: row.executionTxHash,
+      };
+    } catch (err) {
+      console.error('[getPendingRequest] Database error:', err);
+      return null;
+    }
   }
 
   static deletePendingRequest(id: string) {

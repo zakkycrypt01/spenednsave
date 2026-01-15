@@ -12,4 +12,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   // For now, just log and return success
   console.log("Support request:", { name, email, message });
   return res.status(200).json({ success: true });
-  // Removed legacy Pages Router API route for contact-support

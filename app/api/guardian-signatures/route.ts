@@ -17,10 +17,13 @@ function serializeResponse(obj: any): any {
 
 export async function GET() {
   try {
+    console.log('[API] GET /api/guardian-signatures - fetching pending requests');
     const all = GuardianSignatureDB.getPendingRequests();
+    console.log(`[API] Found ${all.length} pending requests`);
     return NextResponse.json(serializeResponse(all));
   } catch (err) {
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error('[API] GET /api/guardian-signatures error:', err);
+    return NextResponse.json({ error: String(err), message: 'Failed to fetch pending requests' }, { status: 500 });
   }
 }
 

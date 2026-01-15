@@ -565,6 +565,7 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
     const [serverActivities, setServerActivities] = useState<any[] | null>(null);
     const [serverLoading, setServerLoading] = useState(false);
     const [migrated, setMigrated] = useState(false);
+    const [shouldLoadOnChain, setShouldLoadOnChain] = useState(true);
     
     // Force loading state to false after 10 seconds
     useEffect(() => {
@@ -576,12 +577,15 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
         return () => clearTimeout(timeout);
     }, []);
     
-    const isLoading = ((depositsLoading || withdrawalsLoading || guardiansLoading) && !loadingTimeout) || serverLoading;
+    const isLoading = ((shouldLoadOnChain && (depositsLoading || withdrawalsLoading || guardiansLoading) && !loadingTimeout) || serverLoading);
 
     const refetch = () => {
         refetchDeposits();
         refetchWithdrawals();
-        if (vaultAddress) fetchServerActivities();
+        if (vaultAddress) {
+            setShouldLoadOnChain(true);
+            fetchServerActivities();
+        }
     };
 
     async function fetchServerActivities() {
@@ -590,11 +594,14 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
         try {
             const res = await fetch(`/api/activities?account=${encodeURIComponent(String(vaultAddress))}`);
             if (!res.ok) {
+                console.log('[useVaultActivity] DB query returned error, will load from RPC');
                 setServerActivities([]);
+                setShouldLoadOnChain(true);
                 return;
             }
             const items = await res.json();
             if (Array.isArray(items) && items.length > 0) {
+                console.log('[useVaultActivity] Found activities in DB, using those instead of RPC');
                 const mapped = items.map((it: any) => ({
                     type: it.type,
                     timestamp: it.timestamp,
@@ -602,12 +609,16 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
                     data: it.details ?? {},
                 }));
                 setServerActivities(mapped.slice(0, limit));
+                setShouldLoadOnChain(false); // Don't load from RPC since we have DB data
             } else {
+                console.log('[useVaultActivity] DB is empty, will load from RPC');
                 setServerActivities([]);
+                setShouldLoadOnChain(true); // Load from RPC since DB is empty
             }
         } catch (e) {
             console.error('Failed to fetch server activities:', e);
             setServerActivities([]);
+            setShouldLoadOnChain(true); // Load from RPC if fetch fails
         } finally {
             setServerLoading(false);
         }
@@ -615,19 +626,26 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
 
     useEffect(() => {
         console.log('[useVaultActivity] Combining activities...');
+        console.log('[useVaultActivity] shouldLoadOnChain:', shouldLoadOnChain);
         console.log('[useVaultActivity] deposits:', deposits.length, deposits);
         console.log('[useVaultActivity] withdrawals:', withdrawals.length, withdrawals);
         console.log('[useVaultActivity] guardians:', guardians.length, guardians);
         
-        // If we have server activities for this vault, prefer them
-        if (serverActivities !== null) {
-            if (serverActivities.length > 0) {
-                setActivities(serverActivities.slice(0, limit));
-                return;
-            }
-            // if serverActivities is empty array, fall back to on-chain
+        // If we have server activities, always prefer them and don't load from RPC
+        if (serverActivities !== null && serverActivities.length > 0) {
+            console.log('[useVaultActivity] Using activities from DB:', serverActivities.length);
+            setActivities(serverActivities.slice(0, limit));
+            return;
         }
 
+        // If DB is empty or not fetched yet, load from RPC
+        if (!shouldLoadOnChain) {
+            console.log('[useVaultActivity] DB is empty and should not load from RPC');
+            setActivities([]);
+            return;
+        }
+
+        console.log('[useVaultActivity] Loading activities from RPC');
         const allActivities = [
             ...deposits.map(d => ({ type: 'deposit' as const, timestamp: d.timestamp, blockNumber: d.blockNumber, data: d })),
             ...withdrawals.map(w => ({ type: 'withdrawal' as const, timestamp: w.timestamp, blockNumber: w.blockNumber, data: w })),
@@ -667,6 +685,7 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
                     }));
 
                     if (payload.length > 0) {
+                        console.log('[useVaultActivity] Auto-migrating activities to DB:', payload.length);
                         const resp = await fetch('/api/activities/import', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -685,7 +704,7 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
                 console.error('Auto-migration failed:', e);
             }
         })();
-    }, [deposits, withdrawals, guardians, limit, serverActivities]);
+    }, [deposits, withdrawals, guardians, limit, serverActivities, shouldLoadOnChain]);
 
     // Fetch server activities on vault change
     useEffect(() => {

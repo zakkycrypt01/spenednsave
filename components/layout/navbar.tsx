@@ -88,26 +88,6 @@ export function Navbar() {
                             }}
                             aria-label="Connect wallet"
                         />
-                        <button
-                            className={
-                                "px-3 py-1 rounded-full border text-xs font-semibold transition-colors " +
-                                (simulationEnabled
-                                    ? "bg-green-100 border-green-400 text-green-700 hover:bg-green-200"
-                                    : "bg-gray-100 border-gray-300 text-gray-600 hover:bg-gray-200")
-                            }
-                            onClick={() => {
-                                if (simulationEnabled) {
-                                    resetSimulation();
-                                } else {
-                                    setSimulationEnabled(true);
-                                }
-                            }}
-                            title="Toggle Simulation Mode"
-                            aria-pressed={simulationEnabled}
-                            aria-label="Toggle simulation mode"
-                        >
-                            {simulationEnabled ? "Simulation: ON" : "Simulation: OFF"}
-                        </button>
                         <ThemeToggle />
                         <button className="md:hidden text-slate-900 dark:text-white p-2 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-shadow" aria-label="Open menu" tabIndex={0}>
                             <span className="material-symbols-outlined" aria-hidden="true">menu</span>

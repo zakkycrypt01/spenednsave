@@ -108,52 +108,6 @@ export function DashboardSaverView() {
     const formattedEthBalance = parseFloat(ethBalance).toFixed(4);
     const totalGuardians = guardians.length;
 
-    // Vault transfer state
-    const [showTransferModal, setShowTransferModal] = useState(false);
-    const [transferAddress, setTransferAddress] = useState("");
-    type TransferRequest = {
-        id: number;
-        newOwner: string;
-        approvals: string[];
-        executed: boolean;
-    };
-    const [transferRequests, setTransferRequests] = useState<TransferRequest[]>([]);
-    // Fetch transfer requests (mocked, replace with actual contract call)
-    useEffect(() => {
-        // TODO: Replace with actual fetch from contract/backend
-        setTransferRequests([]);
-    }, [vaultAddress]);
-
-    // Handler to request transfer
-    const handleRequestTransfer = async () => {
-        if (!transferAddress) return alert("Enter new owner address");
-        try {
-            const res = await fetch("/api/vault-transfer", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ newOwner: transferAddress }),
-            });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.message || "Failed");
-            alert("Transfer request submitted!");
-            setShowTransferModal(false);
-        } catch (err) {
-            alert(err instanceof Error ? err.message : "Failed to request transfer");
-        }
-    };
-
-    // Handler to execute transfer (owner only)
-    const handleExecuteTransfer = async (id: number) => {
-        try {
-            const res = await fetch(`/api/vault-transfer/${id}/execute`, { method: "POST" });
-            const data = await res.json();
-            if (!data.success) throw new Error(data.message || "Failed");
-            alert("Vault ownership transferred!");
-        } catch (err) {
-            alert(err instanceof Error ? err.message : "Failed to execute transfer");
-        }
-    };
-
     return (
         <div className="w-full flex flex-col gap-8">
             {/* Top Cards */}

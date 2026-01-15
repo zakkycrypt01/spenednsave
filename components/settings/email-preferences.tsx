@@ -49,27 +49,6 @@ export function EmailPreferences({ initialEmail = "", initialOptIn = false, onSa
   const [testSent, setTestSent] = useState(false);
   const [testError, setTestError] = useState("");
 
-  async function handleTestEmail() {
-    setTesting(true);
-    setTestError("");
-    setTestSent(false);
-    try {
-      const res = await fetch("/api/notifications/test-email", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ to: email })
-      });
-      if (!res.ok) {
-        const data = await res.json();
-        setTestError(data.error || "Failed to send test email.");
-      } else {
-        setTestSent(true);
-      }
-    } catch {
-      setTestError("Failed to send test email.");
-    }
-    setTesting(false);
-  }
 
   return (
     <div className="max-w-md mx-auto p-4 border rounded-lg bg-white dark:bg-slate-900 shadow">
@@ -109,18 +88,9 @@ export function EmailPreferences({ initialEmail = "", initialOptIn = false, onSa
         >
           {resending ? "Resending..." : "Resend verification email"}
         </button>
-        <button
-          className="px-4 py-2 bg-green-600 text-white rounded disabled:opacity-60"
-          onClick={handleTestEmail}
-          disabled={testing || !email}
-        >
-          {testing ? "Sending..." : "Test Email"}
-        </button>
       </div>
       {saved && <div className="mt-2 text-green-600">Preferences saved!</div>}
       {resent && <div className="mt-2 text-green-600">Verification email resent!</div>}
-      {testSent && <div className="mt-2 text-green-600">Test email sent!</div>}
-      {testError && <div className="mt-2 text-red-600">{testError}</div>}
     </div>
   );
 }

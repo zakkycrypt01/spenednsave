@@ -51,14 +51,17 @@ export function useGuardians(guardianTokenAddress?: Address) {
         if (!guardianTokenAddress) return;
         setServerLoading(true);
         try {
+            console.log('[useGuardians] Fetching from DB for tokenAddress:', guardianTokenAddress);
             const res = await fetch(`/api/guardians?tokenAddress=${encodeURIComponent(String(guardianTokenAddress))}`);
             if (!res.ok) {
-                console.log('[useGuardians] DB query returned error, will load from RPC');
+                console.log('[useGuardians] DB query returned error:', res.status, 'will load from RPC');
                 setServerGuardians([]);
                 setShouldLoadOnChain(true);
                 return;
             }
             const items = await res.json();
+            console.log('[useGuardians] DB returned:', items?.length, 'guardians');
+            
             if (Array.isArray(items) && items.length > 0) {
                 console.log('[useGuardians] Found guardians in DB, using those instead of RPC');
                 const mapped = items.map((g: any) => ({
@@ -69,14 +72,16 @@ export function useGuardians(guardianTokenAddress?: Address) {
                     txHash: g.txHash,
                 }));
                 setServerGuardians(mapped);
+                setGuardians(mapped); // Set guardians immediately from DB
                 setShouldLoadOnChain(false); // Don't load from RPC since we have DB data
+                setIsLoading(false);
             } else {
                 console.log('[useGuardians] DB is empty, will load from RPC');
                 setServerGuardians([]);
                 setShouldLoadOnChain(true); // Load from RPC since DB is empty
             }
         } catch (e) {
-            console.error('Failed to fetch server guardians:', e);
+            console.error('[useGuardians] Failed to fetch server guardians:', e);
             setServerGuardians([]);
             setShouldLoadOnChain(true); // Load from RPC if fetch fails
         } finally {

@@ -1,4 +1,5 @@
 import { EmailPreferences } from '@/components/settings/email-preferences';
+import { DevResetVaultButton } from '@/components/dev-reset-vault-button';
 
 export default function SettingsPage() {
   // TODO: Load user's current email and opt-in status from backend
@@ -28,6 +29,7 @@ export default function SettingsPage() {
         >
           Remove Email
         </button>
+        <DevResetVaultButton />
       </div>
     </main>
   );

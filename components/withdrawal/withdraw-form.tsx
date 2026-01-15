@@ -27,7 +27,7 @@ export function WithdrawalForm() {
     const { data: userContracts } = useUserContracts(address as any);
     const guardianTokenAddress = userContracts ? (userContracts as any)[0] : undefined;
     const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
-    const { guardians } = useGuardians(guardianTokenAddress);
+    const { guardians } = useGuardians(guardianTokenAddress || ('0x0000000000000000000000000000000000000000' as Address));
     const guardianCount = guardians ? guardians.length : 0;
     const { data: vaultBalance } = useVaultETHBalance(vaultAddress);
     const { data: quorum } = useVaultQuorum(vaultAddress);

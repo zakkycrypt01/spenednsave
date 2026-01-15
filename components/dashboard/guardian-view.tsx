@@ -115,9 +115,10 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
     // Real contract/backend data should be loaded here
     // Scheduled withdrawals integration
     // Use fake scheduled withdrawals in demo mode, but always call the hook
+    // To avoid impure function in render, capture now in a ref on first mount
+    const [demoNow] = useState(() => Date.now());
     const demoScheduled: ScheduledWithdrawal[] = useMemo(() => {
         if (!demo) return [];
-        const now = Date.now();
         return [
             {
                 id: 1,
@@ -125,7 +126,7 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
                 approvals: ["0xFriend1"],
                 saverName: "Demo User",
                 saverAddress: "0xDemoUser1234...",
-                timestamp: new Date(now).toISOString(),
+                timestamp: new Date(demoNow).toISOString(),
                 amount: "0.25 ETH",
                 amountUSD: "$500",
                 reason: "Demo withdrawal",
@@ -139,7 +140,7 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
                 approvals: ["0xFriend1", "0xFriend2"],
                 saverName: "Demo User",
                 saverAddress: "0xDemoUser1234...",
-                timestamp: new Date(now - 3600 * 1000 * 5).toISOString(),
+                timestamp: new Date(demoNow - 3600 * 1000 * 5).toISOString(),
                 amount: "1.00 ETH",
                 amountUSD: "$2000",
                 reason: "Demo completed withdrawal",
@@ -149,7 +150,7 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
                 txHash: "0xDEMOFAKEHASH1234567890",
             },
         ];
-    }, [demo]);
+    }, [demo, demoNow]);
     const scheduled = demo ? demoScheduled : scheduledHook.scheduled;
     const loading = demo ? false : scheduledHook.loading;
     const error = demo ? null : scheduledHook.error;

@@ -29,16 +29,10 @@ export async function GET(request: Request, context: any) {
 export async function PUT(request: Request, context: any) {
   try {
     const { id } = context?.params ?? {};
-    console.log('[PUT /api/guardian-signatures/:id] Updating request:', id);
+    console.log('[PUT] Updating request:', id);
     
-    let body;
-    try {
-      body = await request.json();
-      console.log('[PUT] Request body:', JSON.stringify(body, null, 2));
-    } catch (parseErr) {
-      console.error('[PUT] Failed to parse JSON:', parseErr);
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
-    }
+    const body = await request.json();
+    console.log('[PUT] Request body keys:', Object.keys(body));
     
     const existing = await GuardianSignatureDB.getPendingRequest(id);
     if (!existing) {
@@ -46,46 +40,22 @@ export async function PUT(request: Request, context: any) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    // Merge existing with provided body
     const updated = {
       ...existing,
       ...body,
-      // ensure request and signatures remain JSON-compatible
       request: body.request ?? existing.request,
       signatures: body.signatures ?? existing.signatures,
     };
     
-    console.log('[PUT] Updated signatures count:', Array.isArray(updated.signatures) ? updated.signatures.length : 0);
-
+    console.log('[PUT] Saving updated request');
     await GuardianSignatureDB.savePendingRequest(updated);
-    console.log('[PUT] Saved successfully');
     
     const saved = await GuardianSignatureDB.getPendingRequest(id);
-    console.log('[PUT] Retrieved saved request:', saved?.id);
-      // Determine event type
-      let event: import('@/lib/services/email-notifications').EmailEventType | undefined;
-      if (updated.status === 'approved') event = 'withdrawal-approved';
-      else if (updated.status === 'rejected') event = 'withdrawal-rejected';
-      else if (updated.status === 'executed') event = 'withdrawal-executed';
-      else if (updated.status === 'emergency') event = 'emergency-unlock-requested';
-      if (event) {
-        const involvedAddresses = [updated.createdBy, ...(updated.guardians || [])];
-        await notifyUsersOnWithdrawalEvent({
-          event,
-          vaultAddress: updated.vaultAddress,
-          amount: updated.request?.amount?.toString?.() || '',
-          reason: updated.request?.reason,
-          involvedAddresses,
-          extraData: { vaultName: updated.vaultName }
-        });
-      }
-    } catch (e) {
-      console.error('Email notification error:', e);
-    }
-
+    console.log('[PUT] Saved successfully');
+    
     return NextResponse.json(serializeResponse(saved));
   } catch (err) {
-    console.error('[PUT /api/guardian-signatures/:id] Error:', err);
+    console.error('[PUT] Error:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

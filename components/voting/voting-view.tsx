@@ -125,6 +125,11 @@ export function VotingView() {
         fetchPendingRequests();
     }, [address]);
 
+    // Get the selected request or the first one
+    const selectedRequest = selectedRequestId 
+        ? pendingRequests.find(r => r.id === selectedRequestId)
+        : pendingRequests.length > 0 ? pendingRequests[0] : null;
+
     useEffect(() => {
         if (isSignSuccess && signature && pendingRequests.length > 0 && selectedRequest) {
             // Save guardian signature to database
@@ -387,14 +392,6 @@ export function VotingView() {
             </div>
         )
     }
-
-    // Get the selected request or the first one
-    const selectedRequest = selectedRequestId 
-        ? pendingRequests.find(r => r.id === selectedRequestId)
-        : pendingRequests.length > 0 ? pendingRequests[0] : null;
-
-    // Run risk assessment when selectedRequest or vaultBalance changes
-    // ...existing code...
 
     // Render pending requests list and detail view
     if (status === 'pending' && pendingRequests.length > 0) {

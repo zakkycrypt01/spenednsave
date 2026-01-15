@@ -335,7 +335,7 @@ export function WithdrawalForm() {
                                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-border/20 rounded-lg border border-gray-200 dark:border-surface-border/50">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate">
-                                                {guardian}
+                                                {typeof guardian === 'string' ? guardian : guardian?.address || 'Unknown'}
                                             </p>
                                         </div>
                                         <div className="text-xs text-slate-400 whitespace-nowrap">Pending</div>

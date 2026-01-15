@@ -174,6 +174,20 @@ export function WithdrawalForm() {
         // Create the pending withdrawal request in the database
         try {
             const timestamp = Date.now();
+            
+            // Get guardians list - ensure it's loaded
+            let guardiansList = guardians || [];
+            if (guardiansLoading || guardiansList.length === 0) {
+                console.warn('[WithdrawalForm] Guardians still loading or empty, attempting to fetch from contract');
+                // Wait a moment for guardians to load
+                if (guardiansLoading) {
+                    alert('Guardians are still loading. Please wait a moment and try again.');
+                    return;
+                }
+            }
+            
+            console.log('[WithdrawalForm] Creating withdrawal with guardians:', guardiansList);
+            
             // Ensure nonce is converted to string for the ID
             const nonceStr = typeof currentNonce === 'bigint' ? currentNonce.toString() : String(currentNonce);
             const newRequestId = `${vaultAddress}-${nonceStr}-${timestamp}`;
@@ -187,6 +201,15 @@ export function WithdrawalForm() {
                 reason: withdrawalRequest.reason,
             };
             
+            // Extract guardian addresses - handle both string and object formats
+            const guardianAddresses = guardiansList.map((g: any) => {
+                if (typeof g === 'string') return g;
+                if (g?.address) return g.address;
+                return '';
+            }).filter((addr: string) => addr && addr !== '0x0000000000000000000000000000000000000000');
+            
+            console.log('[WithdrawalForm] Guardian addresses to store:', guardianAddresses);
+            
             // Create the pending request with all current guardians
             const pendingRequest = {
                 id: newRequestId,
@@ -197,8 +220,10 @@ export function WithdrawalForm() {
                 createdAt: timestamp,
                 createdBy: address,
                 status: 'awaiting-signature', // Initial status - waiting for owner's signature
-                guardians: guardians?.map((g: any) => typeof g === 'string' ? g : g?.address) || [],
+                guardians: guardianAddresses,
             };
+            
+            console.log('[WithdrawalForm] Pending request to save:', pendingRequest);
             
             const createRes = await fetch('/api/guardian-signatures', {
                 method: 'POST',
@@ -213,6 +238,8 @@ export function WithdrawalForm() {
             }
             
             const createdRequest = await createRes.json();
+            console.log('[WithdrawalForm] Request created in database:', createdRequest);
+            
             setRequestId(createdRequest.id);
             
             // Set the guardians from the created request or use the guardians from state

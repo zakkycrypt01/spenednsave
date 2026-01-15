@@ -158,7 +158,10 @@ export class GuardianSignatureDB {
       // Encrypt blobs before storing
       const encRequest = encryptString(JSON.stringify(serializableRequest));
       const encSignatures = encryptString(JSON.stringify(serializableSignatures));
-      const encGuardians = encryptString(JSON.stringify((request as any).guardians || []));
+      const guardiansArray = Array.isArray((request as any).guardians) ? (request as any).guardians : [];
+      const encGuardians = encryptString(JSON.stringify(guardiansArray));
+
+      console.log('[GuardianSignatureDB] Saving guardians:', guardiansArray);
 
       await collection.updateOne(
         { id: request.id },
@@ -180,6 +183,8 @@ export class GuardianSignatureDB {
         },
         { upsert: true }
       );
+      
+      console.log('[GuardianSignatureDB] Request saved successfully with ID:', request.id);
     } catch (err) {
       console.error('[GuardianSignatureDB] Error saving pending request:', err);
       throw err;
@@ -247,12 +252,17 @@ export class GuardianSignatureDB {
             guardians: (() => {
               try {
                 const decrypted = decryptString(row.guardians);
-                return JSON.parse(decrypted);
+                const parsed = JSON.parse(decrypted);
+                console.log('[getPendingRequests] Decrypted guardians for', row.id, ':', parsed);
+                return parsed;
               } catch (e) {
                 try {
-                  return JSON.parse(row.guardians);
+                  const parsed = JSON.parse(row.guardians);
+                  console.log('[getPendingRequests] Guardians (unencrypted) for', row.id, ':', parsed);
+                  return parsed;
                 } catch (e2) {
-                  console.error('[getPendingRequests] Error parsing guardians:', e2);
+                  console.error('[getPendingRequests] Error parsing guardians for', row.id, ':', e2);
+                  console.warn('[getPendingRequests] Raw guardians value:', row.guardians);
                   return [];
                 }
               }

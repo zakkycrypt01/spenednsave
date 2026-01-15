@@ -43,6 +43,8 @@ export function VotingView() {
 
         const fetchPendingRequests = async () => {
             try {
+                console.log('[VotingView] Fetching pending requests for vault:', vaultAddress);
+                
                 // Fetch all pending requests for this vault from the database
                 const res = await fetch(`/api/guardian-signatures?vaultAddress=${vaultAddress}`, {
                     method: 'GET',
@@ -50,28 +52,71 @@ export function VotingView() {
                 });
 
                 if (!res.ok) {
-                    console.error('Failed to fetch pending requests');
+                    const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+                    console.error('Failed to fetch pending requests:', errorData);
                     setStatus('empty');
                     return;
                 }
 
                 const allRequests = await res.json();
+                console.log('[VotingView] Received requests:', allRequests.length);
                 
                 // Filter to pending-approval status and check if guardian address matches user wallet
                 const pending = allRequests.filter((req: any) => {
                     // Only show pending-approval requests
-                    if (req.status !== 'pending-approval') return false;
+                    if (req.status !== 'pending-approval') {
+                        console.log('[VotingView] Filtering out request with status:', req.status);
+                        return false;
+                    }
                     
                     // Verify the user's wallet address is in the guardians list for this request
-                    const guardians = req.guardians || [];
-                    const isAddressInGuardians = guardians.some((g: string) => g.toLowerCase() === address.toLowerCase());
+                    // Handle both array and encrypted string formats
+                    let guardians: string[] = [];
+                    if (Array.isArray(req.guardians)) {
+                        guardians = req.guardians;
+                    } else if (typeof req.guardians === 'string') {
+                        try {
+                            guardians = JSON.parse(req.guardians);
+                        } catch (e) {
+                            guardians = [];
+                        }
+                    }
                     
-                    if (!isAddressInGuardians) return false;
+                    console.log('[VotingView] Request guardians:', guardians, 'User address:', address);
                     
-                    const signatures = req.signatures || [];
+                    const isAddressInGuardians = guardians.some((g: string) => {
+                        const normalizedG = typeof g === 'string' ? g : g?.address || '';
+                        return normalizedG.toLowerCase() === address?.toLowerCase();
+                    });
+                    
+                    if (!isAddressInGuardians) {
+                        console.log('[VotingView] User not in guardians list for this request');
+                        return false;
+                    }
+                    
+                    // Handle both array and encrypted string formats for signatures
+                    let signatures: any[] = [];
+                    if (Array.isArray(req.signatures)) {
+                        signatures = req.signatures;
+                    } else if (typeof req.signatures === 'string') {
+                        try {
+                            signatures = JSON.parse(req.signatures);
+                        } catch (e) {
+                            signatures = [];
+                        }
+                    }
+                    
                     // Filter out already signed requests by this guardian
-                    return !signatures.some((sig: any) => sig.signer === address && sig.role === 'guardian');
+                    const alreadySigned = signatures.some((sig: any) => sig.signer === address && sig.role === 'guardian');
+                    if (alreadySigned) {
+                        console.log('[VotingView] Guardian already signed this request');
+                        return false;
+                    }
+                    
+                    return true;
                 });
+                
+                console.log('[VotingView] Pending requests after filtering:', pending.length);
                 
                 if (pending.length > 0) {
                     setPendingRequests(pending);

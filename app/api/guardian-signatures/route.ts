@@ -15,12 +15,25 @@ function serializeResponse(obj: any): any {
   return obj;
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('[API] GET /api/guardian-signatures - fetching pending requests');
+    // Extract vaultAddress from query parameters
+    const { searchParams } = new URL(request.url);
+    const vaultAddress = searchParams.get('vaultAddress');
+    
+    console.log('[API] GET /api/guardian-signatures - fetching pending requests', vaultAddress ? `for vault: ${vaultAddress}` : '');
+    
     const all = await GuardianSignatureDB.getPendingRequests();
-    console.log(`[API] Found ${all.length} pending requests`);
-    return NextResponse.json(serializeResponse(all));
+    console.log(`[API] Found ${all.length} total pending requests`);
+    
+    // Filter by vaultAddress if provided
+    let filtered = all;
+    if (vaultAddress) {
+      filtered = all.filter((req: any) => req.vaultAddress?.toLowerCase() === vaultAddress.toLowerCase());
+      console.log(`[API] Filtered to ${filtered.length} requests for vault ${vaultAddress}`);
+    }
+    
+    return NextResponse.json(serializeResponse(filtered));
   } catch (err) {
     console.error('[API] GET /api/guardian-signatures error:', err);
     return NextResponse.json({ error: String(err), message: 'Failed to fetch pending requests' }, { status: 500 });
@@ -30,6 +43,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log('[API] POST /api/guardian-signatures - incoming request with guardians:', body.guardians);
+    
     if (!body || !body.id) {
       return NextResponse.json({ error: 'Invalid body - missing id' }, { status: 400 });
     }
@@ -50,8 +65,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid body - missing createdBy' }, { status: 400 });
     }
 
+    console.log('[API] Saving pending request:', body.id);
     await GuardianSignatureDB.savePendingRequest(body);
+    
     const saved = await GuardianSignatureDB.getPendingRequest(body.id);
+    console.log('[API] Saved request guardians:', saved?.guardians);
 
     // Email notification integration
     try {
@@ -59,6 +77,8 @@ export async function POST(request: Request) {
       const { notifyUsersOnWithdrawalEvent } = await import('@/lib/services/email-notification-trigger');
       // Notify all guardians and the owner if they have opted in
       const involvedAddresses = [saved!.createdBy, ...(saved!.guardians || [])];
+      console.log('[API] Notifying involved addresses:', involvedAddresses);
+      
       await notifyUsersOnWithdrawalEvent({
         event: 'withdrawal-requested',
         vaultAddress: saved!.vaultAddress,

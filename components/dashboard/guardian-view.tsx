@@ -201,7 +201,36 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
             {/* Guardian Approval History */}
             {reputation?.history?.length > 0 && (
                 <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Approval History</h2>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Approval History</h2>
+                        <button
+                            className="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                            onClick={() => {
+                                if (!reputation?.history?.length) return;
+                                const headers = ['Recipient','Reason','Amount','Timestamp'];
+                                const rows = reputation.history.map(item => [
+                                    item.recipient,
+                                    item.reason,
+                                    item.amount,
+                                    item.timestamp ? new Date(item.timestamp).toISOString() : ''
+                                ]);
+                                const csv = [headers, ...rows].map(r => r.map(field => `"${String(field).replace(/"/g, '""')}"`).join(',')).join('\n');
+                                const blob = new Blob([csv], { type: 'text/csv' });
+                                const url = URL.createObjectURL(blob);
+                                const a = document.createElement('a');
+                                a.href = url;
+                                a.download = 'activity-log.csv';
+                                document.body.appendChild(a);
+                                a.click();
+                                setTimeout(() => {
+                                    document.body.removeChild(a);
+                                    URL.revokeObjectURL(url);
+                                }, 100);
+                            }}
+                        >
+                            Download Activity Log (CSV)
+                        </button>
+                    </div>
                     <div className="space-y-3">
                         {reputation.history.map((item, idx) => (
                             <div key={idx} className="bg-white dark:bg-surface-dark border border-surface-border rounded-xl p-4 flex items-center justify-between">

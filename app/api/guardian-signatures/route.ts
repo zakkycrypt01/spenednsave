@@ -77,6 +77,26 @@ export async function POST(request: Request) {
     console.log('[API] Retrieved request from DB:', saved?.id);
     console.log('[API] Guardians in saved request:', saved?.guardians);
 
+    // Also save guardians to the guardians collection so they can be retrieved globally
+    if (body.guardians && Array.isArray(body.guardians) && body.guardians.length > 0) {
+      console.log('[API] Saving guardians to guardians collection...');
+      for (const guardianAddress of body.guardians) {
+        try {
+          await GuardianSignatureDB.saveGuardian({
+            address: guardianAddress,
+            tokenId: '0', // Default tokenId since we may not have it from withdrawal request
+            addedAt: Date.now(),
+            blockNumber: '0', // Default blockNumber
+            txHash: '0x0', // Default txHash
+            tokenAddress: (body as any).guardianTokenAddress || body.vaultAddress,
+          });
+          console.log('[API] Saved guardian:', guardianAddress);
+        } catch (e) {
+          console.error('[API] Error saving guardian:', guardianAddress, e);
+        }
+      }
+    }
+
     // Email notification integration
     try {
       // Import here to avoid circular/server issues

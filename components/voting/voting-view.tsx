@@ -35,17 +35,6 @@ export function VotingView() {
             return;
         }
 
-        // Check contract first, but fallback to guardian list
-        console.log('[VotingView] Checking if', address, 'is in guardians list');
-        const isGuardianInList = guardiansList.some(g => g.address.toLowerCase() === address?.toLowerCase());
-        console.log('[VotingView] isGuardian contract check:', isGuardian, 'isGuardianInList:', isGuardianInList);
-        
-        if (!isGuardian && !isGuardianInList) {
-            console.log('[VotingView] User is not authorized as guardian');
-            setStatus('unauthorized');
-            return;
-        }
-
         // Fetch withdrawal requests from database and verify guardian address matches
         if (!vaultAddress || !address) {
             console.log('[VotingView] Missing vaultAddress or address');
@@ -56,6 +45,7 @@ export function VotingView() {
             try {
                 console.log('[VotingView] Starting fetch for vault:', vaultAddress, 'user address:', address);
                 console.log('[VotingView] Available guardians:', guardiansList.map(g => g.address));
+                console.log('[VotingView] isGuardian from contract check:', isGuardian);
                 
                 // Fetch all pending requests for this vault from the database
                 const res = await fetch(`/api/guardian-signatures?vaultAddress=${vaultAddress}`, {

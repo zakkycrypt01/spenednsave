@@ -225,6 +225,7 @@ export function WithdrawalForm() {
             const pendingRequest = {
                 id: newRequestId,
                 vaultAddress,
+                guardianTokenAddress: guardianTokenAddress || undefined,
                 request: serializedRequest,
                 signatures: [],
                 requiredQuorum: Number(quorumValue),

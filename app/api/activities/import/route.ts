@@ -22,7 +22,7 @@ export async function POST(request: Request) {
           relatedRequestId: item.relatedRequestId ?? null,
           timestamp: Number(item.timestamp),
         };
-        GuardianSignatureDB.saveActivity(activity as any);
+        await GuardianSignatureDB.saveActivity(activity as any);
       } catch (e) {
         console.error('Failed to import activity', item?.id, e);
         continue;

@@ -92,6 +92,7 @@ export default function GuardianLeaderboardPage() {
                   <td className="px-4 py-2">
                     {g.lastAction ? new Date(g.lastAction).toLocaleString() : '-'}
                   </td>
+                  <td className="px-4 py-2">
                     <button onClick={() => setExpanded(expanded === g.account ? null : g.account)} className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
                       {expanded === g.account ? <ChevronUp size={18} /> : <ChevronDown size={18} />} Details
                     </button>

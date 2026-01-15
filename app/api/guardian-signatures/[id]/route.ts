@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { GuardianSignatureDB } from '@/lib/services/guardian-signature-db';
 
-// Helper to convert BigInt values to strings for JSON serialization
 function serializeResponse(obj: any): any {
   if (typeof obj === 'bigint') return obj.toString();
   if (Array.isArray(obj)) return obj.map(serializeResponse);
@@ -29,14 +28,10 @@ export async function GET(request: Request, context: any) {
 export async function PUT(request: Request, context: any) {
   try {
     const { id } = context?.params ?? {};
-    console.log('[PUT] Updating request:', id);
-    
     const body = await request.json();
-    console.log('[PUT] Request body keys:', Object.keys(body));
-    
     const existing = await GuardianSignatureDB.getPendingRequest(id);
+
     if (!existing) {
-      console.error('[PUT] Request not found:', id);
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
@@ -46,16 +41,12 @@ export async function PUT(request: Request, context: any) {
       request: body.request ?? existing.request,
       signatures: body.signatures ?? existing.signatures,
     };
-    
-    console.log('[PUT] Saving updated request');
+
     await GuardianSignatureDB.savePendingRequest(updated);
-    
     const saved = await GuardianSignatureDB.getPendingRequest(id);
-    console.log('[PUT] Saved successfully');
-    
     return NextResponse.json(serializeResponse(saved));
   } catch (err) {
-    console.error('[PUT] Error:', err);
+    console.error('PUT Error:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

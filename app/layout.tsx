@@ -10,6 +10,7 @@ import Toaster from "@/components/ui/toaster";
 import "@rainbow-me/rainbowkit/styles.css";
 import maintenanceConfig from "@/lib/maintenanceConfig";
 import { FeatureRequestButton } from "@/components/feature-request-button";
+import { DemoModeBanner } from "@/components/demo-mode-banner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -45,6 +46,7 @@ export default function RootLayout({
                   {maintenanceConfig.message}
                 </div>
               )}
+              <DemoModeBanner />
               {children}
               <FeatureRequestButton />
               <SimulationDemo />

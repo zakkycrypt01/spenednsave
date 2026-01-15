@@ -4,6 +4,7 @@ import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from
 import { AvatarBlockie } from "@/components/ui/avatar-blockie";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
+import { useDemoMode } from "@/lib/hooks/useDemoMode";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
 
 import { Contract } from "ethers";
@@ -33,6 +34,7 @@ interface ScheduledWithdrawal {
 
 function GuardianView({ badgeData }: { badgeData?: any }) {
     const { address } = useAccount();
+    const { demo } = useDemoMode();
 
     interface VaultInfo {
         vaultAddress: string;
@@ -59,6 +61,25 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
     // Replace with actual data fetching logic for reputation and badgeData
 
     useEffect(() => {
+        if (demo) {
+            setVaults([
+                {
+                    vaultAddress: "0xDEMO1234567890abcdef",
+                    vaultName: "Demo Vault",
+                    owner: "0xOwnerDemo1234...",
+                    pendingApprovals: 2,
+                },
+            ]);
+            setReputation({
+                approvals: 5,
+                avgResponseSeconds: 3600,
+                history: [
+                    { recipient: "0xFriend1", reason: "Withdrawal", amount: "0.5 ETH", timestamp: new Date().toISOString() },
+                    { recipient: "0xFriend2", reason: "Emergency Unlock", amount: "1.2 ETH", timestamp: new Date(Date.now() - 86400000).toISOString() },
+                ],
+            });
+            return;
+        }
         async function fetchVaults() {
             if (!address || !GUARDIAN_SBT_ADDRESS) return;
             try {
@@ -80,7 +101,7 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
             }
         }
         fetchVaults();
-    }, [address]);
+    }, [address, demo]);
 
     // EIP-712 signing for gasless guardian approval
     const handleReject = () => {
@@ -90,7 +111,44 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
 
     // Real contract/backend data should be loaded here
     // Scheduled withdrawals integration
-    const { scheduled, loading, error } = useScheduledWithdrawals();
+    // Use fake scheduled withdrawals in demo mode
+    const { scheduled, loading, error } = demo
+        ? {
+            scheduled: [
+                {
+                    id: 1,
+                    executed: false,
+                    approvals: ["0xFriend1"],
+                    saverName: "Demo User",
+                    saverAddress: "0xDemoUser1234...",
+                    timestamp: new Date().toISOString(),
+                    amount: "0.25 ETH",
+                    amountUSD: "$500",
+                    reason: "Demo withdrawal",
+                    requiredSignatures: 2,
+                    currentSignatures: 1,
+                    hasUserSigned: false,
+                },
+                {
+                    id: 2,
+                    executed: true,
+                    approvals: ["0xFriend1", "0xFriend2"],
+                    saverName: "Demo User",
+                    saverAddress: "0xDemoUser1234...",
+                    timestamp: new Date(Date.now() - 3600 * 1000 * 5).toISOString(),
+                    amount: "1.00 ETH",
+                    amountUSD: "$2000",
+                    reason: "Demo completed withdrawal",
+                    requiredSignatures: 2,
+                    currentSignatures: 2,
+                    hasUserSigned: true,
+                    txHash: "0xDEMOFAKEHASH1234567890",
+                },
+            ],
+            loading: false,
+            error: null,
+        }
+        : useScheduledWithdrawals();
     function getErrorMessage(err: unknown): string | undefined {
         if (typeof err === 'string') return err;
         if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as Record<string, unknown>).message === 'string') {

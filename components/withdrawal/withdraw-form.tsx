@@ -23,6 +23,7 @@ export function WithdrawalForm() {
     const [isScheduled, setIsScheduled] = useState(false);
     const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
     const [requestId, setRequestId] = useState<string | null>(null);
+    const [signingGuardians, setSigningGuardians] = useState<string[]>([]);
 
     const { address, isConnected } = useAccount();
     const chainId = useChainId();

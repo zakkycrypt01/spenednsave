@@ -2,7 +2,6 @@
 
 import { EmailPreferences } from '@/components/settings/email-preferences';
 import { VaultTransfer } from '@/components/settings/vault-transfer';
-import { EmergencyContacts } from '@/components/settings/emergency-contacts';
 import { VaultAnalytics } from '@/components/settings/vault-analytics';
 import { useAccount } from 'wagmi';
 
@@ -28,11 +27,6 @@ export default function SettingsPage() {
       {/* Transfer Vault Ownership Section */}
       <section className="mb-8">
         <VaultTransfer />
-      </section>
-
-      {/* Emergency Contacts Section */}
-      <section>
-        <EmergencyContacts />
       </section>
     </main>
   );

@@ -6,11 +6,15 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const tokenAddress = url.searchParams.get('tokenAddress');
 
+    console.log('[/api/guardians] GET request for tokenAddress:', tokenAddress);
+    
     if (!tokenAddress) {
       return NextResponse.json({ error: 'tokenAddress query parameter is required' }, { status: 400 });
     }
 
     const guardians = await GuardianSignatureDB.getGuardiansByTokenAddress(tokenAddress);
+    console.log('[/api/guardians] Retrieved guardians:', guardians?.length, 'guardians');
+    
     return NextResponse.json(guardians);
   } catch (err) {
     console.error('[/api/guardians] Error:', err);

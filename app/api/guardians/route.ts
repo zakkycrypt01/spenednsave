@@ -10,7 +10,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'tokenAddress query parameter is required' }, { status: 400 });
     }
 
-    const guardians = GuardianSignatureDB.getGuardiansByTokenAddress(tokenAddress);
+    const guardians = await GuardianSignatureDB.getGuardiansByTokenAddress(tokenAddress);
     return NextResponse.json(guardians);
   } catch (err) {
     console.error('[/api/guardians] Error:', err);
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid body - missing required fields' }, { status: 400 });
     }
 
-    GuardianSignatureDB.saveGuardian(body);
+    await GuardianSignatureDB.saveGuardian(body);
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error('[/api/guardians] Error:', err);

@@ -38,22 +38,38 @@ export function VotingView() {
             return;
         }
 
-        // Fetch withdrawal requests from localStorage
-        // In production, this would fetch from a backend or IPFS
-        if (!vaultAddress) return;
+        // Fetch withdrawal requests from database and verify guardian address matches
+        if (!vaultAddress || !address) return;
 
-        try {
-            const storedRequests = localStorage.getItem(`withdrawal-requests-${vaultAddress}`);
-            if (storedRequests) {
-                const requests = JSON.parse(storedRequests);
-                // Filter to only show requests for this vault and not already signed by this guardian
-                const pending = requests.filter((req: any) => {
-                    // Only show requests for this vault
-                    if (req.vaultAddress !== vaultAddress) return false;
+        const fetchPendingRequests = async () => {
+            try {
+                // Fetch all pending requests for this vault from the database
+                const res = await fetch(`/api/guardian-signatures?vaultAddress=${vaultAddress}`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' },
+                });
+
+                if (!res.ok) {
+                    console.error('Failed to fetch pending requests');
+                    setStatus('empty');
+                    return;
+                }
+
+                const allRequests = await res.json();
+                
+                // Filter to pending-approval status and check if guardian address matches user wallet
+                const pending = allRequests.filter((req: any) => {
+                    // Only show pending-approval requests
+                    if (req.status !== 'pending-approval') return false;
+                    
+                    // Verify the user's wallet address is in the guardians list for this request
+                    const guardians = req.guardians || [];
+                    const isAddressInGuardians = guardians.some((g: string) => g.toLowerCase() === address.toLowerCase());
+                    
+                    if (!isAddressInGuardians) return false;
                     
                     const signatures = req.signatures || [];
                     // Filter out already signed requests by this guardian
-                    // Don't count owner signatures when checking if guardian has signed
                     return !signatures.some((sig: any) => sig.signer === address && sig.role === 'guardian');
                 });
                 
@@ -63,45 +79,69 @@ export function VotingView() {
                 } else {
                     setStatus('empty');
                 }
-            } else {
+            } catch (error) {
+                console.error('Error loading withdrawal requests:', error);
                 setStatus('empty');
             }
-        } catch (error) {
-            console.error('Error loading withdrawal requests:', error);
-            setStatus('empty');
-        }
+        };
+
+        fetchPendingRequests();
     }, [vaultAddress, address, isGuardian, isCheckingGuardian, isLoadingGuardians, guardiansList]);
 
     useEffect(() => {
         if (isSignSuccess && signature && pendingRequests.length > 0) {
-            // Save guardian signature to localStorage
-            try {
-                const currentRequest = pendingRequests[0];
-                const storedRequests = localStorage.getItem(`withdrawal-requests-${vaultAddress}`);
-                if (storedRequests) {
-                    const requests = JSON.parse(storedRequests);
-                    const updatedRequests = requests.map((req: any) => {
-                        if (req.id === currentRequest.id) {
-                            const guardianSignatures = (req.signatures || []).filter((s: any) => s.role !== 'owner');
-                            return {
-                                ...req,
-                                signatures: [
-                                    ...(req.signatures || []),
-                                    { signer: address, signature, timestamp: Date.now(), role: 'guardian' }
-                                ],
-                                signaturesCount: guardianSignatures.length + 1 // Count only guardian signatures
-                            };
+            // Save guardian signature to database
+            const saveGuardianSignature = async () => {
+                try {
+                    const currentRequest = pendingRequests[0];
+                    
+                    // Verify address matches guardian list before saving
+                    const guardians = currentRequest.guardians || [];
+                    const isAddressInGuardians = guardians.some((g: string) => g.toLowerCase() === address?.toLowerCase());
+                    
+                    if (!isAddressInGuardians) {
+                        console.error('Guardian address does not match database records');
+                        alert('Your wallet address does not match the guardian records for this vault');
+                        return;
+                    }
+                    
+                    // Add guardian signature to existing signatures
+                    const existingSignatures = currentRequest.signatures || [];
+                    const updatedSignatures = [
+                        ...existingSignatures,
+                        {
+                            signer: address,
+                            signature,
+                            signedAt: Date.now(),
+                            role: 'guardian'
                         }
-                        return req;
+                    ];
+                    
+                    // Update the request in the database
+                    const updateRes = await fetch(`/api/guardian-signatures/${currentRequest.id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            signatures: updatedSignatures,
+                        }),
                     });
-                    localStorage.setItem(`withdrawal-requests-${vaultAddress}`, JSON.stringify(updatedRequests));
+                    
+                    if (!updateRes.ok) {
+                        console.error('Failed to save guardian signature');
+                        alert('Failed to save your signature');
+                        return;
+                    }
+                    
+                } catch (error) {
+                    console.error('Error saving signature:', error);
+                    alert('Error saving your signature');
                 }
-            } catch (error) {
-                console.error('Error saving signature:', error);
-            }
+            };
+            
+            saveGuardianSignature();
             setStatus('signed');
         }
-    }, [isSignSuccess, signature, pendingRequests, vaultAddress, address]);
+    }, [isSignSuccess, signature, pendingRequests, address]);
 
     const handleSign = async (request: any) => {
         if (!vaultAddress || !chainId) return;

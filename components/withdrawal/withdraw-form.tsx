@@ -65,10 +65,10 @@ export function WithdrawalForm() {
     // Handle successful signature
     useEffect(() => {
         if (isSignSuccess && signature && withdrawalData && requestId && vaultAddress && address) {
-            // Save withdrawal request to database with owner's signature
+            // Save withdrawal request to database with owner's signature and update status
             const saveRequest = async () => {
                 try {
-                    // Update the pending request with the owner's signature
+                    // Update the pending request with the owner's signature and update status
                     const updateRes = await fetch(`/api/guardian-signatures/${requestId}`, {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
@@ -80,14 +80,22 @@ export function WithdrawalForm() {
                                 signedAt: Date.now(),
                             }],
                             guardians: guardians?.map((g: any) => typeof g === 'string' ? g : g?.address) || [],
+                            status: 'pending-approval', // Update status after owner signs - now waiting for guardians
                         }),
                     });
                     
                     if (!updateRes.ok) {
-                        console.error('Failed to update withdrawal request with signature');
+                        const errorData = await updateRes.json().catch(() => ({ error: 'Unknown error' }));
+                        console.error('Failed to update withdrawal request with signature:', errorData);
+                        toast.error('Failed to save signature');
+                        return;
                     }
+                    
+                    toast.success('Signature saved! Share this with your guardians.');
                 } catch (error) {
                     console.error('Error saving withdrawal request signature:', error);
+                    toast.error('Error saving signature');
+                    return;
                 }
                 
                 setStep('success');
@@ -188,7 +196,7 @@ export function WithdrawalForm() {
                 requiredQuorum: Number(quorumValue),
                 createdAt: timestamp,
                 createdBy: address,
-                status: 'pending',
+                status: 'awaiting-signature', // Initial status - waiting for owner's signature
                 guardians: guardians?.map((g: any) => typeof g === 'string' ? g : g?.address) || [],
             };
             

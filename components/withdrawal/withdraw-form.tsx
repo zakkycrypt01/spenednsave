@@ -201,6 +201,8 @@ export function WithdrawalForm() {
             
             const createdRequest = await createRes.json();
             setRequestId(createdRequest.id);
+            // Set the guardians from the created request
+            setSigningGuardians(createdRequest.guardians || []);
         } catch (error) {
             console.error('Error creating withdrawal request:', error);
             toast.error('Failed to create withdrawal request');
@@ -383,12 +385,12 @@ export function WithdrawalForm() {
                     <div className="mb-6">
                         <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Guardians</h3>
                         <div className="space-y-2 max-h-48 overflow-y-auto">
-                            {guardians && guardians.length > 0 ? (
-                                guardians.map((guardian: any, index: number) => (
+                            {signingGuardians && signingGuardians.length > 0 ? (
+                                signingGuardians.map((guardian: string, index: number) => (
                                     <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-surface-border/20 rounded-lg border border-gray-200 dark:border-surface-border/50">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-xs font-mono text-slate-600 dark:text-slate-400 truncate">
-                                                {typeof guardian === 'string' ? guardian : guardian?.address || 'Unknown'}
+                                                {guardian}
                                             </p>
                                         </div>
                                         <div className="text-xs text-slate-400 whitespace-nowrap">Pending</div>

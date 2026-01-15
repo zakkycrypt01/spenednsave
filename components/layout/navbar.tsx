@@ -60,6 +60,8 @@ export function Navbar() {
                             { name: "Feature Requests", href: "/feature-requests" },
                             { name: "FAQ", href: "/faq" },
                             { name: "Contact Support", href: "/contact-support" },
+                            { name: "Terms", href: "/terms" },
+                            { name: "Privacy", href: "/privacy" },
                         ].map((link) => {
                             const isActive = pathname === link.href;
                             return (

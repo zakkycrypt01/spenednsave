@@ -144,7 +144,16 @@ export function VotingView() {
     }, [isSignSuccess, signature, pendingRequests, address]);
 
     const handleSign = async (request: any) => {
-        if (!vaultAddress || !chainId) return;
+        if (!vaultAddress || !chainId || !address) return;
+
+        // Verify that the user's address matches a guardian in the database
+        const guardians = request.guardians || [];
+        const isAddressInGuardians = guardians.some((g: string) => g.toLowerCase() === address.toLowerCase());
+        
+        if (!isAddressInGuardians) {
+            alert('Your wallet address does not match the guardian records for this request. Only the designated guardians can sign this withdrawal.');
+            return;
+        }
 
         setStatus('pending');
 
@@ -174,11 +183,11 @@ export function VotingView() {
                 types,
                 primaryType: 'Withdrawal',
                 message: {
-                    token: request.token as Address,
-                    amount: BigInt(request.amount), // Convert string back to BigInt
-                    recipient: request.recipient as Address,
-                    nonce: BigInt(request.nonce), // Convert string back to BigInt
-                    reason: request.reason,
+                    token: request.request?.token || request.token as Address,
+                    amount: BigInt(request.request?.amount || request.amount), // Convert string back to BigInt
+                    recipient: request.request?.recipient || request.recipient as Address,
+                    nonce: BigInt(request.request?.nonce || request.nonce), // Convert string back to BigInt
+                    reason: request.request?.reason || request.reason,
                 },
             });
         } catch (error) {

@@ -62,7 +62,18 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 - **2026-01-14**: Fixed Activity Log total deposits calculation and display. Now always sums as `bigint` and shows up to 5 decimal places for ETH values.
 
-## ✨ Features
+
+## ✨ New Features (2026)
+
+- **Maintenance Mode Banner**: Toggle a global maintenance banner via `lib/maintenanceConfig.ts`.
+- **Recent Notifications Dropdown**: Bell icon in navbar shows latest notifications (API-driven).
+- **Feature Request / Feedback Modal**: Floating button on all pages for submitting feedback or feature requests (API-driven modal).
+- **Contact Support Form**: `/contact-support` page for reaching out to support (API-driven).
+- **FAQ, Terms, Privacy Pages**: `/faq`, `/terms`, `/privacy` for help and legal info, all linked in the navbar.
+- **Download Activity Log as CSV**: Export your approval history from the dashboard as a CSV file.
+- **View on BaseScan Links**: Vaults and transactions have direct links to BaseScan for easy blockchain inspection.
+- **Delete Account / Remove Email**: Settings page now includes options to delete your account or remove your email.
+
 
 
 ### Email Notifications
@@ -343,6 +354,12 @@ SpendVault:    [User-specific deployments]
 
 ## 💻 Frontend Application
 
+### UI/UX Highlights
+
+- **Navbar**: Now includes links to FAQ, Terms, Privacy, Contact Support, and a notifications dropdown.
+- **Floating Feedback Button**: Visible on all pages for quick feature requests.
+- **Maintenance Banner**: Shows at the top of all pages when enabled.
+
 ### Tech Stack
 
 **Framework**: Next.js 16.1 (App Router)
@@ -406,7 +423,7 @@ This is ideal for onboarding, demos, and testing the user experience without ris
 
 ---
 
-### Project Structure
+### Project Structure (2026)
 
 ```
 spenednsave/
@@ -420,8 +437,16 @@ spenednsave/
 │   ├── emergency/           # Emergency unlock
 │   ├── activity/            # Transaction history
 │   ├── feature-requests/    # Community feature requests page
+│   ├── faq/                 # FAQ/help page
+│   ├── terms/               # Terms of Service page
+│   ├── privacy/             # Privacy Policy page
+│   ├── contact-support/     # Contact support form
 │   └── api/feature-requests # API routes for feature requests
+│   └── api/notifications    # API routes for notifications
 ├── components/              # React components
+│   ├── feature-request-modal.tsx  # Modal for feature/feedback
+│   ├── feature-request-button.tsx # Floating feedback button
+│   ├── ui/notifications-dropdown.tsx # Notifications dropdown
 │   ├── community/           # Community feature requests UI
 │   ├── landing/            # Landing page sections
 │   ├── dashboard/          # Dashboard views
@@ -449,7 +474,10 @@ spenednsave/
 ```
 ---
 
-## 🌟 Community Feature Requests
+## 🌟 Community Feature Requests & Feedback
+
+- Users can submit feature requests or feedback via the floating button/modal on any page.
+- Requests are sent to `/api/feature-requests` and can be managed in the backend.
 
 SpendGuard now includes a Community Feature Requests page where users can:
 
@@ -786,7 +814,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📞 Support
+## 📞 Support & Help
+
+- Use the in-app Contact Support form (`/contact-support`) for direct help.
+- Visit the FAQ page (`/faq`) for common questions.
 
 Need help? Reach out through:
 
@@ -799,6 +830,15 @@ Need help? Reach out through:
 <div align="center">
 
 **Built with ❤️ on Base**
+
+---
+
+## ⚡ Quick Links
+
+- [FAQ](./app/faq/page.tsx)
+- [Contact Support](./app/contact-support/page.tsx)
+- [Terms of Service](./app/terms/page.tsx)
+- [Privacy Policy](./app/privacy/page.tsx)
 
 [Website](#) • [Docs](#) • [Twitter](#) • [Discord](#)
 

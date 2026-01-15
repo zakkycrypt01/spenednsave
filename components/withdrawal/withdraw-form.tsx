@@ -12,6 +12,7 @@ import { useAccount, useSignTypedData, useChainId } from "wagmi";
 import { parseEther, formatEther, type Address } from "viem";
 import { useUserContracts, useVaultETHBalance, useVaultQuorum, useVaultNonce, useIsVaultOwner, useGetPolicyForAmount, useGetWithdrawalCaps, useVaultWithdrawnInPeriod } from "@/lib/hooks/useContracts";
 import { useGuardians } from "@/lib/hooks/useVaultData";
+import { useGuardianSignatures } from "@/lib/hooks/useGuardianSignatures";
 
 export function WithdrawalForm() {
     const [step, setStep] = useState<'form' | 'signing' | 'success'>('form');
@@ -21,6 +22,7 @@ export function WithdrawalForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isScheduled, setIsScheduled] = useState(false);
     const [scheduledDate, setScheduledDate] = useState<Date | null>(null);
+    const [requestId, setRequestId] = useState<string | null>(null);
 
     const { address, isConnected } = useAccount();
     const chainId = useChainId();
@@ -33,6 +35,7 @@ export function WithdrawalForm() {
     const { data: quorum } = useVaultQuorum(vaultAddress);
     const { data: currentNonce } = useVaultNonce(vaultAddress);
     const { data: isVaultOwner, isLoading: isCheckingOwnership } = useIsVaultOwner(vaultAddress, address);
+    const { createWithdrawalRequest } = useGuardianSignatures(vaultAddress);
     
     const { signTypedData, data: signature, isPending: isSigning, isSuccess: isSignSuccess } = useSignTypedData();
 
@@ -60,38 +63,38 @@ export function WithdrawalForm() {
 
     // Handle successful signature
     useEffect(() => {
-        if (isSignSuccess && signature && withdrawalData) {
-            // Save withdrawal request to localStorage with owner's signature
-            // In production, this would be saved to a backend or IPFS
-            try {
-                const requestId = `${vaultAddress}-${Date.now()}`;
-                const requestData = {
-                    id: requestId,
-                    token: withdrawalData.token,
-                    amount: withdrawalData.amount.toString(), // Convert BigInt to string
-                    recipient: withdrawalData.recipient,
-                    nonce: withdrawalData.nonce.toString(), // Convert BigInt to string
-                    reason: withdrawalData.reason,
-                    owner: address,
-                    vaultAddress,
-                    createdAt: Date.now(),
-                    signatures: [
-                        { signer: address, signature, timestamp: Date.now(), role: 'owner' }
-                    ],
-                    signaturesCount: 0 // Guardian signatures count
-                };
+        if (isSignSuccess && signature && withdrawalData && requestId && vaultAddress && address) {
+            // Save withdrawal request to database with owner's signature
+            const saveRequest = async () => {
+                try {
+                    // Update the pending request with the owner's signature
+                    const updateRes = await fetch(`/api/guardian-signatures/${requestId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            signatures: [{
+                                request: withdrawalData,
+                                signer: address,
+                                signature,
+                                signedAt: Date.now(),
+                            }],
+                            guardians: guardians?.map((g: any) => typeof g === 'string' ? g : g?.address) || [],
+                        }),
+                    });
+                    
+                    if (!updateRes.ok) {
+                        console.error('Failed to update withdrawal request with signature');
+                    }
+                } catch (error) {
+                    console.error('Error saving withdrawal request signature:', error);
+                }
                 
-                const existingRequests = localStorage.getItem(`withdrawal-requests-${vaultAddress}`);
-                const requests = existingRequests ? JSON.parse(existingRequests) : [];
-                requests.push(requestData);
-                localStorage.setItem(`withdrawal-requests-${vaultAddress}`, JSON.stringify(requests));
-            } catch (error) {
-                console.error('Error saving withdrawal request:', error);
-            }
+                setStep('success');
+            };
             
-            setStep('success');
+            saveRequest();
         }
-    }, [isSignSuccess, signature, withdrawalData, vaultAddress, address]);
+    }, [isSignSuccess, signature, withdrawalData, requestId, vaultAddress, address, guardians]);
 
     // Client-side cap hooks (zero address = ETH)
     const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000' as Address;
@@ -153,6 +156,42 @@ export function WithdrawalForm() {
         };
 
         setWithdrawalData(withdrawalRequest);
+        
+        // Create the pending withdrawal request in the database
+        try {
+            const timestamp = Date.now();
+            const newRequestId = `${vaultAddress}-${currentNonce}-${timestamp}`;
+            
+            // Create the pending request with all current guardians
+            const pendingRequest = {
+                id: newRequestId,
+                vaultAddress,
+                request: withdrawalRequest,
+                signatures: [],
+                requiredQuorum: Number(quorumValue),
+                createdAt: timestamp,
+                createdBy: address,
+                status: 'pending' as const,
+                guardians: guardians?.map((g: any) => typeof g === 'string' ? g : g?.address) || [],
+            };
+            
+            const createRes = await fetch('/api/guardian-signatures', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pendingRequest),
+            });
+            
+            if (!createRes.ok) {
+                throw new Error('Failed to create withdrawal request');
+            }
+            
+            const createdRequest = await createRes.json();
+            setRequestId(createdRequest.id);
+        } catch (error) {
+            console.error('Error creating withdrawal request:', error);
+            toast.error('Failed to create withdrawal request');
+            return;
+        }
         
         // Move to signing step to get owner's signature
         setStep('signing');

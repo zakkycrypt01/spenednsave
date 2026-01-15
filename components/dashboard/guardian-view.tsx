@@ -28,6 +28,7 @@ interface ScheduledWithdrawal {
     requiredSignatures: number;
     currentSignatures: number;
     hasUserSigned: boolean;
+    txHash?: string; // Optional transaction hash for BaseScan link
 }
 
 function GuardianView({ badgeData }: { badgeData?: any }) {

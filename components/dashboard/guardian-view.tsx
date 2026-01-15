@@ -3,7 +3,7 @@
 import { Shield, CheckCircle, XCircle, Clock, Users, Award } from "lucide-react";
 import { AvatarBlockie } from "@/components/ui/avatar-blockie";
 import { useAccount } from "wagmi";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useDemoMode } from "@/lib/hooks/useDemoMode";
 import { useScheduledWithdrawals } from "@/lib/hooks/useScheduledWithdrawals";
 
@@ -115,10 +115,10 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
     // Real contract/backend data should be loaded here
     // Scheduled withdrawals integration
     // Use fake scheduled withdrawals in demo mode, but always call the hook
-    let demoScheduled: ScheduledWithdrawal[] = [];
-    if (demo) {
+    const demoScheduled: ScheduledWithdrawal[] = useMemo(() => {
+        if (!demo) return [];
         const now = Date.now();
-        demoScheduled = [
+        return [
             {
                 id: 1,
                 executed: false,
@@ -149,7 +149,7 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
                 txHash: "0xDEMOFAKEHASH1234567890",
             },
         ];
-    }
+    }, [demo]);
     const scheduled = demo ? demoScheduled : scheduledHook.scheduled;
     const loading = demo ? false : scheduledHook.loading;
     const error = demo ? null : scheduledHook.error;

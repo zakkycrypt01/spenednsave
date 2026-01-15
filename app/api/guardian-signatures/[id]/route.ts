@@ -31,8 +31,14 @@ export async function PUT(request: Request, context: any) {
     const { id } = context?.params ?? {};
     console.log('[PUT /api/guardian-signatures/:id] Updating request:', id);
     
-    const body = await request.json();
-    console.log('[PUT] Request body:', JSON.stringify(body, null, 2));
+    let body;
+    try {
+      body = await request.json();
+      console.log('[PUT] Request body:', JSON.stringify(body, null, 2));
+    } catch (parseErr) {
+      console.error('[PUT] Failed to parse JSON:', parseErr);
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+    }
     
     const existing = await GuardianSignatureDB.getPendingRequest(id);
     if (!existing) {
@@ -49,7 +55,7 @@ export async function PUT(request: Request, context: any) {
       signatures: body.signatures ?? existing.signatures,
     };
     
-    console.log('[PUT] Updated signatures:', updated.signatures);
+    console.log('[PUT] Updated signatures count:', Array.isArray(updated.signatures) ? updated.signatures.length : 0);
 
     await GuardianSignatureDB.savePendingRequest(updated);
     console.log('[PUT] Saved successfully');

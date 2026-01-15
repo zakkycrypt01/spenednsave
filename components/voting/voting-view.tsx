@@ -145,18 +145,35 @@ export function VotingView() {
                     }
                     
                     // Add guardian signature to existing signatures
-                    const existingSignatures = currentRequest.signatures || [];
+                    let existingSignatures = currentRequest.signatures || [];
+                    
+                    // Parse existing signatures if they're a string
+                    if (typeof existingSignatures === 'string') {
+                        try {
+                            existingSignatures = JSON.parse(existingSignatures);
+                        } catch (e) {
+                            existingSignatures = [];
+                        }
+                    }
+                    
+                    // Ensure it's an array
+                    if (!Array.isArray(existingSignatures)) {
+                        existingSignatures = [];
+                    }
+                    
+                    const newSignature = {
+                        signer: address,
+                        signature: signature?.toString?.() || String(signature),
+                        signedAt: Date.now(),
+                        role: 'guardian'
+                    };
+                    
                     const updatedSignatures = [
                         ...existingSignatures,
-                        {
-                            signer: address,
-                            signature,
-                            signedAt: Date.now(),
-                            role: 'guardian'
-                        }
+                        newSignature
                     ];
                     
-                    console.log('[VotingView] Saving signatures:', updatedSignatures);
+                    console.log('[VotingView] Saving signatures:', JSON.stringify(updatedSignatures, null, 2));
                     
                     // Update the request in the database
                     const updateRes = await fetch(`/api/guardian-signatures/${currentRequest.id}`, {

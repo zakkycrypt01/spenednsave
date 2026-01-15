@@ -67,7 +67,7 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
               ]
             : []
     );
-    const [reputation, setReputation] = useState<Reputation | null>(() =>
+    const [reputation] = useState<Reputation | null>(() =>
         demo
             ? {
                   approvals: 5,

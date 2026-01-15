@@ -820,7 +820,7 @@ export function useVaultActivity(vaultAddress?: Address, guardianTokenAddress?: 
                         id: `${String(vaultAddress)}-${act.type}-${String(act.blockNumber ?? '0')}-${act.timestamp}`,
                         account: String(vaultAddress),
                         type: act.type,
-                        details: act.data ?? {},
+                        details: convertBigInts(act.data ?? {}),
                         relatedRequestId: (act.data as any)?.id ?? (act.data as any)?.requestId ?? null,
                         blockNumber: act.blockNumber ?? 0,
                         timestamp: act.timestamp,

@@ -14,6 +14,7 @@ export async function GET(request: Request) {
     const all = GuardianSignatureDB.getAllActivities();
     return NextResponse.json(all);
   } catch (err) {
+    console.error('[/api/activities] Error:', err);
     return NextResponse.json({ error: String(err) }, { status: 500 });
   }
 }

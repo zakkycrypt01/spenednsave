@@ -57,7 +57,22 @@ export function NotificationsDropdown() {
       </button>
       {open && (
         <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
-          <div className="p-4 border-b border-slate-100 dark:border-slate-800 font-bold text-slate-900 dark:text-white">Recent Notifications</div>
+          <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
+            <span className="font-bold text-slate-900 dark:text-white">Recent Notifications</span>
+            {notifications.some(n => !n.read) && (
+              <button
+                className="text-xs text-blue-600 hover:underline"
+                onClick={async () => {
+                  try {
+                    await fetch("/api/notifications/mark-all-read", { method: "POST" });
+                    setNotifications((prev) => prev.map(n => ({ ...n, read: true })));
+                  } catch {}
+                }}
+              >
+                Mark all as read
+              </button>
+            )}
+          </div>
           <ul className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
             {notifications.length === 0 && (
               <li className="p-4 text-slate-500 text-center">No notifications</li>

@@ -53,23 +53,83 @@ export function PolicyConfig({ vaultAddress }: { vaultAddress?: Address }) {
     };
 
     return (
-        <div className="bg-surface-dark border border-surface-border rounded-2xl p-4">
-            <h4 className="text-white font-bold mb-2">Withdrawal Policies (Owner)</h4>
-            {loadingExisting ? <p className="text-slate-400 text-sm">Loading...</p> : (
-                <div className="space-y-2">
-                    {rows.map((r, i) => (
-                        <div key={i} className="flex gap-2 items-center">
-                            <input value={r.minAmount} onChange={(e) => updateRow(i, 'minAmount', e.target.value)} className="w-20" />
-                            <span className="text-slate-400">to</span>
-                            <input value={r.maxAmount} onChange={(e) => updateRow(i, 'maxAmount', e.target.value)} className="w-20" />
-                            <input value={r.requiredApprovals} onChange={(e) => updateRow(i, 'requiredApprovals', e.target.value)} className="w-20" />
-                            <input value={r.cooldown} onChange={(e) => updateRow(i, 'cooldown', e.target.value)} className="w-28" />
-                            <button onClick={() => removeRow(i)} className="text-sm text-red-400">Remove</button>
+        <div>
+            <h3 className="text-white text-xl font-bold mb-6">Withdrawal Policies (Owner)</h3>
+            {loadingExisting ? (
+                <p className="text-slate-400 text-sm">Loading...</p>
+            ) : (
+                <div className="space-y-4">
+                    {rows.length > 0 && (
+                        <div className="space-y-3">
+                            {rows.map((r, i) => (
+                                <div key={i} className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 space-y-3">
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Min Amount</label>
+                                            <input 
+                                                value={r.minAmount} 
+                                                onChange={(e) => updateRow(i, 'minAmount', e.target.value)} 
+                                                placeholder="0"
+                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Max Amount</label>
+                                            <input 
+                                                value={r.maxAmount} 
+                                                onChange={(e) => updateRow(i, 'maxAmount', e.target.value)} 
+                                                placeholder="0"
+                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Approvals</label>
+                                            <input 
+                                                value={r.requiredApprovals} 
+                                                onChange={(e) => updateRow(i, 'requiredApprovals', e.target.value)} 
+                                                placeholder="1"
+                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-slate-400 block mb-1">Cooldown</label>
+                                            <input 
+                                                value={r.cooldown} 
+                                                onChange={(e) => updateRow(i, 'cooldown', e.target.value)} 
+                                                placeholder="0"
+                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end">
+                                        <button 
+                                            onClick={() => removeRow(i)} 
+                                            className="text-sm text-red-400 hover:text-red-300 transition-colors"
+                                        >
+                                            Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                    <div className="flex gap-2 mt-2">
-                        <button onClick={addRow} className="text-sm text-primary">Add policy</button>
-                        <button onClick={submit} className="text-sm text-white bg-primary px-3 py-1 rounded">Save policies</button>
+                    )}
+                    {rows.length === 0 && (
+                        <p className="text-slate-400 text-sm text-center py-4">No policies added yet</p>
+                    )}
+                    <div className="flex gap-2 mt-4">
+                        <button 
+                            onClick={addRow} 
+                            className="text-primary hover:text-primary-hover font-medium transition-colors"
+                        >
+                            Add policy
+                        </button>
+                        <button 
+                            onClick={submit} 
+                            disabled={rows.length === 0 || setPoliciesHook.isPending}
+                            className="ml-auto bg-primary hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-2 px-4 rounded-xl transition-colors"
+                        >
+                            {setPoliciesHook.isPending ? 'Saving...' : 'Save policies'}
+                        </button>
                     </div>
                 </div>
             )}

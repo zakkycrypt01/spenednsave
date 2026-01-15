@@ -288,25 +288,25 @@ export function DashboardSaverView() {
                                                 {isGuardianAdded && <Users size={18} />}
                                             </div>
                                             <div>
-                                                <p className="text-white font-medium">
+                                                <p className="text-slate-900 dark:text-white font-medium">
                                                     {isDeposit ? 'Deposit' : isWithdrawal ? 'Withdrawal' : 'Guardian Added'}
                                                 </p>
                                                 {isGuardianAdded && activity.data?.address && (
-                                                    <p className="text-slate-400 text-sm">
+                                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
                                                         You added {activity.data.address.slice(0, 6)}...{activity.data.address.slice(-4)} as guardian
                                                     </p>
                                                 )}
                                                 {isDeposit && activity.data?.from && (
-                                                    <p className="text-slate-400 text-sm">
+                                                    <p className="text-slate-600 dark:text-slate-400 text-sm">
                                                         {activity.data.from.toLowerCase() === address?.toLowerCase() 
                                                             ? 'You deposited to your vault' 
                                                             : `From ${activity.data.from.slice(0, 6)}...${activity.data.from.slice(-4)}`}
                                                     </p>
                                                 )}
                                                 {isWithdrawal && activity.data?.reason && (
-                                                    <p className="text-slate-400 text-sm">{activity.data.reason}</p>
+                                                    <p className="text-slate-600 dark:text-slate-400 text-sm">{activity.data.reason}</p>
                                                 )}
-                                                <p className="text-slate-500 text-xs mt-0.5">{timeString}</p>
+                                                <p className="text-slate-600 dark:text-slate-500 text-xs mt-0.5">{timeString}</p>
                                             </div>
                                         </div>
                                         {(isDeposit || isWithdrawal) && (

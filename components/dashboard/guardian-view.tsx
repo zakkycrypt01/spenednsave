@@ -55,8 +55,30 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
         history: ReputationHistoryItem[];
     }
     // Remove unused selectedRequest and setSelectedRequest
-    const [vaults, setVaults] = useState<VaultInfo[]>([]);
-    const [reputation, setReputation] = useState<Reputation | null>(null);
+    const [vaults, setVaults] = useState<VaultInfo[]>(() =>
+        demo
+            ? [
+                  {
+                      vaultAddress: "0xDEMO1234567890abcdef",
+                      vaultName: "Demo Vault",
+                      owner: "0xOwnerDemo1234...",
+                      pendingApprovals: 2,
+                  },
+              ]
+            : []
+    );
+    const [reputation, setReputation] = useState<Reputation | null>(() =>
+        demo
+            ? {
+                  approvals: 5,
+                  avgResponseSeconds: 3600,
+                  history: [
+                      { recipient: "0xFriend1", reason: "Withdrawal", amount: "0.5 ETH", timestamp: new Date().toISOString() },
+                      { recipient: "0xFriend2", reason: "Emergency Unlock", amount: "1.2 ETH", timestamp: new Date(Date.now() - 86400000).toISOString() },
+                  ],
+              }
+            : null
+    );
     // BadgeData: [tokenIds: string[], types: string[], timestamps: string[]]
 
     // Replace with actual data fetching logic for reputation and badgeData
@@ -64,24 +86,7 @@ function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
     // Always call hooks in the same order
     const scheduledHook = useScheduledWithdrawals();
     useEffect(() => {
-        if (demo) {
-            setVaults([
-                {
-                    vaultAddress: "0xDEMO1234567890abcdef",
-                    vaultName: "Demo Vault",
-                    owner: "0xOwnerDemo1234...",
-                    pendingApprovals: 2,
-                },
-            ]);
-            setReputation({
-                approvals: 5,
-                avgResponseSeconds: 3600,
-                history: [
-                    { recipient: "0xFriend1", reason: "Withdrawal", amount: "0.5 ETH", timestamp: new Date().toISOString() },
-                    { recipient: "0xFriend2", reason: "Emergency Unlock", amount: "1.2 ETH", timestamp: new Date(Date.now() - 86400000).toISOString() },
-                ],
-            });
-        } else {
+        if (!demo) {
             async function fetchVaults() {
                 if (!address || !GUARDIAN_SBT_ADDRESS) return;
                 try {

@@ -323,8 +323,8 @@ export function DashboardSaverView() {
 
                 {/* Quick Actions / Guardians */}
                 <section className="flex flex-col gap-6">
-                    <h3 className="text-white text-xl font-bold">Guardians</h3>
                     <div className="bg-surface-dark border border-surface-border rounded-2xl p-6">
+                        <h3 className="text-white text-xl font-bold mb-6">Guardians</h3>
                         <div className="flex items-center justify-center mb-6">
                             <div className="size-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                                 <Users size={32} />
@@ -357,9 +357,10 @@ export function DashboardSaverView() {
                         <Link href="/guardians" className="block w-full mt-6 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl text-sm font-medium transition-colors text-center">
                             Manage Guardians
                         </Link>
-                        <div className="mt-4">
-                            <PolicyConfig vaultAddress={vaultAddress as any} />
-                        </div>
+                    </div>
+
+                    <div className="bg-surface-dark border border-surface-border rounded-2xl p-6">
+                        <PolicyConfig vaultAddress={vaultAddress as any} />
                     </div>
                 </section>
             </div>

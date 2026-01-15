@@ -4,7 +4,6 @@ import { useAccount } from "wagmi";
 import { useHasVault, useUserContracts } from "@/lib/hooks/useContracts";
 import { DashboardEmptyState } from "./empty-state";
 import { DashboardSaverView } from "./saver-view";
-import { EmergencyContacts } from "./emergency-contacts";
 import { DashboardGuardianView } from "./guardian-view";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -36,10 +35,7 @@ export function DashboardContent({ forcedView }: DashboardContentProps) {
 
     // Dev mode: force a specific view
     if (forcedView === 'saver') {
-        return <>
-            <DashboardSaverView />
-            <EmergencyContacts />
-        </>;
+        return <DashboardSaverView />;
     }
     if (forcedView === 'guardian') {
         return <DashboardGuardianView />;
@@ -50,10 +46,7 @@ export function DashboardContent({ forcedView }: DashboardContentProps) {
 
     // If user has a vault, show saver view
     if (hasVault && userContracts) {
-        return <>
-            <DashboardSaverView />
-            <EmergencyContacts />
-        </>;
+        return <DashboardSaverView />;
     }
 
     // No vault - show empty state with setup option

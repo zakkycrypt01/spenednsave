@@ -5,7 +5,7 @@ import { CheckCircle, Clock, Users, Shield } from "lucide-react";
 import toast from "react-hot-toast";
 
 
-export default function ScheduledList({ onExecute }: { onExecute?: (id: number) => Promise<void> }) {
+export function ScheduledWithdrawalsList({ onExecute }: { onExecute?: (id: number) => Promise<void> }) {
   const { scheduled, loading, error } = useScheduledWithdrawals();
 
   if (loading) return (

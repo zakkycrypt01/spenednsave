@@ -31,7 +31,7 @@ export async function POST(request: Request) {
           })),
         };
 
-        GuardianSignatureDB.savePendingRequest(normalized);
+        await GuardianSignatureDB.savePendingRequest(normalized);
       } catch (e) {
         // Skip invalid items but continue
         console.error('Failed to import item', item?.id, e);

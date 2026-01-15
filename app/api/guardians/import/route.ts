@@ -25,7 +25,7 @@ export async function POST(request: Request) {
           tokenAddress: String(item.tokenAddress).toLowerCase(),
         };
         
-        GuardianSignatureDB.saveGuardian(guardian);
+        await GuardianSignatureDB.saveGuardian(guardian);
         importedCount++;
       } catch (e) {
         console.error('Failed to import guardian', item?.address, e);

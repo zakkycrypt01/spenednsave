@@ -11,10 +11,17 @@ export default function ContactSupportPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    // TODO: Replace with real API endpoint
     try {
-      // Simulate API call
-      await new Promise((res) => setTimeout(res, 1000));
+      const res = await fetch("/api/contact-support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, message })
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || "Failed to send message. Please try again later.");
+        return;
+      }
       setSubmitted(true);
     } catch (err) {
       setError("Failed to send message. Please try again later.");

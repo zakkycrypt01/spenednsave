@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Shield, ArrowRight, User, Check, X, AlertCircle } from "lucide-react";
 import { useAccount, useSignTypedData, useChainId } from "wagmi";
 import { useUserContracts, useVaultQuorum, useIsGuardian } from "@/lib/hooks/useContracts";
-import { useGuardians } from "@/lib/hooks/useVaultData";
 import { type Address, formatEther } from "viem";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
@@ -21,34 +20,23 @@ export function VotingView() {
     const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
     const { data: quorum } = useVaultQuorum(vaultAddress);
     const { data: isGuardian, isLoading: isCheckingGuardian } = useIsGuardian(guardianTokenAddress, address);
-    const { guardians: guardiansList, isLoading: isLoadingGuardians } = useGuardians(guardianTokenAddress);
     
     const { signTypedData, data: signature, isPending: isSigning, isSuccess: isSignSuccess } = useSignTypedData();
 
     useEffect(() => {
-        // Check if user is a guardian before showing withdrawal requests
-        console.log('[VotingView] Checking guardians - isCheckingGuardian:', isCheckingGuardian, 'isLoadingGuardians:', isLoadingGuardians);
-        console.log('[VotingView] guardiansList:', guardiansList);
-        
-        if (isCheckingGuardian || isLoadingGuardians) {
+        // Fetch all withdrawal requests and show only ones user is a guardian for
+        if (!address) {
+            console.log('[VotingView] Missing address');
             setStatus('loading');
-            return;
-        }
-
-        // Fetch withdrawal requests from database and verify guardian address matches
-        if (!vaultAddress || !address) {
-            console.log('[VotingView] Missing vaultAddress or address');
             return;
         }
 
         const fetchPendingRequests = async () => {
             try {
-                console.log('[VotingView] Starting fetch for vault:', vaultAddress, 'user address:', address);
-                console.log('[VotingView] Available guardians:', guardiansList.map(g => g.address));
-                console.log('[VotingView] isGuardian from contract check:', isGuardian);
+                console.log('[VotingView] Starting fetch for user address:', address);
                 
-                // Fetch all pending requests for this vault from the database
-                const res = await fetch(`/api/guardian-signatures?vaultAddress=${vaultAddress}`, {
+                // Fetch ALL pending requests (not filtered by vault) from the database
+                const res = await fetch('/api/guardian-signatures', {
                     method: 'GET',
                     headers: { 'Content-Type': 'application/json' },
                 });
@@ -62,9 +50,8 @@ export function VotingView() {
 
                 const allRequests = await res.json();
                 console.log('[VotingView] Received', allRequests.length, 'total requests');
-                console.log('[VotingView] All requests:', allRequests);
                 
-                // Filter to pending statuses and check if guardian address matches user wallet
+                // Filter to only show requests where user's address is in the guardians array
                 const pending = allRequests.filter((req: any) => {
                     // Only show pending requests (awaiting-signature or pending-approval)
                     const validStatuses = ['awaiting-signature', 'pending-approval'];
@@ -94,7 +81,7 @@ export function VotingView() {
                     });
                     
                     if (!isAddressInGuardians) {
-                        console.log('[VotingView] User not in guardians list for this request');
+                        console.log('[VotingView] User not in guardians list for request', req.id);
                         return false;
                     }
                     
@@ -113,10 +100,11 @@ export function VotingView() {
                     // Filter out already signed requests by this guardian
                     const alreadySigned = signatures.some((sig: any) => sig.signer === address && sig.role === 'guardian');
                     if (alreadySigned) {
-                        console.log('[VotingView] Guardian already signed this request');
+                        console.log('[VotingView] Guardian already signed request', req.id);
                         return false;
                     }
                     
+                    console.log('[VotingView] Including request', req.id, 'for user to sign');
                     return true;
                 });
                 
@@ -135,7 +123,7 @@ export function VotingView() {
         };
 
         fetchPendingRequests();
-    }, [vaultAddress, address, isGuardian, isCheckingGuardian, isLoadingGuardians, guardiansList]);
+    }, [address]);
 
     useEffect(() => {
         if (isSignSuccess && signature && pendingRequests.length > 0) {

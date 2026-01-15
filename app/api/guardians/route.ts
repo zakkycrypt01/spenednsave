@@ -46,6 +46,7 @@ export async function GET(request: Request) {
         }
       } catch (e) {
         console.error('[/api/guardians] Error checking pending requests:', e);
+        console.error('[/api/guardians] Error details:', e instanceof Error ? e.stack : String(e));
       }
     }
     
@@ -53,7 +54,9 @@ export async function GET(request: Request) {
     return NextResponse.json(guardians || []);
   } catch (err) {
     console.error('[/api/guardians] Error:', err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error('[/api/guardians] Error details:', err instanceof Error ? err.stack : String(err));
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: errorMessage, stack: err instanceof Error ? err.stack : undefined }, { status: 500 });
   }
 }
 

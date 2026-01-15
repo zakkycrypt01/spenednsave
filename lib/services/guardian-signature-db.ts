@@ -426,43 +426,33 @@ export class GuardianSignatureDB {
   }
 
   static async getActivitiesByAccount(account: string) {
-    try {
-      const database = await getDatabase();
-      const collection = database.collection('account_activities');
-      const rows = await collection.find({ account }).sort({ timestamp: -1 }).toArray();
+    const database = await getDatabase();
+    const collection = database.collection('account_activities');
+    const rows = await collection.find({ account }).sort({ timestamp: -1 }).toArray();
 
-      return rows.map((row: any) => ({
-        id: row.id,
-        account: row.account,
-        type: row.type,
-        details: row.details ? JSON.parse(decryptString(row.details)) : undefined,
-        relatedRequestId: row.relatedRequestId,
-        timestamp: row.timestamp,
-      }));
-    } catch (err) {
-      console.error('[GuardianSignatureDB] Error getting activities:', err);
-      return [];
-    }
+    return rows.map((row: any) => ({
+      id: row.id,
+      account: row.account,
+      type: row.type,
+      details: row.details ? JSON.parse(decryptString(row.details)) : undefined,
+      relatedRequestId: row.relatedRequestId,
+      timestamp: row.timestamp,
+    }));
   }
 
   static async getAllActivities() {
-    try {
-      const database = await getDatabase();
-      const collection = database.collection('account_activities');
-      const rows = await collection.find({}).sort({ timestamp: -1 }).toArray();
+    const database = await getDatabase();
+    const collection = database.collection('account_activities');
+    const rows = await collection.find({}).sort({ timestamp: -1 }).toArray();
 
-      return rows.map((row: any) => ({
-        id: row.id,
-        account: row.account,
-        type: row.type,
-        details: row.details ? JSON.parse(decryptString(row.details)) : undefined,
-        relatedRequestId: row.relatedRequestId,
-        timestamp: row.timestamp,
-      }));
-    } catch (err) {
-      console.error('[GuardianSignatureDB] Error getting all activities:', err);
-      return [];
-    }
+    return rows.map((row: any) => ({
+      id: row.id,
+      account: row.account,
+      type: row.type,
+      details: row.details ? JSON.parse(decryptString(row.details)) : undefined,
+      relatedRequestId: row.relatedRequestId,
+      timestamp: row.timestamp,
+    }));
   }
 
   static async getActivity(id: string) {
@@ -535,23 +525,18 @@ export class GuardianSignatureDB {
   }
 
   static async getGuardiansByTokenAddress(tokenAddress: string) {
-    try {
-      const database = await getDatabase();
-      const collection = database.collection('guardians');
-      const rows = await collection.find({ tokenAddress: tokenAddress.toLowerCase() }).sort({ addedAt: 1 }).toArray();
+    const database = await getDatabase();
+    const collection = database.collection('guardians');
+    const rows = await collection.find({ tokenAddress: tokenAddress.toLowerCase() }).sort({ addedAt: 1 }).toArray();
 
-      return rows.map((row: any) => ({
-        address: row.address,
-        tokenId: row.tokenId,
-        addedAt: row.addedAt,
-        blockNumber: row.blockNumber,
-        txHash: row.txHash,
-        tokenAddress: row.tokenAddress,
-      }));
-    } catch (err) {
-      console.error('[GuardianSignatureDB] Error getting guardians:', err);
-      return [];
-    }
+    return rows.map((row: any) => ({
+      address: row.address,
+      tokenId: row.tokenId,
+      addedAt: row.addedAt,
+      blockNumber: row.blockNumber,
+      txHash: row.txHash,
+      tokenAddress: row.tokenAddress,
+    }));
   }
 
   static async deleteGuardiansByTokenAddress(tokenAddress: string) {

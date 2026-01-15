@@ -7,15 +7,21 @@ export async function GET(request: Request) {
     const account = url.searchParams.get('account');
 
     if (account) {
+      console.log('[/api/activities] GET activities for account:', account);
       const activities = await GuardianSignatureDB.getActivitiesByAccount(account);
+      console.log('[/api/activities] Retrieved', activities.length, 'activities');
       return NextResponse.json(activities);
     }
 
+    console.log('[/api/activities] GET all activities');
     const all = await GuardianSignatureDB.getAllActivities();
+    console.log('[/api/activities] Retrieved', all.length, 'total activities');
     return NextResponse.json(all);
   } catch (err) {
     console.error('[/api/activities] Error:', err);
-    return NextResponse.json({ error: String(err) }, { status: 500 });
+    console.error('[/api/activities] Error details:', err instanceof Error ? err.stack : String(err));
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: errorMessage, stack: err instanceof Error ? err.stack : undefined }, { status: 500 });
   }
 }
 

@@ -63,16 +63,42 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 - **2026-01-14**: Fixed Activity Log total deposits calculation and display. Now always sums as `bigint` and shows up to 5 decimal places for ETH values.
 
 
-## ✨ New Features (2026)
 
-- **Maintenance Mode Banner**: Toggle a global maintenance banner via `lib/maintenanceConfig.ts`.
-- **Recent Notifications Dropdown**: Bell icon in navbar shows latest notifications (API-driven).
-- **Feature Request / Feedback Modal**: Floating button on all pages for submitting feedback or feature requests (API-driven modal).
-- **Contact Support Form**: `/contact-support` page for reaching out to support (API-driven).
-- **FAQ, Terms, Privacy Pages**: `/faq`, `/terms`, `/privacy` for help and legal info, all linked in the navbar.
-- **Download Activity Log as CSV**: Export your approval history from the dashboard as a CSV file.
-- **View on BaseScan Links**: Vaults and transactions have direct links to BaseScan for easy blockchain inspection.
-- **Delete Account / Remove Email**: Settings page now includes options to delete your account or remove your email.
+## ✨ New Features & API Endpoints (2026)
+
+
+**All new features are now fully integrated with backend API endpoints:**
+
+- **Maintenance Mode Banner**: Toggle via `/api/maintenance` (GET/POST)
+- **Recent Notifications Dropdown**: `/api/notifications` (GET/POST), `/api/notifications/mark-all-read` (POST)
+- **Feature Request / Feedback Modal**: `/api/feature-requests` (GET/POST)
+- **Contact Support Form**: `/api/contact-support` (POST)
+- **FAQ, Terms, Privacy Pages**: `/api/faq` (GET), `/api/legal` (GET)
+- **Download Activity Log as CSV**: `/api/export-csv` (GET)
+- **View on BaseScan Links**: Direct client-side links (no backend required)
+- **Delete Account / Remove Email**: `/api/delete-account` (DELETE)
+- **Test Email**: `/api/test-email` (POST)
+- **Reset Vault / Clear Cache**: `/api/reset-vault` (POST)
+- **Demo Mode**: `/api/demo-mode` (GET/POST)
+
+### API Endpoints Overview
+
+| Feature                | Endpoint                        | Method | Description |
+|------------------------|----------------------------------|--------|-------------|
+| Maintenance Mode       | `/api/maintenance`               | GET/POST | Get/set maintenance banner |
+| Notifications         | `/api/notifications`             | GET/POST | Fetch/send notifications |
+| Mark All Read         | `/api/notifications/mark-all-read` | POST | Mark all notifications as read |
+| Feature Requests      | `/api/feature-requests`          | GET/POST | Submit/view feature requests |
+| Contact Support       | `/api/contact-support`           | POST   | Send support message |
+| FAQ                   | `/api/faq`                       | GET    | Get FAQ/help content |
+| Legal Pages           | `/api/legal`                     | GET    | Get Terms/Privacy content |
+| CSV Export            | `/api/export-csv`                | GET    | Download activity log as CSV |
+| Delete Account        | `/api/delete-account`            | DELETE | Delete user account |
+| Test Email            | `/api/test-email`                | POST   | Send test email |
+| Reset Vault           | `/api/reset-vault`               | POST   | Reset vault data |
+| Demo Mode             | `/api/demo-mode`                 | GET/POST | Get/set demo mode |
+
+All endpoints are stubbed for demo and can be connected to real services as needed.
 
 
 

@@ -54,7 +54,7 @@ export function PolicyConfig({ vaultAddress }: { vaultAddress?: Address }) {
 
     return (
         <div>
-            <h3 className="text-white text-xl font-bold mb-6">Withdrawal Policies (Owner)</h3>
+            <h3 className="text-slate-900 dark:text-white text-xl font-bold mb-6">Withdrawal Policies (Owner)</h3>
             {loadingExisting ? (
                 <p className="text-slate-400 text-sm">Loading...</p>
             ) : (
@@ -62,42 +62,42 @@ export function PolicyConfig({ vaultAddress }: { vaultAddress?: Address }) {
                     {rows.length > 0 && (
                         <div className="space-y-3">
                             {rows.map((r, i) => (
-                                <div key={i} className="bg-slate-800/50 rounded-lg p-4 border border-slate-700 space-y-3">
+                                <div key={i} className="bg-slate-100 dark:bg-slate-800/50 rounded-lg p-4 border border-gray-300 dark:border-slate-700 space-y-3">
                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Min Amount</label>
+                                            <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Min Amount</label>
                                             <input 
                                                 value={r.minAmount} 
                                                 onChange={(e) => updateRow(i, 'minAmount', e.target.value)} 
                                                 placeholder="0"
-                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                                className="w-full bg-white dark:bg-background-dark border border-gray-300 dark:border-border-dark rounded px-2 py-1 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Max Amount</label>
+                                            <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Max Amount</label>
                                             <input 
                                                 value={r.maxAmount} 
                                                 onChange={(e) => updateRow(i, 'maxAmount', e.target.value)} 
                                                 placeholder="0"
-                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                                className="w-full bg-white dark:bg-background-dark border border-gray-300 dark:border-border-dark rounded px-2 py-1 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Approvals</label>
+                                            <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Approvals</label>
                                             <input 
                                                 value={r.requiredApprovals} 
                                                 onChange={(e) => updateRow(i, 'requiredApprovals', e.target.value)} 
                                                 placeholder="1"
-                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                                className="w-full bg-white dark:bg-background-dark border border-gray-300 dark:border-border-dark rounded px-2 py-1 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
                                             />
                                         </div>
                                         <div>
-                                            <label className="text-xs text-slate-400 block mb-1">Cooldown</label>
+                                            <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Cooldown</label>
                                             <input 
                                                 value={r.cooldown} 
                                                 onChange={(e) => updateRow(i, 'cooldown', e.target.value)} 
                                                 placeholder="0"
-                                                className="w-full bg-background-dark border border-border-dark rounded px-2 py-1 text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
+                                                className="w-full bg-white dark:bg-background-dark border border-gray-300 dark:border-border-dark rounded px-2 py-1 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-primary outline-none" 
                                             />
                                         </div>
                                     </div>

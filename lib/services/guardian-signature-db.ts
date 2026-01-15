@@ -73,45 +73,54 @@ function decryptString(payload: string): string {
 
 // Initialize tables if not exist
 const init = () => {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS pending_requests (
-      id TEXT PRIMARY KEY,
-      vaultAddress TEXT,
-      request TEXT,
-      signatures TEXT,
-      requiredQuorum INTEGER,
-      status TEXT,
-      createdAt INTEGER,
-      createdBy TEXT,
-      executedAt INTEGER,
-      executionTxHash TEXT,
-      guardians TEXT
-    );
-  `);
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS account_activities (
-      id TEXT PRIMARY KEY,
-      account TEXT,
-      type TEXT,
-      details TEXT,
-      relatedRequestId TEXT,
-      timestamp INTEGER
-    );
-  `);
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS guardians (
-      id TEXT PRIMARY KEY,
-      address TEXT,
-      tokenId TEXT,
-      addedAt INTEGER,
-      blockNumber TEXT,
-      txHash TEXT,
-      tokenAddress TEXT
-    );
-  `);
+  try {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS pending_requests (
+        id TEXT PRIMARY KEY,
+        vaultAddress TEXT,
+        request TEXT,
+        signatures TEXT,
+        requiredQuorum INTEGER,
+        status TEXT,
+        createdAt INTEGER,
+        createdBy TEXT,
+        executedAt INTEGER,
+        executionTxHash TEXT,
+        guardians TEXT
+      );
+    `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS account_activities (
+        id TEXT PRIMARY KEY,
+        account TEXT,
+        type TEXT,
+        details TEXT,
+        relatedRequestId TEXT,
+        timestamp INTEGER
+      );
+    `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS guardians (
+        id TEXT PRIMARY KEY,
+        address TEXT,
+        tokenId TEXT,
+        addedAt INTEGER,
+        blockNumber TEXT,
+        txHash TEXT,
+        tokenAddress TEXT
+      );
+    `);
+  } catch (e) {
+    console.error('Database initialization error:', e);
+    // Don't throw - let it fail gracefully when accessed
+  }
 };
 
-init();
+try {
+  init();
+} catch (e) {
+  console.error('Failed to initialize database:', e);
+}
 
 export class GuardianSignatureDB {
   static savePendingRequest(request: PendingWithdrawalRequest) {

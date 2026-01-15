@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useSimulation } from "../simulation/SimulationContext";
 import { cn } from "@/lib/utils"; // We need to create this utility
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { NotificationsDropdown } from "@/components/ui/notifications-dropdown";
 import { Shield, X, Menu } from "lucide-react"; // Using Lucide for the logo icon for now, or SVG
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
@@ -85,6 +86,7 @@ export function Navbar() {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <NotificationsDropdown />
                         <ConnectButton
                             accountStatus={{
                                 smallScreen: 'avatar',

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Shield, ArrowRight, User, Check, X, AlertCircle } from "lucide-react";
 import { useAccount, useSignTypedData, useChainId } from "wagmi";
 import { useUserContracts, useVaultQuorum, useIsGuardian } from "@/lib/hooks/useContracts";
+import { useGuardians } from "@/lib/hooks/useVaultData";
 import { type Address, formatEther } from "viem";
 import { Spinner } from "@/components/ui/spinner";
 import Link from "next/link";
@@ -19,18 +20,20 @@ export function VotingView() {
     const vaultAddress = userContracts ? (userContracts as any)[1] : undefined;
     const { data: quorum } = useVaultQuorum(vaultAddress);
     const { data: isGuardian, isLoading: isCheckingGuardian } = useIsGuardian(guardianTokenAddress, address);
-    // ...existing code...
+    const { guardians: guardiansList, isLoading: isLoadingGuardians } = useGuardians(guardianTokenAddress);
     
     const { signTypedData, data: signature, isPending: isSigning, isSuccess: isSignSuccess } = useSignTypedData();
 
     useEffect(() => {
         // Check if user is a guardian before showing withdrawal requests
-        if (isCheckingGuardian) {
+        if (isCheckingGuardian || isLoadingGuardians) {
             setStatus('loading');
             return;
         }
 
-        if (!isGuardian) {
+        // Check contract first, but fallback to guardian list
+        const isGuardianInList = guardiansList.some(g => g.address.toLowerCase() === address?.toLowerCase());
+        if (!isGuardian && !isGuardianInList) {
             setStatus('unauthorized');
             return;
         }
@@ -67,7 +70,7 @@ export function VotingView() {
             console.error('Error loading withdrawal requests:', error);
             setStatus('empty');
         }
-    }, [vaultAddress, address, isGuardian, isCheckingGuardian]);
+    }, [vaultAddress, address, isGuardian, isCheckingGuardian, isLoadingGuardians, guardiansList]);
 
     useEffect(() => {
         if (isSignSuccess && signature && pendingRequests.length > 0) {

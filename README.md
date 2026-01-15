@@ -486,29 +486,114 @@ spenednsave/
 │   └── ui/                 # Reusable UI components
 ├── contracts/              # Solidity smart contracts
 │   ├── SpendVault.sol
-│   ├── GuardianSBT.sol
-│   └── VaultFactory.sol
-├── lib/                    # Utilities and hooks
-│   ├── contracts.ts        # Contract instances
-│   ├── config.ts           # App configuration
-│   ├── utils.ts            # Helper functions
-│   ├── abis/               # Contract ABIs
-│   └── hooks/              # Custom React hooks
-├── public/                 # Static assets
-├── _designs/               # HTML design prototypes
-└── [config files]          # TS, Tailwind, ESLint configs
+
+### GuardianSBT.sol
+
+**Purpose**: Soulbound token (non-transferable NFT) that identifies guardians
+
+**Key Features**:
+- ERC-721 compliant
+- Blocks all transfers (except mint/burn)
+- Only owner can mint/burn tokens
+- Used for identity verification in SpendVault
+- **Multi-Vault Associations**: Each guardian token can be linked to multiple SpendVault addresses. Guardians can serve in multiple vaults.
+
+**Main Functions:**
+```solidity
+function mint(address to, address vault) external onlyOwner
+function burn(uint256 tokenId, address vault) external onlyOwner
+function balanceOf(address account) external view returns (uint256)
+function getVaultsForGuardian(address guardian) external view returns (address[] memory)
+function getGuardiansForVault(address vault) external view returns (address[] memory)
 ```
+
 ---
 
-## 🌟 Community Feature Requests & Feedback
+## 🧑‍💻 Usage Examples
 
-- Users can submit feature requests or feedback via the floating button/modal on any page.
-- Requests are sent to `/api/feature-requests` and can be managed in the backend.
+### Interacting with Smart Contracts (Hardhat/Ethers.js)
 
-SpendGuard now includes a Community Feature Requests page where users can:
+#### Mint a Guardian SBT
+```js
+// scripts/mintGuardian.js
+const { ethers } = require("hardhat");
 
-- Suggest new features for the platform
-- Vote on existing feature requests
+async function main() {
+   const [deployer] = await ethers.getSigners();
+   const guardianSBT = await ethers.getContractAt("GuardianSBT", "<GUARDIAN_SBT_ADDRESS>");
+   const tx = await guardianSBT.mint("<GUARDIAN_ADDRESS>", "<VAULT_ADDRESS>");
+   await tx.wait();
+   console.log("Guardian SBT minted!");
+}
+main();
+```
+
+#### Withdraw from SpendVault
+```js
+// scripts/withdraw.js
+const { ethers } = require("hardhat");
+
+async function main() {
+   const [owner] = await ethers.getSigners();
+   const spendVault = await ethers.getContractAt("SpendVault", "<VAULT_ADDRESS>");
+   // Prepare signatures array from guardians (off-chain signing required)
+   const signatures = [/* guardian signatures here */];
+   const tx = await spendVault.withdraw(
+      "<TOKEN_ADDRESS>",
+      ethers.utils.parseEther("0.1"),
+      "<RECIPIENT_ADDRESS>",
+      "For expenses",
+      signatures
+   );
+   await tx.wait();
+   console.log("Withdrawal executed!");
+}
+main();
+```
+
+---
+
+### Example API Requests
+
+#### Submit a Feature Request
+```bash
+curl -X POST http://localhost:3000/api/feature-requests \
+```
+**Response:**
+```json
+{
+   "success": true,
+   "message": "Feature request submitted"
+}
+```
+
+#### Get Notifications
+```bash
+curl http://localhost:3000/api/notifications
+```
+**Response:**
+```json
+[
+   {
+      "id": 1,
+      "type": "withdrawal-approved",
+      "message": "Your withdrawal was approved by a guardian.",
+      "timestamp": 1700000000
+   }
+]
+```
+
+#### Contact Support
+```bash
+curl -X POST http://localhost:3000/api/contact-support \
+```
+**Response:**
+```json
+{
+   "success": true,
+   "message": "Support request received"
+}
+```
 - See top-voted ideas prioritized for future development
 
 **How to use:**

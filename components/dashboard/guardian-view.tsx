@@ -236,6 +236,14 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
                             <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">{vault.vaultName}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Owner: {vault.owner}</p>
                             <p className="text-sm text-slate-600 dark:text-slate-400">Pending Approvals: {vault.pendingApprovals}</p>
+                            <a
+                                href={`https://basescan.org/address/${vault.vaultAddress}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block mt-2 text-blue-600 hover:underline text-sm"
+                            >
+                                View on BaseScan
+                            </a>
                         </div>
                     ))}
                 </div>
@@ -375,6 +383,17 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
                                             </button>
                                         </p>
                                         <p className="text-sm text-slate-500 dark:text-slate-400">{request.reason}</p>
+                                        {/* If a transaction hash is available, show BaseScan link */}
+                                        {request.txHash && (
+                                            <a
+                                                href={`https://basescan.org/tx/${request.txHash}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-block mt-1 text-blue-600 hover:underline text-xs"
+                                            >
+                                                View on BaseScan
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="text-right">

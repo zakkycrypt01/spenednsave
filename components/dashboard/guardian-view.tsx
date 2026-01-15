@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, CheckCircle, XCircle, Clock, AlertTriangle, Users, Award } from "lucide-react";
+import { Shield, CheckCircle, XCircle, Clock, Users, Award } from "lucide-react";
 import { AvatarBlockie } from "@/components/ui/avatar-blockie";
 import { useAccount } from "wagmi";
 import { useState, useEffect } from "react";
@@ -32,7 +32,8 @@ interface ScheduledWithdrawal {
     txHash?: string; // Optional transaction hash for BaseScan link
 }
 
-function GuardianView({ badgeData }: { badgeData?: any }) {
+type BadgeData = [string[], string[], string[]];
+function GuardianView({ badgeData }: { badgeData?: BadgeData }) {
     const { address } = useAccount();
     const { demo } = useDemoMode();
 
@@ -60,6 +61,8 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
 
     // Replace with actual data fetching logic for reputation and badgeData
 
+    // Always call hooks in the same order
+    const scheduledHook = useScheduledWithdrawals();
     useEffect(() => {
         if (demo) {
             setVaults([
@@ -78,29 +81,29 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
                     { recipient: "0xFriend2", reason: "Emergency Unlock", amount: "1.2 ETH", timestamp: new Date(Date.now() - 86400000).toISOString() },
                 ],
             });
-            return;
-        }
-        async function fetchVaults() {
-            if (!address || !GUARDIAN_SBT_ADDRESS) return;
-            try {
-                // Use ethers.js to call getVaultsForGuardian
-                const provider = new JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
-                const contract = new Contract(GUARDIAN_SBT_ADDRESS, GuardianSBTABI, provider);
-                // This call may fail if the ABI or contract is not correct, so wrap in try/catch
-                // If not implemented, just set empty
+        } else {
+            async function fetchVaults() {
+                if (!address || !GUARDIAN_SBT_ADDRESS) return;
                 try {
-                    await contract.getVaultsForGuardian(address);
+                    // Use ethers.js to call getVaultsForGuardian
+                    const provider = new JsonRpcProvider(process.env.NEXT_PUBLIC_RPC_URL);
+                    const contract = new Contract(GUARDIAN_SBT_ADDRESS, GuardianSBTABI, provider);
+                    // This call may fail if the ABI or contract is not correct, so wrap in try/catch
+                    // If not implemented, just set empty
+                    try {
+                        await contract.getVaultsForGuardian(address);
+                    } catch {
+                        // fallback: not implemented
+                    }
+                    // For each vault, fetch name, owner, and pending approvals from contract/backend
+                    // Replace with actual contract calls in production
+                    setVaults([]);
                 } catch {
-                    // fallback: not implemented
+                    setVaults([]);
                 }
-                // For each vault, fetch name, owner, and pending approvals from contract/backend
-                // Replace with actual contract calls in production
-                setVaults([]);
-            } catch {
-                setVaults([]);
             }
+            fetchVaults();
         }
-        fetchVaults();
     }, [address, demo]);
 
     // EIP-712 signing for gasless guardian approval
@@ -111,44 +114,45 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
 
     // Real contract/backend data should be loaded here
     // Scheduled withdrawals integration
-    // Use fake scheduled withdrawals in demo mode
-    const { scheduled, loading, error } = demo
-        ? {
-            scheduled: [
-                {
-                    id: 1,
-                    executed: false,
-                    approvals: ["0xFriend1"],
-                    saverName: "Demo User",
-                    saverAddress: "0xDemoUser1234...",
-                    timestamp: new Date().toISOString(),
-                    amount: "0.25 ETH",
-                    amountUSD: "$500",
-                    reason: "Demo withdrawal",
-                    requiredSignatures: 2,
-                    currentSignatures: 1,
-                    hasUserSigned: false,
-                },
-                {
-                    id: 2,
-                    executed: true,
-                    approvals: ["0xFriend1", "0xFriend2"],
-                    saverName: "Demo User",
-                    saverAddress: "0xDemoUser1234...",
-                    timestamp: new Date(Date.now() - 3600 * 1000 * 5).toISOString(),
-                    amount: "1.00 ETH",
-                    amountUSD: "$2000",
-                    reason: "Demo completed withdrawal",
-                    requiredSignatures: 2,
-                    currentSignatures: 2,
-                    hasUserSigned: true,
-                    txHash: "0xDEMOFAKEHASH1234567890",
-                },
-            ],
-            loading: false,
-            error: null,
-        }
-        : useScheduledWithdrawals();
+    // Use fake scheduled withdrawals in demo mode, but always call the hook
+    let demoScheduled: ScheduledWithdrawal[] = [];
+    if (demo) {
+        const now = Date.now();
+        demoScheduled = [
+            {
+                id: 1,
+                executed: false,
+                approvals: ["0xFriend1"],
+                saverName: "Demo User",
+                saverAddress: "0xDemoUser1234...",
+                timestamp: new Date(now).toISOString(),
+                amount: "0.25 ETH",
+                amountUSD: "$500",
+                reason: "Demo withdrawal",
+                requiredSignatures: 2,
+                currentSignatures: 1,
+                hasUserSigned: false,
+            },
+            {
+                id: 2,
+                executed: true,
+                approvals: ["0xFriend1", "0xFriend2"],
+                saverName: "Demo User",
+                saverAddress: "0xDemoUser1234...",
+                timestamp: new Date(now - 3600 * 1000 * 5).toISOString(),
+                amount: "1.00 ETH",
+                amountUSD: "$2000",
+                reason: "Demo completed withdrawal",
+                requiredSignatures: 2,
+                currentSignatures: 2,
+                hasUserSigned: true,
+                txHash: "0xDEMOFAKEHASH1234567890",
+            },
+        ];
+    }
+    const scheduled = demo ? demoScheduled : scheduledHook.scheduled;
+    const loading = demo ? false : scheduledHook.loading;
+    const error = demo ? null : scheduledHook.error;
     function getErrorMessage(err: unknown): string | undefined {
         if (typeof err === 'string') return err;
         if (typeof err === 'object' && err !== null && 'message' in err && typeof (err as Record<string, unknown>).message === 'string') {
@@ -210,12 +214,12 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
                     <div className="flex items-center gap-3">
                         <div className="text-sm text-slate-500">Badges</div>
                         <div className="flex items-center gap-2">
-                            {(badgeData[0] || []).map((tid, i) => (
+                            {(badgeData && badgeData[0] ? badgeData[0] : []).map((tid: string, i: number) => (
                                 <div key={String(tid)} className="inline-flex items-center gap-2 bg-white dark:bg-surface-dark border border-surface-border rounded-xl px-3 py-1 text-xs">
                                     <Award size={16} className="text-amber-500" />
                                     <div>
-                                        <div className="font-semibold">{badgeData[1] && badgeData[1][i] ? `Type ${String(badgeData[1][i])}` : 'Badge'}</div>
-                                        <div className="text-xs text-slate-500">{badgeData[2] && badgeData[2][i] ? new Date(Number(badgeData[2][i]) * 1000).toLocaleDateString() : ''}</div>
+                                        <div className="font-semibold">{badgeData && badgeData[1] && badgeData[1][i] ? `Type ${String(badgeData[1][i])}` : 'Badge'}</div>
+                                        <div className="text-xs text-slate-500">{badgeData && badgeData[2] && badgeData[2][i] ? new Date(Number(badgeData[2][i]) * 1000).toLocaleDateString() : ''}</div>
                                     </div>
                                 </div>
                             ))}
@@ -257,7 +261,7 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
                 </div>
             </div>
             {/* Guardian Approval History */}
-            {reputation?.history?.length > 0 && (
+            {reputation && reputation.history && reputation.history.length > 0 && (
                 <div>
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Approval History</h2>
@@ -290,7 +294,7 @@ function GuardianView({ badgeData }: { badgeData?: any }) {
                         </button>
                     </div>
                     <div className="space-y-3">
-                        {reputation.history.map((item, idx) => (
+                        {reputation && reputation.history && reputation.history.map((item, idx) => (
                             <div key={idx} className="bg-white dark:bg-surface-dark border border-surface-border rounded-xl p-4 flex items-center justify-between">
                                 <div>
                                     <div className="flex items-center gap-1 font-medium text-slate-900 dark:text-white">

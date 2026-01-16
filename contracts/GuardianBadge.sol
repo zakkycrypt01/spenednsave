@@ -29,6 +29,8 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
     event BadgeMinted(address indexed guardian, BadgeType indexed badgeType, uint256 level, uint256 indexed tokenId);
     event BadgeUpgraded(address indexed guardian, BadgeType indexed badgeType, uint256 newLevel, uint256 indexed tokenId);
     event BadgeBurned(address indexed guardian, BadgeType indexed badgeType, uint256 indexed tokenId);
+    event EmergencyContactAdded(address indexed contact);
+    event EmergencyContactRemoved(address indexed contact);
 
     constructor() ERC721("GuardianBadge", "GBADGE") Ownable(msg.sender) {}
 
@@ -123,14 +125,30 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
         return guardianBadges[guardian][badgeType] != 0;
     }
 
+    /**
+     * @notice Get the count of badges for a guardian
+     * @param guardian The guardian address
+     * @return The total number of badges owned
+     */
+    function getGuardianBadgeCount(address guardian) external view returns (uint256) {
+        return guardianBadgeTypes[guardian].length;
+    }
+
+    /**
+     * @notice Get detailed information about a badge
+     * @param tokenId The badge token ID
+     * @return badge The Badge struct containing badgeType, level, and timestamp
+     */
+    function getBadgeDetails(uint256 tokenId) external view returns (Badge memory) {
+        require(tokenId != 0 && tokenId <= _tokenIdCounter, "Badge not found");
+        return badges[tokenId];
+    }
+
     // ============================================================
     // EMERGENCY CONTACTS - Separate functionality for emergency recovery
     // ============================================================
     mapping(address => bool) public emergencyContacts;
     address[] public emergencyContactList;
-
-    event EmergencyContactAdded(address indexed contact);
-    event EmergencyContactRemoved(address indexed contact);
 
     /**
      * @notice Add a trusted emergency contact (owner only)
@@ -171,8 +189,16 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
         return emergencyContactList;
     }
 
-    // --- Soulbound: Block all transfers and approvals ---
+    // ============================================================
+    // SOULBOUND MECHANICS - Non-transferable NFT enforcement
+    // ============================================================
+    // These functions enforce the soulbound nature of the badges.
+    // Badges cannot be transferred, approved, or sold - they are
+    // permanently bound to the guardian who receives them.
 
+    /**
+     * @dev Override _beforeTokenTransfer to prevent all transfers except minting and burning
+     */
     function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
         internal
         override(ERC721, ERC721Enumerable)
@@ -190,22 +216,37 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
         return super.supportsInterface(interfaceId);
     }
 
+    /**
+     * @dev Prevent approval of soulbound tokens
+     */
     function approve(address to, uint256 tokenId) public override(ERC721) {
         revert("Soulbound: Approvals disabled");
     }
 
+    /**
+     * @dev Prevent bulk approval of soulbound tokens
+     */
     function setApprovalForAll(address operator, bool approved) public override(ERC721) {
         revert("Soulbound: Approvals disabled");
     }
 
+    /**
+     * @dev Prevent direct transfers of soulbound tokens
+     */
     function transferFrom(address from, address to, uint256 tokenId) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
     }
 
+    /**
+     * @dev Prevent safe transfers of soulbound tokens
+     */
     function safeTransferFrom(address from, address to, uint256 tokenId) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
     }
 
+    /**
+     * @dev Prevent safe transfers with data of soulbound tokens
+     */
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
     }

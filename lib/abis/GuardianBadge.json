@@ -1,11 +1,187 @@
 [
   {
+    "inputs": [],
+    "name": "OwnableUnauthorizedAccount",
+    "type": "error"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "guardian", "type": "address" },
+      { "indexed": true, "name": "badgeType", "type": "uint8" },
+      { "indexed": false, "name": "level", "type": "uint256" },
+      { "indexed": true, "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "BadgeMinted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "guardian", "type": "address" },
+      { "indexed": true, "name": "badgeType", "type": "uint8" },
+      { "indexed": false, "name": "newLevel", "type": "uint256" },
+      { "indexed": true, "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "BadgeUpgraded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "guardian", "type": "address" },
+      { "indexed": true, "name": "badgeType", "type": "uint8" },
+      { "indexed": true, "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "BadgeBurned",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "contact", "type": "address" }
+    ],
+    "name": "EmergencyContactAdded",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "contact", "type": "address" }
+    ],
+    "name": "EmergencyContactRemoved",
+    "type": "event"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "contact", "type": "address" }
+    ],
+    "name": "addEmergencyContact",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "guardian", "type": "address" },
+      { "internalType": "uint8", "name": "badgeType", "type": "uint8" }
+    ],
+    "name": "burnBadge",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
     "inputs": [
       { "internalType": "address", "name": "to", "type": "address" },
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "approve",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "tokenId", "type": "uint256" }
+    ],
+    "name": "getBadgeDetails",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint8", "name": "badgeType", "type": "uint8" },
+          { "internalType": "uint256", "name": "level", "type": "uint256" },
+          { "internalType": "uint256", "name": "timestamp", "type": "uint256" }
+        ],
+        "internalType": "struct GuardianBadge.Badge",
+        "name": "badge",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getEmergencyContacts",
+    "outputs": [
+      { "internalType": "address[]", "name": "", "type": "address[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "guardian", "type": "address" }
+    ],
+    "name": "getGuardianBadgeCount",
+    "outputs": [
+      { "internalType": "uint256", "name": "", "type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "guardian", "type": "address" }
+    ],
+    "name": "getGuardianBadgeTokens",
+    "outputs": [
+      { "internalType": "uint256[]", "name": "", "type": "uint256[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "guardian", "type": "address" }
+    ],
+    "name": "getGuardianBadgeTypes",
+    "outputs": [
+      { "internalType": "uint8[]", "name": "", "type": "uint8[]" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "guardian", "type": "address" },
+      { "internalType": "uint8", "name": "badgeType", "type": "uint8" }
+    ],
+    "name": "hasGuardianBadge",
+    "outputs": [
+      { "internalType": "bool", "name": "", "type": "bool" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "guardian", "type": "address" },
       { "internalType": "uint8", "name": "badgeType", "type": "uint8" },
       { "internalType": "uint256", "name": "level", "type": "uint256" }
     ],
     "name": "mintBadge",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "contact", "type": "address" }
+    ],
+    "name": "removeEmergencyContact",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "guardian", "type": "address" },
+      { "internalType": "uint8", "name": "badgeType", "type": "uint8" },
+      { "internalType": "uint256", "name": "newLevel", "type": "uint256" }
+    ],
+    "name": "upgradeBadge",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

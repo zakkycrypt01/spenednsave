@@ -170,12 +170,149 @@
         </section>
     </main>
 
+    <!-- Wallet Connection Modal -->
+    <div id="walletModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4" style="display: none;">
+        <div class="bg-slate-900 border border-white/10 rounded-2xl p-8 max-w-md w-full">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold">Connect Wallet</h2>
+                <button onclick="document.getElementById('walletModal').classList.add('hidden')" class="text-slate-400 hover:text-white text-2xl leading-none">&times;</button>
+            </div>
+            
+            <div class="space-y-3">
+                <!-- MetaMask -->
+                <button onclick="connectMetaMask()" class="w-full flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors border border-white/5 hover:border-white/20">
+                    <div class="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center">
+                        <span class="text-lg">🦊</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-bold">MetaMask</p>
+                        <p class="text-sm text-slate-400">Most popular wallet</p>
+                    </div>
+                </button>
+
+                <!-- Rabby Wallet -->
+                <button onclick="connectRabby()" class="w-full flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors border border-white/5 hover:border-white/20">
+                    <div class="w-10 h-10 bg-purple-500/20 rounded-lg flex items-center justify-center">
+                        <span class="text-lg">🐰</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-bold">Rabby Wallet</p>
+                        <p class="text-sm text-slate-400">Multi-chain support</p>
+                    </div>
+                </button>
+
+                <!-- WalletConnect -->
+                <button onclick="connectWalletConnect()" class="w-full flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors border border-white/5 hover:border-white/20">
+                    <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <span class="text-lg">🔗</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-bold">WalletConnect</p>
+                        <p class="text-sm text-slate-400">Connect any wallet</p>
+                    </div>
+                </button>
+
+                <!-- Coinbase -->
+                <button onclick="connectCoinbase()" class="w-full flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors border border-white/5 hover:border-white/20">
+                    <div class="w-10 h-10 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                        <span class="text-lg">💰</span>
+                    </div>
+                    <div class="text-left flex-1">
+                        <p class="font-bold">Coinbase</p>
+                        <p class="text-sm text-slate-400">Coinbase Wallet</p>
+                    </div>
+                </button>
+            </div>
+
+            <p class="text-sm text-slate-400 text-center mt-6">
+                Don't have a wallet? <a href="https://metamask.io" target="_blank" class="text-blue-400 hover:text-blue-300">Install MetaMask</a> or <a href="https://rabby.io" target="_blank" class="text-purple-400 hover:text-purple-300">Install Rabby</a>
+            </p>
+        </div>
+    </div>
+
     <script>
-        document.getElementById('connectBtn').addEventListener('click', () => {
-            alert('Install MetaMask or another Web3 wallet to connect!\n\nFor the full app, run: npm install && npm run dev');
+        // Wallet detection and connection
+        function detectWallets() {
+            return {
+                metaMask: window.ethereum?.isMetaMask,
+                rabby: window.ethereum?.isRabby,
+                coinbase: window.ethereum?.isCoinbaseWallet,
+                walletConnect: window.ethereum?.isWalletConnect,
+            };
+        }
+
+        function connectMetaMask() {
+            if (window.ethereum?.isMetaMask) {
+                window.ethereum.request({ method: 'eth_requestAccounts' })
+                    .then(accounts => {
+                        alert(`Connected to MetaMask!\nAccount: ${accounts[0]}`);
+                        document.getElementById('walletModal').classList.add('hidden');
+                    })
+                    .catch(err => alert('Connection failed: ' + err.message));
+            } else {
+                alert('MetaMask not installed. Install it from https://metamask.io');
+            }
+        }
+
+        function connectRabby() {
+            if (window.ethereum?.isRabby) {
+                window.ethereum.request({ method: 'eth_requestAccounts' })
+                    .then(accounts => {
+                        alert(`Connected to Rabby Wallet!\nAccount: ${accounts[0]}`);
+                        document.getElementById('walletModal').classList.add('hidden');
+                    })
+                    .catch(err => alert('Connection failed: ' + err.message));
+            } else {
+                alert('Rabby Wallet not installed. Install it from https://rabby.io');
+            }
+        }
+
+        function connectWalletConnect() {
+            alert('WalletConnect support requires web3-onboard or ethers.js library.\n\nFor full integration, run: npm install && npm run dev');
+        }
+
+        function connectCoinbase() {
+            if (window.ethereum?.isCoinbaseWallet) {
+                window.ethereum.request({ method: 'eth_requestAccounts' })
+                    .then(accounts => {
+                        alert(`Connected to Coinbase Wallet!\nAccount: ${accounts[0]}`);
+                        document.getElementById('walletModal').classList.add('hidden');
+                    })
+                    .catch(err => alert('Connection failed: ' + err.message));
+            } else {
+                alert('Coinbase Wallet not installed or not available.');
+            }
+        }
+
+        function openWalletModal() {
+            const wallets = detectWallets();
+            if (wallets.metaMask || wallets.rabby || wallets.coinbase) {
+                const modal = document.getElementById('walletModal');
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+            } else {
+                alert('No Web3 wallets detected.\n\nInstall:\n- MetaMask: https://metamask.io\n- Rabby: https://rabby.io\n- Coinbase Wallet\n\nOr for full app: npm install && npm run dev');
+            }
+        }
+
+        document.getElementById('connectBtn').addEventListener('click', openWalletModal);
+        document.getElementById('heroConnectBtn').addEventListener('click', openWalletModal);
+
+        // Close modal on escape or click outside
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('walletModal');
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
         });
-        document.getElementById('heroConnectBtn').addEventListener('click', () => {
-            alert('Install MetaMask or another Web3 wallet to connect!\n\nFor the full app, run: npm install && npm run dev');
+
+        document.getElementById('walletModal').addEventListener('click', (e) => {
+            if (e.target.id === 'walletModal') {
+                const modal = document.getElementById('walletModal');
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
         });
     </script>
 </body>

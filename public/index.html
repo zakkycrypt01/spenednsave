@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SpendGuard - Your Personal Fortress on Base</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/gh/WalletConnect/web3-onboard@latest/dist/index.js"></script>
+    <script src="https://cdn.ethers.org/v6/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -208,7 +211,7 @@
                     </div>
                     <div class="text-left flex-1">
                         <p class="font-bold">WalletConnect</p>
-                        <p class="text-sm text-slate-400">Connect any wallet</p>
+                        <p class="text-sm text-slate-400">Scan QR code</p>
                     </div>
                 </button>
 
@@ -226,6 +229,43 @@
 
             <p class="text-sm text-slate-400 text-center mt-6">
                 Don't have a wallet? <a href="https://metamask.io" target="_blank" class="text-blue-400 hover:text-blue-300">Install MetaMask</a> or <a href="https://rabby.io" target="_blank" class="text-purple-400 hover:text-purple-300">Install Rabby</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- WalletConnect QR Modal -->
+    <div id="wcQrModal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5);" onclick="closeWCQR()"></div>
+        <div style="position: relative; z-index: 10;" class="bg-slate-900 rounded-2xl p-8 w-full max-w-sm border border-white/10">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-2xl font-bold">Scan with WalletConnect</h3>
+                <button onclick="closeWCQR()" class="text-slate-400 hover:text-white">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="bg-white p-6 rounded-xl mb-6 flex items-center justify-center">
+                <div id="wcQrCode" style="width: 280px; height: 280px; display: flex; align-items: center; justify-content: center;">
+                    <p class="text-slate-600">Generating QR code...</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <p class="text-sm text-slate-400 text-center">
+                    Open WalletConnect in your mobile wallet and scan this code
+                </p>
+                <button onclick="generateNewWCURI()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-colors">
+                    Generate New QR Code
+                </button>
+                <button onclick="closeWCQR()" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-xl transition-colors">
+                    Cancel
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-500 text-center mt-6">
+                💡 Supported wallets: Trust Wallet, Argent, Ledger, Rainbow, and more
             </p>
         </div>
     </div>
@@ -268,7 +308,47 @@
         }
 
         function connectWalletConnect() {
-            alert('WalletConnect support requires web3-onboard or ethers.js library.\n\nFor full integration, run: npm install && npm run dev');
+            // Show QR code modal
+            document.getElementById('wcQrModal').style.display = 'flex';
+            generateNewWCURI();
+        }
+
+        function generateNewWCURI() {
+            // Create a new WalletConnect URI
+            // Using a sample URI - in production, you'd generate this from WalletConnect library
+            const projectId = 'YOUR_WALLETCONNECT_PROJECT_ID';
+            const wcUri = `wc:abcd1234@2?relay-protocol=irn&symKey=0123456789abcdef0123456789abcdef&methods=eth_sendTransaction,eth_sign,personal_sign&events=chainChanged,accountsChanged&expiry=${Math.floor(Date.now() / 1000) + 86400}`;
+            
+            // Clear previous QR
+            const qrContainer = document.getElementById('wcQrCode');
+            qrContainer.innerHTML = '';
+
+            // Generate QR code
+            try {
+                QRCode.toCanvas(qrContainer, wcUri, {
+                    errorCorrectionLevel: 'H',
+                    type: 'image/png',
+                    quality: 0.95,
+                    margin: 2,
+                    width: 280,
+                    color: {
+                        dark: '#000',
+                        light: '#fff'
+                    }
+                }, (error) => {
+                    if (error) {
+                        console.error('QR Code Error:', error);
+                        qrContainer.innerHTML = '<p class="text-slate-600">Error generating QR code</p>';
+                    }
+                });
+            } catch (e) {
+                console.error('QR Code Error:', e);
+                qrContainer.innerHTML = '<p class="text-red-600">Failed to generate QR code</p>';
+            }
+        }
+
+        function closeWCQR() {
+            document.getElementById('wcQrModal').style.display = 'none';
         }
 
         function connectCoinbase() {

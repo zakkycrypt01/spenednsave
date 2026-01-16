@@ -17,10 +17,12 @@ SpendGuard is a smart contract system that enables secure fund management throug
 - [Features](#-features)
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start)
+- [Quick Links](#-quick-links)
 - [Smart Contracts](#-smart-contracts)
 - [Frontend Application](#-frontend-application)
 - [Development](#-development)
 - [Deployment](#-deployment)
+- [Roadmap](#-roadmap)
 - [Security](#-security)
 - [Testing](#-testing)
 - [Contributing](#-contributing)
@@ -56,10 +58,7 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 ## 📝 Changelog
 
-- **2026-01-14**: Fixed Activity Log total deposits calculation and display. Now always sums as `bigint` and shows up to 5 decimal places for ETH values.
-
-## 📝 Changelog
-
+- **2026-01-16**: Added comprehensive 30-feature roadmap for incremental development
 - **2026-01-14**: Fixed Activity Log total deposits calculation and display. Now always sums as `bigint` and shows up to 5 decimal places for ETH values.
 
 
@@ -277,7 +276,24 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed contract deployment instructions
 
 ---
 
-## 📜 Smart Contracts
+## � Quick Links
+
+Quick access to key resources:
+
+| Resource | Link | Purpose |
+|----------|------|----------|
+| Live Demo | [spendguard.xyz](#) | Try the app |
+| Contracts | [BaseScan Explorer](#) | View smart contracts |
+| Deployment Guide | [DEPLOYMENT.md](DEPLOYMENT.md) | Deploy to production |
+| API Documentation | [API Endpoints](#-new-features--api-endpoints-2026) | Backend integration |
+| WalletConnect Setup | [WALLETCONNECT_README.md](WALLETCONNECT_README.md) | Wallet integration |
+| Issue Tracker | [GitHub Issues](#) | Report bugs |
+| Feature Requests | [/feature-requests](#) | Suggest features |
+| Support | [/contact-support](#) | Get help |
+
+---
+
+## �📜 Smart Contracts
 
 ### GuardianSBT.sol
 
@@ -777,7 +793,73 @@ npx hardhat verify --network baseSepolia DEPLOYED_ADDRESS
 
 ---
 
-## 🔒 Security
+## �️ Roadmap
+
+### Q1 2026 - Foundation & UX Polish
+
+**30 Committed Features** (See [FEATURE_ROADMAP_COMMITS.md](FEATURE_ROADMAP_COMMITS.md) for full details)
+
+#### UI/UX Enhancements (5 features)
+- [ ] Dark mode toggle animations
+- [ ] Loading skeleton components
+- [ ] Enhanced toast notifications
+- [ ] Keyboard shortcuts helper modal
+- [ ] Mobile drawer navigation
+
+#### Analytics & Metrics (6 features)
+- [ ] Expanded dashboard cards
+- [ ] Vault statistics page
+- [ ] Advanced activity log filters
+- [ ] Multi-format data export (JSON, Excel)
+- [ ] Vault performance dashboard
+- [ ] Guardian leaderboard
+
+#### Notifications & Alerts (5 features)
+- [ ] Enhanced email preference UI
+- [ ] Browser push notifications
+- [ ] Weekly digest emails
+- [ ] Real-time WebSocket updates
+- [ ] Sound alerts for important events
+
+#### Security & Monitoring (4 features)
+- [ ] Security audit log page
+- [ ] Risk assessment indicators
+- [ ] Transaction simulation details
+- [ ] Device trust manager
+
+#### Education & Onboarding (4 features)
+- [ ] Interactive onboarding tour
+- [ ] Glossary with tooltips
+- [ ] Enhanced FAQ with search
+- [ ] Video guide references
+
+#### Developer Tools (3 features)
+- [ ] Contract ABI browser
+- [ ] Real-time event monitor
+- [ ] Mock data generator
+
+#### Social & Integration (3 features)
+- [ ] Social sharing features
+- [ ] DAO integration hooks
+- [ ] Theme customization UI
+
+### Q2 2026 - Advanced Features
+
+- Multi-vault management dashboard
+- Advanced recovery scenarios
+- Enhanced guardian verification
+- Integration with major protocols
+
+### Q3+ 2026 - Scaling & Partnerships
+
+- Mainnet deployment
+- Layer 2 optimization
+- Community governance
+- Mobile app (React Native)
+
+---
+
+## �🔒 Security
 
 ### Smart Contract Security
 

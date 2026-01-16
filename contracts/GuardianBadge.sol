@@ -22,13 +22,110 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
     mapping(uint256 => Badge) public badges;
     // guardian => badge type => tokenId
     mapping(address => mapping(BadgeType => uint256)) public guardianBadges;
+    // guardian => array of badge types they own
+    mapping(address => BadgeType[]) private guardianBadgeTypes;
     uint256 private _tokenIdCounter;
 
-    event BadgeMinted(address indexed guardian, BadgeType badgeType, uint256 level, uint256 tokenId);
+    event BadgeMinted(address indexed guardian, BadgeType indexed badgeType, uint256 level, uint256 indexed tokenId);
+    event BadgeUpgraded(address indexed guardian, BadgeType indexed badgeType, uint256 newLevel, uint256 indexed tokenId);
+    event BadgeBurned(address indexed guardian, BadgeType indexed badgeType, uint256 indexed tokenId);
 
     constructor() ERC721("GuardianBadge", "GBADGE") Ownable(msg.sender) {}
 
-    // --- Emergency Contact List ---
+    // ============================================================
+    // BADGE MANAGEMENT - Core badge minting and querying
+    // ============================================================
+
+    /**
+     * @notice Mint a new badge for a guardian
+     * @param guardian The guardian address
+     * @param badgeType The type of badge
+     * @param level The achievement level
+     */
+    function mintBadge(address guardian, BadgeType badgeType, uint256 level) external onlyOwner {
+        require(guardian != address(0), "Invalid guardian address");
+        require(guardianBadges[guardian][badgeType] == 0, "Badge type already exists");
+        _tokenIdCounter++;
+        uint256 tokenId = _tokenIdCounter;
+        _safeMint(guardian, tokenId);
+        badges[tokenId] = Badge({ badgeType: badgeType, level: level, timestamp: block.timestamp });
+        guardianBadges[guardian][badgeType] = tokenId;
+        guardianBadgeTypes[guardian].push(badgeType);
+        emit BadgeMinted(guardian, badgeType, level, tokenId);
+    }
+
+    /**
+     * @notice Upgrade an existing badge to a new level
+     * @param guardian The guardian address
+     * @param badgeType The badge type to upgrade
+     * @param newLevel The new achievement level
+     */
+    function upgradeBadge(address guardian, BadgeType badgeType, uint256 newLevel) external onlyOwner {
+        uint256 tokenId = guardianBadges[guardian][badgeType];
+        require(tokenId != 0, "Badge not found");
+        require(newLevel > badges[tokenId].level, "New level must be higher");
+        badges[tokenId].level = newLevel;
+        badges[tokenId].timestamp = block.timestamp;
+        emit BadgeUpgraded(guardian, badgeType, newLevel, tokenId);
+    }
+
+    /**
+     * @notice Burn a badge (remove from circulation)
+     * @param guardian The guardian address
+     * @param badgeType The badge type to burn
+     */
+    function burnBadge(address guardian, BadgeType badgeType) external onlyOwner {
+        uint256 tokenId = guardianBadges[guardian][badgeType];
+        require(tokenId != 0, "Badge not found");
+        _burn(tokenId);
+        delete guardianBadges[guardian][badgeType];
+        delete badges[tokenId];
+        // Remove from badge types array
+        for (uint256 i = 0; i < guardianBadgeTypes[guardian].length; i++) {
+            if (guardianBadgeTypes[guardian][i] == badgeType) {
+                guardianBadgeTypes[guardian][i] = guardianBadgeTypes[guardian][guardianBadgeTypes[guardian].length - 1];
+                guardianBadgeTypes[guardian].pop();
+                break;
+            }
+        }
+        emit BadgeBurned(guardian, badgeType, tokenId);
+    }
+
+    /**
+     * @notice Get all badge token IDs for a guardian
+     * @param guardian The guardian address
+     * @return An array of token IDs
+     */
+    function getGuardianBadgeTokens(address guardian) external view returns (uint256[] memory) {
+        uint256[] memory tokenIds = new uint256[](guardianBadgeTypes[guardian].length);
+        for (uint256 i = 0; i < guardianBadgeTypes[guardian].length; i++) {
+            tokenIds[i] = guardianBadges[guardian][guardianBadgeTypes[guardian][i]];
+        }
+        return tokenIds;
+    }
+
+    /**
+     * @notice Get all badge types for a guardian
+     * @param guardian The guardian address
+     * @return An array of badge types
+     */
+    function getGuardianBadgeTypes(address guardian) external view returns (BadgeType[] memory) {
+        return guardianBadgeTypes[guardian];
+    }
+
+    /**
+     * @notice Check if a guardian has a specific badge type
+     * @param guardian The guardian address
+     * @param badgeType The badge type to check
+     * @return True if the guardian has the badge
+     */
+    function hasGuardianBadge(address guardian, BadgeType badgeType) external view returns (bool) {
+        return guardianBadges[guardian][badgeType] != 0;
+    }
+
+    // ============================================================
+    // EMERGENCY CONTACTS - Separate functionality for emergency recovery
+    // ============================================================
     mapping(address => bool) public emergencyContacts;
     address[] public emergencyContactList;
 
@@ -54,10 +151,12 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
     function removeEmergencyContact(address contact) external onlyOwner {
         require(emergencyContacts[contact], "Not in list");
         emergencyContacts[contact] = false;
-        // Remove from array
+        // Remove from array using swap-and-pop pattern
         for (uint256 i = 0; i < emergencyContactList.length; i++) {
             if (emergencyContactList[i] == contact) {
+                // Swap with last element
                 emergencyContactList[i] = emergencyContactList[emergencyContactList.length - 1];
+                // Remove last element
                 emergencyContactList.pop();
                 break;
             }
@@ -109,15 +208,5 @@ contract GuardianBadge is ERC721Enumerable, Ownable {
 
     function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override(ERC721) {
         revert("Soulbound: Transfers disabled");
-    }
-
-    function mintBadge(address guardian, BadgeType badgeType, uint256 level) external onlyOwner {
-        require(guardian != address(0), "Invalid guardian address");
-        _tokenIdCounter++;
-        uint256 tokenId = _tokenIdCounter;
-        _safeMint(guardian, tokenId);
-        badges[tokenId] = Badge({ badgeType: badgeType, level: level, timestamp: block.timestamp });
-        guardianBadges[guardian][badgeType] = tokenId;
-        emit BadgeMinted(guardian, badgeType, level, tokenId);
     }
 }

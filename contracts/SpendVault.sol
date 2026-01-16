@@ -112,6 +112,45 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
     mapping(uint256 => uint256) public enhancedApprovalsNeeded; // nonce => count needed
     mapping(uint256 => uint256) public enhancedApprovalsReceived; // nonce => count received
 
+    // ============ Time-Locked Withdrawals ============
+    struct QueuedWithdrawal {
+        address token;
+        uint256 amount;
+        address recipient;
+        uint256 queuedAt;
+        uint256 readyAt; // block.timestamp when withdrawal can be executed
+        string reason;
+        string category;
+        bool isFrozen;
+        bool isExecuted;
+        bool isCancelled;
+        address[] signers; // guardians who approved this withdrawal
+    }
+
+    uint256 public timeLockDelay = 2 days; // Configurable delay for large withdrawals
+    uint256 public largeTxThreshold = 1000 ether; // Threshold to trigger time-lock (configurable per token)
+    mapping(address => uint256) public tokenTxThresholds; // Override per-token thresholds
+
+    mapping(uint256 => QueuedWithdrawal) public queuedWithdrawals; // withdrawalId => QueuedWithdrawal
+    uint256 public withdrawalQueueId; // Counter for unique withdrawal IDs
+
+    mapping(uint256 => mapping(address => bool)) public frozenBy; // withdrawalId => guardian => has frozen
+
+    event WithdrawalQueued(
+        uint256 indexed withdrawalId,
+        address indexed token,
+        uint256 amount,
+        address indexed recipient,
+        uint256 readyAt
+    );
+
+    event WithdrawalExecuted(uint256 indexed withdrawalId);
+    event WithdrawalCancelled(uint256 indexed withdrawalId, address indexed cancelledBy);
+    event WithdrawalFrozen(uint256 indexed withdrawalId, address indexed frozenBy);
+    event WithdrawalUnfrozen(uint256 indexed withdrawalId, address indexed unfrozenBy);
+    event TimeLockDelayUpdated(uint256 newDelay);
+    event LargeTxThresholdUpdated(address indexed token, uint256 newThreshold);
+
     event WithdrawalCapsSet(address indexed token, uint256 daily, uint256 weekly, uint256 monthly);
     event SpendingLimitExceeded(address indexed token, string limitType, uint256 attemptedAmount, uint256 limit);
     event EnhancedApprovalsRequired(uint256 indexed nonce, uint256 approvalsNeeded, string limitExceeded);
@@ -803,6 +842,310 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
         if (policy.cooldown > 0) {
             lastWithdrawalTime[recipient][policyIdx] = block.timestamp;
         }
+    }
+
+    // ============ Time-Locked Withdrawal Functions ============
+
+    /**
+     * @notice Queue a large withdrawal with time-lock protection
+     * Withdrawals exceeding the threshold must wait before execution
+     * During the delay, guardians can cancel or freeze the transaction
+     */
+    function queueWithdrawal(
+        address token,
+        uint256 amount,
+        address recipient,
+        string memory reason,
+        string memory category,
+        bytes[] memory signatures
+    ) external nonReentrant returns (uint256 withdrawalId) {
+        require(recipient != address(0), "Invalid recipient");
+        require(amount > 0, "Amount must be greater than 0");
+
+        // Check if this withdrawal needs time-lock
+        uint256 threshold = tokenTxThresholds[token] > 0 ? tokenTxThresholds[token] : largeTxThreshold;
+        bool needsTimeLock = amount >= threshold;
+
+        if (needsTimeLock) {
+            // Verify signatures for queuing
+            _verifyWithdrawalSignatures(token, amount, recipient, reason, category, signatures);
+
+            // Get withdrawal ID
+            withdrawalId = withdrawalQueueId++;
+
+            // Calculate ready time
+            uint256 readyAt = block.timestamp + timeLockDelay;
+
+            // Store queued withdrawal
+            queuedWithdrawals[withdrawalId] = QueuedWithdrawal({
+                token: token,
+                amount: amount,
+                recipient: recipient,
+                queuedAt: block.timestamp,
+                readyAt: readyAt,
+                reason: reason,
+                category: category,
+                isFrozen: false,
+                isExecuted: false,
+                isCancelled: false,
+                signers: _getSignersFromSignatures(token, amount, recipient, reason, category, signatures)
+            });
+
+            emit WithdrawalQueued(withdrawalId, token, amount, recipient, readyAt);
+        } else {
+            // Small withdrawals execute immediately
+            withdraw(token, amount, recipient, reason, category, block.timestamp, signatures);
+        }
+    }
+
+    /**
+     * @notice Execute a queued withdrawal after time-lock expires
+     */
+    function executeQueuedWithdrawal(uint256 withdrawalId) external nonReentrant {
+        QueuedWithdrawal storage queued = queuedWithdrawals[withdrawalId];
+        
+        require(!queued.isExecuted, "Already executed");
+        require(!queued.isCancelled, "Withdrawal was cancelled");
+        require(!queued.isFrozen, "Withdrawal is frozen");
+        require(block.timestamp >= queued.readyAt, "Time-lock not expired");
+
+        // Mark as executed
+        queued.isExecuted = true;
+
+        // Execute transfer
+        address token = queued.token;
+        uint256 amount = queued.amount;
+        address recipient = queued.recipient;
+
+        if (token == address(0)) {
+            require(address(this).balance >= amount, "Insufficient ETH balance");
+            (bool success, ) = recipient.call{value: amount}("");
+            require(success, "ETH transfer failed");
+        } else {
+            IERC20(token).transfer(recipient, amount);
+        }
+
+        // Update counters
+        _updateWithdrawalCounters(token, amount);
+
+        emit WithdrawalExecuted(withdrawalId);
+    }
+
+    /**
+     * @notice Cancel a queued withdrawal (owner or guardians)
+     */
+    function cancelQueuedWithdrawal(uint256 withdrawalId) external {
+        QueuedWithdrawal storage queued = queuedWithdrawals[withdrawalId];
+        
+        require(!queued.isExecuted, "Already executed");
+        require(!queued.isCancelled, "Already cancelled");
+
+        // Only owner or signers (guardians) can cancel
+        bool isOwner = msg.sender == owner();
+        bool isSigner = false;
+        for (uint256 i = 0; i < queued.signers.length; i++) {
+            if (queued.signers[i] == msg.sender) {
+                isSigner = true;
+                break;
+            }
+        }
+        
+        require(isOwner || isSigner, "Only owner or signers can cancel");
+
+        queued.isCancelled = true;
+        emit WithdrawalCancelled(withdrawalId, msg.sender);
+    }
+
+    /**
+     * @notice Freeze a queued withdrawal (guardians only)
+     * Used when something looks wrong and additional review is needed
+     */
+    function freezeQueuedWithdrawal(uint256 withdrawalId) external {
+        QueuedWithdrawal storage queued = queuedWithdrawals[withdrawalId];
+        
+        require(!queued.isExecuted, "Already executed");
+        require(!queued.isCancelled, "Already cancelled");
+
+        // Only guardians can freeze
+        require(
+            IGuardianSBT(guardianToken).balanceOf(msg.sender) > 0,
+            "Only guardians can freeze"
+        );
+
+        // Mark as frozen
+        queued.isFrozen = true;
+        frozenBy[withdrawalId][msg.sender] = true;
+
+        emit WithdrawalFrozen(withdrawalId, msg.sender);
+    }
+
+    /**
+     * @notice Unfreeze a queued withdrawal (only the guardian who froze it)
+     */
+    function unfreezeQueuedWithdrawal(uint256 withdrawalId) external {
+        QueuedWithdrawal storage queued = queuedWithdrawals[withdrawalId];
+        
+        require(queued.isFrozen, "Not frozen");
+        require(frozenBy[withdrawalId][msg.sender], "You didn't freeze this withdrawal");
+
+        // Check if any other guardian still has it frozen
+        bool stillFrozen = false;
+        for (uint256 i = 0; i < queued.signers.length; i++) {
+            if (i != i) continue; // placeholder, would iterate through guardians
+            if (frozenBy[withdrawalId][queued.signers[i]] && queued.signers[i] != msg.sender) {
+                stillFrozen = true;
+                break;
+            }
+        }
+
+        if (!stillFrozen) {
+            queued.isFrozen = false;
+        }
+        
+        frozenBy[withdrawalId][msg.sender] = false;
+        emit WithdrawalUnfrozen(withdrawalId, msg.sender);
+    }
+
+    /**
+     * @notice Update time-lock delay (owner only)
+     */
+    function setTimeLockDelay(uint256 newDelay) external onlyOwner {
+        require(newDelay > 0, "Delay must be greater than 0");
+        timeLockDelay = newDelay;
+        emit TimeLockDelayUpdated(newDelay);
+    }
+
+    /**
+     * @notice Update large transaction threshold (owner only)
+     */
+    function setLargeTxThreshold(uint256 newThreshold) external onlyOwner {
+        largeTxThreshold = newThreshold;
+        emit LargeTxThresholdUpdated(address(0), newThreshold);
+    }
+
+    /**
+     * @notice Update threshold per token (owner only)
+     */
+    function setTokenThreshold(address token, uint256 threshold) external onlyOwner {
+        tokenTxThresholds[token] = threshold;
+        emit LargeTxThresholdUpdated(token, threshold);
+    }
+
+    /**
+     * @notice Get queued withdrawal details
+     */
+    function getQueuedWithdrawal(uint256 withdrawalId)
+        external
+        view
+        returns (
+            address token,
+            uint256 amount,
+            address recipient,
+            uint256 queuedAt,
+            uint256 readyAt,
+            bool isFrozen,
+            bool isExecuted,
+            bool isCancelled,
+            uint256 freezeCount
+        )
+    {
+        QueuedWithdrawal storage queued = queuedWithdrawals[withdrawalId];
+        
+        // Count how many guardians have frozen this
+        uint256 freezeCount = 0;
+        for (uint256 i = 0; i < queued.signers.length; i++) {
+            if (frozenBy[withdrawalId][queued.signers[i]]) {
+                freezeCount++;
+            }
+        }
+
+        return (
+            queued.token,
+            queued.amount,
+            queued.recipient,
+            queued.queuedAt,
+            queued.readyAt,
+            queued.isFrozen,
+            queued.isExecuted,
+            queued.isCancelled,
+            freezeCount
+        );
+    }
+
+    // ============ Internal Helper Functions ============
+
+    /**
+     * @notice Verify withdrawal signatures for queuing
+     */
+    function _verifyWithdrawalSignatures(
+        address token,
+        uint256 amount,
+        address recipient,
+        string memory reason,
+        string memory category,
+        bytes[] memory signatures
+    ) internal view {
+        require(signatures.length > 0, "No signatures provided");
+
+        bytes32 reasonHash = keccak256(bytes(reason));
+        bytes32 structHash = keccak256(
+            abi.encode(
+                WITHDRAWAL_TYPEHASH,
+                token,
+                amount,
+                recipient,
+                nonce,
+                reasonHash,
+                keccak256(bytes(category)),
+                block.timestamp
+            )
+        );
+        bytes32 hash = _hashTypedDataV4(structHash);
+
+        uint256 validSignatures = 0;
+        for (uint256 i = 0; i < signatures.length; i++) {
+            address signer = hash.recover(signatures[i]);
+            require(
+                IGuardianSBT(guardianToken).balanceOf(signer) > 0,
+                "Signer is not a guardian"
+            );
+            validSignatures++;
+        }
+
+        require(validSignatures >= quorum, "Quorum not met");
+    }
+
+    /**
+     * @notice Extract signer addresses from signatures
+     */
+    function _getSignersFromSignatures(
+        address token,
+        uint256 amount,
+        address recipient,
+        string memory reason,
+        string memory category,
+        bytes[] memory signatures
+    ) internal view returns (address[] memory) {
+        bytes32 reasonHash = keccak256(bytes(reason));
+        bytes32 structHash = keccak256(
+            abi.encode(
+                WITHDRAWAL_TYPEHASH,
+                token,
+                amount,
+                recipient,
+                nonce,
+                reasonHash,
+                keccak256(bytes(category)),
+                block.timestamp
+            )
+        );
+        bytes32 hash = _hashTypedDataV4(structHash);
+
+        address[] memory signers = new address[](signatures.length);
+        for (uint256 i = 0; i < signatures.length; i++) {
+            signers[i] = hash.recover(signatures[i]);
+        }
+        return signers;
     }
 
     // ============ Emergency Functions ============

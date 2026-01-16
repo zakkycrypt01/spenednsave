@@ -140,6 +140,28 @@ SpendGuard includes sophisticated spending limit controls to enforce daily, week
 
 **Use Case**: Protect against compromised accounts or malicious insiders by requiring additional consensus for large withdrawals.
 
+### ⏰ Time-Locked Withdrawals
+
+SpendGuard protects large withdrawals with an automatic time-lock mechanism that forces a review period:
+
+- **Smart Queuing**: Withdrawals exceeding a configurable threshold (default 1000 ETH) are automatically queued instead of executed immediately
+- **Guardian Review Window**: 2-day (configurable) delay period where guardians can freeze suspicious transactions
+- **Multi-Guardian Freeze**: Any guardian can freeze a withdrawal, and it stays frozen until **ALL** freezing guardians approve its execution
+- **Smart Execution**: Once the delay expires and no guardian has frozen it, anyone can execute (permissionless execution)
+- **Owner Emergency Cancel**: Owner can cancel any queued withdrawal at any time without waiting for delay
+- **Per-Token Configuration**: Set different thresholds for different tokens (e.g., high threshold for stablecoins, lower for rare tokens)
+
+**Statuses:**
+- 🟡 **Pending**: Queued, waiting for time-lock delay
+- 🟢 **Ready**: Delay expired, ready for execution
+- 🔒 **Frozen**: Guardians froze it for manual review
+- ✅ **Executed**: Successfully executed and withdrawn
+- ❌ **Cancelled**: Owner or signers cancelled it
+
+**Use Case**: Prevent large treasury withdrawals from being executed without proper oversight. Gives guardian team time to investigate unusual withdrawal patterns and consensus-block suspicious transactions.
+
+**Learn More:** [TIME_LOCKS_QUICKREF.md](TIME_LOCKS_QUICKREF.md) | [TIME_LOCKS_SPEC.md](TIME_LOCKS_SPEC.md)
+
 ### For Guardians (Trusted Friends)
 
 - ✅ **Voting Dashboard**: View and approve pending withdrawal requests

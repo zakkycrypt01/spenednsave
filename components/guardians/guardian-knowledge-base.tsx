@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, ChevronDown, BookOpen, HelpCircle, Lightbulb, Users, Shield, Zap } from 'lucide-react';
+import { Search, ChevronDown, BookOpen, HelpCircle, Lightbulb, Users, Shield, Zap, Award } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 

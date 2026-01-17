@@ -158,6 +158,16 @@ export function ActivityLogView() {
                     Deposits
                 </button>
                 <button 
+                    onClick={() => setFilterStatus('withdrawals')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                        filterStatus === 'withdrawals'
+                            ? 'bg-primary text-white shadow-lg shadow-primary/25'
+                            : 'bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border text-slate-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-surface-border'
+                    }`}
+                >
+                    Withdrawals
+                </button>
+                <button 
                     onClick={() => setFilterStatus('guardians')}
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                         filterStatus === 'guardians'

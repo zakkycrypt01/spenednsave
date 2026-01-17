@@ -54,6 +54,7 @@ export function Navbar() {
                     <div className="hidden md:flex items-center gap-1 p-1 bg-surface-light dark:bg-surface-border rounded-full border border-surface-border dark:border-gray-700/50 shadow-sm" role="menubar" aria-label="Primary">
                         {[
                             { name: "Dashboard", href: "/dashboard" },
+                            { name: "Analytics", href: "/analytics" },
                             { name: "Guardians", href: "/guardians" },
                             { name: "Voting", href: "/voting" },
                             { name: "Activity", href: "/activity" },

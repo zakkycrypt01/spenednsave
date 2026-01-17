@@ -91,7 +91,7 @@ function OverviewTab({ vaultAddress }: { vaultAddress: Address }) {
           Participation and performance metrics
         </p>
         <div className="mt-4">
-          <GuardianActivityDashboard vaultAddress={vaultAddress} compact={true} />
+          <GuardianActivityDashboard vaultAddress={vaultAddress} />
         </div>
       </div>
     </div>

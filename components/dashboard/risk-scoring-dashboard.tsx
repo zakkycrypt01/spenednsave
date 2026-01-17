@@ -389,9 +389,9 @@ function AlertCard({
   };
 
   return (
-    <div className={`rounded-lg border-2 p-4 ${severityColors[alert.severity]}`}>
+    <div className={`rounded-lg border-2 p-4 ${severityColors[alert.severity as 'info' | 'warning' | 'critical']}`}>
       <div className="flex items-start gap-3">
-        <span className="text-xl">{severityIcons[alert.severity]}</span>
+        <span className="text-xl">{severityIcons[alert.severity as 'info' | 'warning' | 'critical']}</span>
         <div className="flex-1">
           <p className="font-semibold text-gray-900 dark:text-white">{alert.message}</p>
           <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{alert.description}</p>

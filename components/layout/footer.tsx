@@ -10,7 +10,7 @@ export function Footer() {
                     </span>
                     <span>Secured by Smart Contracts on Base</span>
                 </div>
-                <div className="flex gap-6 flex-wrap justify-center md:justify-end">
+                <div className="flex gap-6 flex-wrap justify-center md:justify-center items-center">
                     <Link
                         className="text-xs text-slate-400 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md"
                         href="/terms"
@@ -29,6 +29,8 @@ export function Footer() {
                     >
                         Support
                     </Link>
+                </div>
+                <div className="flex gap-4 items-center">
                     <span className="text-slate-300 dark:text-slate-700">•</span>
                     {/* Social Media Icons */}
                     <a

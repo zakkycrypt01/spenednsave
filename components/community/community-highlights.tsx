@@ -99,7 +99,7 @@ const COMMUNITY_HIGHLIGHTS: CommunityHighlight[] = [
     handle: '@cryptosafetyorg',
     title: 'SpendGuard: A New Standard for Wallet Security',
     excerpt: 'SpendGuard represents a significant advancement in wallet security architecture...',
-    fullText: 'SpendGuard represents a significant advancement in wallet security architecture. The combination of multi-signature vault security with social recovery is innovative and practical. We\'re excited about what this means for self-custody.',
+    fullText: 'SpendGuard represents a significant advancement in wallet security architecture. The combination of multi-signature vault security with social recovery is innovative and practical. We&apos;re excited about what this means for self-custody.',
     timestamp: new Date('2026-01-08'),
     likes: 1203,
     replies: 156,
@@ -128,10 +128,7 @@ const COMMUNITY_HIGHLIGHTS: CommunityHighlight[] = [
   },
 ];
 
-export function CommunityHighlights() {
-  const featuredHighlights = COMMUNITY_HIGHLIGHTS.filter(h => h.featured);
-  const allHighlights = COMMUNITY_HIGHLIGHTS;
-
+function HighlightCard({ highlight }: { highlight: CommunityHighlight }) {
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'tweet':
@@ -166,7 +163,7 @@ export function CommunityHighlights() {
     }
   };
 
-  const HighlightCard = ({ highlight }: { highlight: CommunityHighlight }) => (
+  return (
     <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-6 hover:shadow-lg transition-all group">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
@@ -245,6 +242,11 @@ export function CommunityHighlights() {
       </div>
     </div>
   );
+}
+
+export function CommunityHighlights() {
+  const featuredHighlights = COMMUNITY_HIGHLIGHTS.filter(h => h.featured);
+  const allHighlights = COMMUNITY_HIGHLIGHTS;
 
   return (
     <div className="w-full">
@@ -291,7 +293,7 @@ export function CommunityHighlights() {
           Share Your SpendGuard Story
         </h3>
         <p className="text-slate-600 dark:text-slate-400 mb-6 max-w-2xl mx-auto">
-          Have a great experience with SpendGuard? Share your story, tutorial, or use case with the community. We'd love to feature your content!
+          Have a great experience with SpendGuard? Share your story, tutorial, or use case with the community. We&apos;d love to feature your content!
         </p>
         <a
           href="mailto:community@spendguard.io"

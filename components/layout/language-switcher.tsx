@@ -6,8 +6,8 @@
 'use client';
 
 import React from 'react';
-import { useLanguage } from '@/lib/i18n/i18n-context';
-import { useI18n } from '@/lib/i18n/use-i18n';
+import { useLanguage, useI18n } from '@/lib/i18n/i18n-context';
+import type { Language } from '@/lib/i18n/languages';
 
 interface LanguageSwitcherProps {
   variant?: 'dropdown' | 'grid' | 'inline';

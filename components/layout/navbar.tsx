@@ -9,6 +9,7 @@ import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Shield, X, Menu } from "lucide-react"; // Using Lucide for the logo icon for now, or SVG
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { Globe } from "lucide-react";
 
 export function Navbar() {
     const pathname = usePathname();
@@ -62,7 +63,6 @@ export function Navbar() {
                             { name: "Updates", href: "/updates" },
                             { name: "Referrals", href: "/referral-program" },
                             { name: "Blog", href: "/blog" },
-                            { name: "Support", href: "/support" },
                         ].map((link) => {
                             const isActive = pathname === link.href;
                             return (
@@ -87,6 +87,19 @@ export function Navbar() {
 
                     <div className="flex items-center gap-4">
                         <NotificationBell />
+                        <div className="relative">
+                            <select className="appearance-none px-3 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded-md text-sm text-slate-700 dark:text-slate-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark/80" aria-label="Language selection" defaultValue="en">
+                                <option value="en">English</option>
+                                <option value="es">Español</option>
+                                <option value="fr">Français</option>
+                                <option value="de">Deutsch</option>
+                                <option value="it">Italiano</option>
+                                <option value="pt">Português</option>
+                                <option value="ja">日本語</option>
+                                <option value="zh">中文</option>
+                            </select>
+                            <Globe className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 pointer-events-none" />
+                        </div>
                         <ConnectButton
                             accountStatus={{
                                 smallScreen: 'avatar',

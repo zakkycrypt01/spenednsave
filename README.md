@@ -91,6 +91,14 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 ## 📝 Changelog
 
+- **2026-01-17**: Launched Enhanced Settings Page with comprehensive account management:
+  - Theme/appearance customization (light/dark/system modes)
+  - Notification preferences with 6+ notification types
+  - Security settings with 2FA setup and session management
+  - Connected wallets management with multi-chain support
+  - Account preferences (timezone, language, communication settings)
+  - Tabbed navigation with URL parameter support
+  - Full dark mode and responsive mobile design
 - **2026-01-17**: Added comprehensive Support & Help Center, Terms of Service, and Privacy Policy pages. Added "Withdrawals" filter button to Activity Log for better withdrawal tracking.
 - **2026-01-17**: Cleaned up dependencies and removed test files for frontend-only production build
 - **2026-01-16**: Added GuardianBadge and GuardianSBT contracts with comprehensive test coverage

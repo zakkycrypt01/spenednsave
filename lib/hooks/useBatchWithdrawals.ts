@@ -268,7 +268,7 @@ export function useBatchItems(batchManagerAddress: Address, batchId: bigint | nu
     query: { enabled: batchId !== null }
   });
 
-  const items: WithdrawalItem[] = itemsData
+  const items: WithdrawalItem[] = itemsData && Array.isArray(itemsData)
     ? itemsData.map((item: any) => ({
         token: item.token as Address,
         amount: item.amount as bigint,

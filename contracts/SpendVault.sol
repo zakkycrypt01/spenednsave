@@ -136,6 +136,23 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
 
     mapping(uint256 => mapping(address => bool)) public frozenBy; // withdrawalId => guardian => has frozen
 
+    // ============ Emergency Freeze Mechanism ============
+    bool public vaultEmergencyFrozen; // True if vault is frozen due to suspected malicious activity
+    uint256 public emergencyFreezeThreshold; // Number of guardians required to freeze (e.g., majority)
+    mapping(address => bool) public emergencyFreezeVotes; // guardian => has voted to freeze
+    mapping(address => bool) public emergencyUnfreezeVotes; // guardian => has voted to unfreeze
+    uint256 public freezeVoteCount; // Current number of guardians voting to freeze
+    uint256 public unfreezeVoteCount; // Current number of guardians voting to unfreeze
+    uint256 public lastFreezeTimestamp; // Timestamp of last freeze action
+    address[] public freezeVoters; // List of guardians who voted to freeze
+    address[] public unfreezeVoters; // List of guardians who voted to unfreeze
+
+    event VaultEmergencyFrozen(uint256 indexed voteCount, uint256 indexed threshold);
+    event VaultEmergencyUnfrozen(uint256 indexed voteCount, uint256 indexed threshold);
+    event EmergencyFreezeVoteCast(address indexed guardian, bool indexed voting_for_freeze, uint256 indexed current_votes);
+    event EmergencyUnfreezeVoteCast(address indexed guardian, bool indexed voting_for_unfreeze, uint256 indexed current_votes);
+    event EmergencyFreezeThresholdUpdated(uint256 newThreshold);
+
     event WithdrawalQueued(
         uint256 indexed withdrawalId,
         address indexed token,
@@ -621,6 +638,9 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
         for (uint256 i = 0; i < _tags.length; i++) {
             tags.push(_tags[i]);
         }
+        // Initialize emergency freeze threshold to majority (50% + 1)
+        emergencyFreezeThreshold = (_quorum / 2) + 1;
+        vaultEmergencyFrozen = false;
     }
 
     /**
@@ -725,6 +745,7 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
         uint256 createdAt,
         bytes[] memory signatures
     ) external nonReentrant {
+        require(!vaultEmergencyFrozen, "Vault is emergency frozen");
         require(recipient != address(0), "Invalid recipient");
         require(amount > 0, "Amount must be greater than 0");
         require(signatures.length > 0, "No signatures provided");
@@ -859,6 +880,7 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
         string memory category,
         bytes[] memory signatures
     ) external nonReentrant returns (uint256 withdrawalId) {
+        require(!vaultEmergencyFrozen, "Vault is emergency frozen");
         require(recipient != address(0), "Invalid recipient");
         require(amount > 0, "Amount must be greater than 0");
 
@@ -1070,6 +1092,139 @@ contract SpendVault is Ownable, EIP712, ReentrancyGuard {
             queued.isCancelled,
             freezeCount
         );
+    }
+
+    // ============ Emergency Freeze Functions ============
+
+    /**
+     * @notice Cast a vote to freeze the vault due to suspected malicious activity
+     * @dev Any guardian can initiate an emergency freeze vote
+     * Vault freezes when majority threshold is reached
+     */
+    function voteEmergencyFreeze() external nonReentrant {
+        require(IGuardianSBT(guardianToken).balanceOf(msg.sender) > 0, "Only guardians can freeze vault");
+        require(!emergencyFreezeVotes[msg.sender], "Guardian already voted to freeze");
+        require(!vaultEmergencyFrozen, "Vault already frozen");
+
+        // Clear any existing unfreeze votes from this guardian
+        if (emergencyUnfreezeVotes[msg.sender]) {
+            emergencyUnfreezeVotes[msg.sender] = false;
+            unfreezeVoteCount--;
+            // Remove from unfreezeVoters array
+            for (uint256 i = 0; i < unfreezeVoters.length; i++) {
+                if (unfreezeVoters[i] == msg.sender) {
+                    unfreezeVoters[i] = unfreezeVoters[unfreezeVoters.length - 1];
+                    unfreezeVoters.pop();
+                    break;
+                }
+            }
+        }
+
+        // Record the freeze vote
+        emergencyFreezeVotes[msg.sender] = true;
+        freezeVoteCount++;
+        freezeVoters.push(msg.sender);
+        lastFreezeTimestamp = block.timestamp;
+
+        emit EmergencyFreezeVoteCast(msg.sender, true, freezeVoteCount);
+
+        // Freeze vault if threshold reached
+        if (freezeVoteCount >= emergencyFreezeThreshold) {
+            vaultEmergencyFrozen = true;
+            emit VaultEmergencyFrozen(freezeVoteCount, emergencyFreezeThreshold);
+        }
+    }
+
+    /**
+     * @notice Revoke emergency freeze vote and/or vote to unfreeze
+     * @dev If vault is frozen, this counts as a vote to unfreeze
+     * If not frozen, this just revokes the freeze vote
+     */
+    function voteEmergencyUnfreeze() external nonReentrant {
+        require(IGuardianSBT(guardianToken).balanceOf(msg.sender) > 0, "Only guardians can unfreeze vault");
+        require(vaultEmergencyFrozen || emergencyFreezeVotes[msg.sender], "No freeze to unfreeze or no freeze vote to revoke");
+
+        // If there's a freeze vote, revoke it
+        if (emergencyFreezeVotes[msg.sender]) {
+            emergencyFreezeVotes[msg.sender] = false;
+            freezeVoteCount--;
+            // Remove from freezeVoters array
+            for (uint256 i = 0; i < freezeVoters.length; i++) {
+                if (freezeVoters[i] == msg.sender) {
+                    freezeVoters[i] = freezeVoters[freezeVoters.length - 1];
+                    freezeVoters.pop();
+                    break;
+                }
+            }
+        }
+
+        // If vault is frozen, record unfreeze vote
+        if (vaultEmergencyFrozen) {
+            require(!emergencyUnfreezeVotes[msg.sender], "Guardian already voted to unfreeze");
+            
+            emergencyUnfreezeVotes[msg.sender] = true;
+            unfreezeVoteCount++;
+            unfreezeVoters.push(msg.sender);
+
+            emit EmergencyUnfreezeVoteCast(msg.sender, true, unfreezeVoteCount);
+
+            // Unfreeze vault if threshold reached
+            if (unfreezeVoteCount >= emergencyFreezeThreshold) {
+                vaultEmergencyFrozen = false;
+                // Clear all freeze and unfreeze votes after unfreezing
+                for (uint256 i = 0; i < freezeVoters.length; i++) {
+                    emergencyFreezeVotes[freezeVoters[i]] = false;
+                }
+                for (uint256 i = 0; i < unfreezeVoters.length; i++) {
+                    emergencyUnfreezeVotes[unfreezeVoters[i]] = false;
+                }
+                delete freezeVoters;
+                delete unfreezeVoters;
+                freezeVoteCount = 0;
+                unfreezeVoteCount = 0;
+                emit VaultEmergencyUnfrozen(emergencyFreezeThreshold, emergencyFreezeThreshold);
+            }
+        }
+    }
+
+    /**
+     * @notice Update the emergency freeze threshold (owner only)
+     * @param newThreshold Number of guardians required for emergency freeze
+     */
+    function setEmergencyFreezeThreshold(uint256 newThreshold) external onlyOwner {
+        require(newThreshold > 0, "Threshold must be greater than 0");
+        require(newThreshold <= quorum, "Threshold cannot exceed quorum");
+        emergencyFreezeThreshold = newThreshold;
+        emit EmergencyFreezeThresholdUpdated(newThreshold);
+    }
+
+    /**
+     * @notice Get current emergency freeze status and vote counts
+     * @return frozen Whether vault is currently frozen
+     * @return freezeVotes Number of guardians voting to freeze
+     * @return unfreezeVotes Number of guardians voting to unfreeze
+     * @return threshold Threshold required to freeze/unfreeze
+     */
+    function getEmergencyFreezeStatus()
+        external
+        view
+        returns (bool frozen, uint256 freezeVotes, uint256 unfreezeVotes, uint256 threshold)
+    {
+        return (vaultEmergencyFrozen, freezeVoteCount, unfreezeVoteCount, emergencyFreezeThreshold);
+    }
+
+    /**
+     * @notice Get list of guardians who voted to freeze
+     */
+    function getFreezeVoters() external view returns (address[] memory) {
+        return freezeVoters;
+    }
+
+    /**
+     * @notice Get list of guardians who voted to unfreeze
+     */
+    function getUnfreezeVoters() external view returns (address[] memory) {
+        return unfreezeVoters;
     }
 
     // ============ Internal Helper Functions ============

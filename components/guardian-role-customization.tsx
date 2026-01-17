@@ -18,6 +18,18 @@ interface GuardianRole {
   isCustom: boolean;
   createdAt: string;
   members: number;
+  
+  // New features
+  timeBasedActive?: boolean;
+  activeDays?: string[]; // ['Monday', 'Tuesday', etc.]
+  rotationEnabled?: boolean;
+  rotationDays?: number; // Rotation frequency in days
+  rotationSchedule?: string[]; // Member IDs in rotation order
+  delegationEnabled?: boolean;
+  delegateMembers?: string[]; // Members who can delegate
+  tieredApprovalEnabled?: boolean;
+  tieredApprovalThreshold?: number; // Amount threshold in USD
+  tieredApprovalRequired?: number; // Approval count for amounts below threshold
 }
 
 const DEFAULT_PERMISSIONS: Permission[] = [
@@ -117,6 +129,56 @@ const DEFAULT_ROLES: GuardianRole[] = [
     isCustom: true,
     createdAt: '2026-01-10',
     members: 2
+  },
+  {
+    id: 'custom-2',
+    name: 'Weekday Guardian',
+    description: 'Active Monday-Friday for business hour approvals',
+    permissions: ['approve_withdrawal', 'emergency_access', 'view_history'],
+    approvalRequired: 1,
+    isCustom: true,
+    createdAt: '2026-01-15',
+    members: 1,
+    timeBasedActive: true,
+    activeDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+  },
+  {
+    id: 'custom-3',
+    name: 'Rotating Manager',
+    description: 'Rotates weekly among 3 members for fair distribution',
+    permissions: ['approve_withdrawal', 'manage_guardians', 'view_history'],
+    approvalRequired: 2,
+    isCustom: true,
+    createdAt: '2026-01-14',
+    members: 3,
+    rotationEnabled: true,
+    rotationDays: 7,
+    rotationSchedule: ['member-1', 'member-2', 'member-3']
+  },
+  {
+    id: 'custom-4',
+    name: 'Delegating Advisor',
+    description: 'Can delegate approval rights to trusted team members',
+    permissions: ['approve_withdrawal', 'view_history'],
+    approvalRequired: 1,
+    isCustom: true,
+    createdAt: '2026-01-16',
+    members: 1,
+    delegationEnabled: true,
+    delegateMembers: ['member-a', 'member-b', 'member-c']
+  },
+  {
+    id: 'custom-5',
+    name: 'Tiered Approval Guardian',
+    description: 'Lower approval threshold for smaller withdrawals under $1000',
+    permissions: ['approve_withdrawal', 'emergency_access', 'view_history'],
+    approvalRequired: 2,
+    isCustom: true,
+    createdAt: '2026-01-17',
+    members: 2,
+    tieredApprovalEnabled: true,
+    tieredApprovalThreshold: 1000,
+    tieredApprovalRequired: 1
   }
 ];
 
@@ -128,7 +190,15 @@ export function GuardianRoleCustomization() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    approvalRequired: 1
+    approvalRequired: 1,
+    timeBasedActive: false,
+    activeDays: [] as string[],
+    rotationEnabled: false,
+    rotationDays: 7,
+    delegationEnabled: false,
+    tieredApprovalEnabled: false,
+    tieredApprovalThreshold: 1000,
+    tieredApprovalRequired: 1
   });
 
   const getPermissionName = (permId: string) => {
@@ -150,7 +220,15 @@ export function GuardianRoleCustomization() {
         approvalRequired: formData.approvalRequired,
         isCustom: true,
         createdAt: new Date().toISOString().split('T')[0],
-        members: 0
+        members: 0,
+        timeBasedActive: formData.timeBasedActive || undefined,
+        activeDays: formData.activeDays.length > 0 ? formData.activeDays : undefined,
+        rotationEnabled: formData.rotationEnabled || undefined,
+        rotationDays: formData.rotationEnabled ? formData.rotationDays : undefined,
+        delegationEnabled: formData.delegationEnabled || undefined,
+        tieredApprovalEnabled: formData.tieredApprovalEnabled || undefined,
+        tieredApprovalThreshold: formData.tieredApprovalEnabled ? formData.tieredApprovalThreshold : undefined,
+        tieredApprovalRequired: formData.tieredApprovalEnabled ? formData.tieredApprovalRequired : undefined
       };
       setRoles([...roles, newRole]);
       resetForm();
@@ -167,7 +245,15 @@ export function GuardianRoleCustomization() {
                 name: formData.name,
                 description: formData.description,
                 permissions: selectedPermissions,
-                approvalRequired: formData.approvalRequired
+                approvalRequired: formData.approvalRequired,
+                timeBasedActive: formData.timeBasedActive || undefined,
+                activeDays: formData.activeDays.length > 0 ? formData.activeDays : undefined,
+                rotationEnabled: formData.rotationEnabled || undefined,
+                rotationDays: formData.rotationEnabled ? formData.rotationDays : undefined,
+                delegationEnabled: formData.delegationEnabled || undefined,
+                tieredApprovalEnabled: formData.tieredApprovalEnabled || undefined,
+                tieredApprovalThreshold: formData.tieredApprovalEnabled ? formData.tieredApprovalThreshold : undefined,
+                tieredApprovalRequired: formData.tieredApprovalEnabled ? formData.tieredApprovalRequired : undefined
               }
             : r
         )
@@ -187,14 +273,34 @@ export function GuardianRoleCustomization() {
     setFormData({
       name: role.name,
       description: role.description,
-      approvalRequired: role.approvalRequired
+      approvalRequired: role.approvalRequired,
+      timeBasedActive: role.timeBasedActive || false,
+      activeDays: role.activeDays || [],
+      rotationEnabled: role.rotationEnabled || false,
+      rotationDays: role.rotationDays || 7,
+      delegationEnabled: role.delegationEnabled || false,
+      tieredApprovalEnabled: role.tieredApprovalEnabled || false,
+      tieredApprovalThreshold: role.tieredApprovalThreshold || 1000,
+      tieredApprovalRequired: role.tieredApprovalRequired || 1
     });
     setSelectedPermissions(role.permissions);
     setShowForm(true);
   };
 
   const resetForm = () => {
-    setFormData({ name: '', description: '', approvalRequired: 1 });
+    setFormData({ 
+      name: '', 
+      description: '', 
+      approvalRequired: 1,
+      timeBasedActive: false,
+      activeDays: [],
+      rotationEnabled: false,
+      rotationDays: 7,
+      delegationEnabled: false,
+      tieredApprovalEnabled: false,
+      tieredApprovalThreshold: 1000,
+      tieredApprovalRequired: 1
+    });
     setSelectedPermissions([]);
     setEditingRole(null);
     setShowForm(false);
@@ -293,6 +399,133 @@ export function GuardianRoleCustomization() {
               <option value={2}>2 Approvals Required (Medium Security)</option>
               <option value={3}>3 Approvals Required (High Security)</option>
             </select>
+          </div>
+
+          {/* Advanced Features Section */}
+          <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Advanced Features</p>
+            
+            {/* Time-Based Activation */}
+            <div className="space-y-2 mb-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.timeBasedActive}
+                  onChange={(e) => setFormData({ ...formData, timeBasedActive: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">Time-Based Activation</span>
+              </label>
+              {formData.timeBasedActive && (
+                <div className="ml-6 p-3 bg-slate-50 dark:bg-slate-800 rounded">
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-2">Active on:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => (
+                      <label key={day} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={formData.activeDays.includes(day)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, activeDays: [...formData.activeDays, day] });
+                            } else {
+                              setFormData({ ...formData, activeDays: formData.activeDays.filter(d => d !== day) });
+                            }
+                          }}
+                          className="w-3 h-3"
+                        />
+                        <span className="text-xs text-slate-700 dark:text-slate-300">{day}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Rotation Schedule */}
+            <div className="space-y-2 mb-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.rotationEnabled}
+                  onChange={(e) => setFormData({ ...formData, rotationEnabled: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">Enable Rotation Schedule</span>
+              </label>
+              {formData.rotationEnabled && (
+                <div className="ml-6 p-3 bg-slate-50 dark:bg-slate-800 rounded">
+                  <label className="text-xs text-slate-600 dark:text-slate-400 block mb-2">Rotation frequency (days):</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="365"
+                    value={formData.rotationDays}
+                    onChange={(e) => setFormData({ ...formData, rotationDays: Number(e.target.value) })}
+                    className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded text-sm text-slate-900 dark:text-white"
+                  />
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Members will rotate every {formData.rotationDays} days</p>
+                </div>
+              )}
+            </div>
+
+            {/* Delegation Workflow */}
+            <div className="space-y-2 mb-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.delegationEnabled}
+                  onChange={(e) => setFormData({ ...formData, delegationEnabled: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">Allow Delegation</span>
+              </label>
+              {formData.delegationEnabled && (
+                <div className="ml-6 p-3 bg-slate-50 dark:bg-slate-800 rounded">
+                  <p className="text-xs text-slate-600 dark:text-slate-400">Guardians can delegate approval rights to team members</p>
+                </div>
+              )}
+            </div>
+
+            {/* Tiered Approval Thresholds */}
+            <div className="space-y-2">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.tieredApprovalEnabled}
+                  onChange={(e) => setFormData({ ...formData, tieredApprovalEnabled: e.target.checked })}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-semibold text-slate-900 dark:text-white">Tiered Approval Thresholds</span>
+              </label>
+              {formData.tieredApprovalEnabled && (
+                <div className="ml-6 p-3 bg-slate-50 dark:bg-slate-800 rounded space-y-2">
+                  <div>
+                    <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Threshold amount (USD):</label>
+                    <input
+                      type="number"
+                      min="100"
+                      step="100"
+                      value={formData.tieredApprovalThreshold}
+                      onChange={(e) => setFormData({ ...formData, tieredApprovalThreshold: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded text-sm text-slate-900 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-600 dark:text-slate-400 block mb-1">Approvals required for amounts below ${formData.tieredApprovalThreshold}:</label>
+                    <select
+                      value={formData.tieredApprovalRequired}
+                      onChange={(e) => setFormData({ ...formData, tieredApprovalRequired: Number(e.target.value) })}
+                      className="w-full px-3 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded text-sm text-slate-900 dark:text-white"
+                    >
+                      <option value={1}>1 Approval</option>
+                      <option value={2}>2 Approvals</option>
+                      <option value={3}>3 Approvals</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -416,6 +649,32 @@ export function GuardianRoleCustomization() {
                 {role.members} member{role.members !== 1 ? 's' : ''}
               </span>
             </div>
+
+            {/* Advanced Features Badges */}
+            {(role.timeBasedActive || role.rotationEnabled || role.delegationEnabled || role.tieredApprovalEnabled) && (
+              <div className="flex flex-wrap gap-2">
+                {role.timeBasedActive && (
+                  <span className="text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2 py-1 rounded">
+                    🕐 Time-Based ({role.activeDays?.length || 0} days)
+                  </span>
+                )}
+                {role.rotationEnabled && (
+                  <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-1 rounded">
+                    🔄 Rotation ({role.rotationDays}d)
+                  </span>
+                )}
+                {role.delegationEnabled && (
+                  <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">
+                    🤝 Delegation
+                  </span>
+                )}
+                {role.tieredApprovalEnabled && (
+                  <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-1 rounded">
+                    💰 Tiered (&lt;${role.tieredApprovalThreshold})
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Permissions */}
             <div>

@@ -45,6 +45,7 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Vault Recovery System | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
 | Custom Features (Messages & Roles) | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
 | Enhanced Withdrawal Messages | [ENHANCED_WITHDRAWAL_MESSAGES.md](ENHANCED_WITHDRAWAL_MESSAGES.md) |
+| Enhanced Guardian Roles | [ENHANCED_GUARDIAN_ROLES.md](ENHANCED_GUARDIAN_ROLES.md) |
 | Issues | [GitHub Issues](https://github.com/cryptonique0/spenednsave/issues) |
 | Feature Requests | [Discussions](https://github.com/cryptonique0/spenednsave/discussions) |
 
@@ -62,7 +63,7 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Email Notifications | ✅ Complete | 400 | [lib/services/email-notifications.ts](lib/services/email-notifications.ts) |
 | Multi-Language Support (i18n) | ✅ Complete | 2,000+ | [I18N_DOCUMENTATION.md](I18N_DOCUMENTATION.md) |
 | Custom Withdrawal Messages | ✅ Complete | 530 | [ENHANCED_WITHDRAWAL_MESSAGES.md](ENHANCED_WITHDRAWAL_MESSAGES.md) |
-| Guardian Role Customization | ✅ Complete | 408 | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
+| Guardian Role Customization | ✅ Complete | 700 | [ENHANCED_GUARDIAN_ROLES.md](ENHANCED_GUARDIAN_ROLES.md) |
 | Vault Recovery System | ✅ Complete | 2,200+ | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
 | Guardian Reputation System | 🔄 Proposed | — | [#1](https://github.com/cryptonique0/spenednsave/issues/1) |
 | Multi-Token Batching | 🔄 Proposed | — | [#2](https://github.com/cryptonique0/spenednsave/issues/2) |
@@ -98,6 +99,16 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 ## 📝 Changelog
 
+- **2026-01-18**: Enhanced Guardian Role Customization with 4 New Features:
+  - **Time-Based Role Assignments** (🕐): Guardian roles active only on specific days (Mon-Fri business hours, etc.)
+  - **Rotation Schedules** (🔄): Automatic guardian rotation among team members at set intervals (weekly, bi-weekly, etc.)
+  - **Delegation Workflows** (🤝): Guardians can delegate approval rights to trusted team members with audit trails
+  - **Approval Thresholds** (💰): Different approval requirements based on withdrawal amounts (e.g., 1 approval <$1000, 2 approvals ≥$1000)
+  - Sample roles demonstrating all features included (5 total roles)
+  - Advanced features section in form with conditional UI
+  - Color-coded badges on role cards for quick feature identification
+  - Complete documentation: [ENHANCED_GUARDIAN_ROLES.md](ENHANCED_GUARDIAN_ROLES.md)
+  - 700+ lines of code, fully type-safe, 0 errors
 - **2026-01-18**: Enhanced Custom Withdrawal Messages with 4 New Types:
   - **Recurring Withdrawals** (🔄): Automatic payments at set intervals (weekly, monthly, quarterly, annually)
   - **Conditional Withdrawals** (❓): Triggered by specific conditions (balance thresholds, market prices, custom events)

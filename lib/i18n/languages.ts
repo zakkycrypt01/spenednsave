@@ -2,7 +2,7 @@
  * Supported Languages and Localization Configuration
  */
 
-export type Language = 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'pt' | 'ru';
+export type Language = 'en' | 'es' | 'fr' | 'de' | 'zh' | 'ja' | 'pt' | 'ru' | 'ar' | 'he';
 
 export const SUPPORTED_LANGUAGES: Record<Language, {
   name: string;
@@ -57,6 +57,18 @@ export const SUPPORTED_LANGUAGES: Record<Language, {
     nativeName: 'Русский',
     flag: '🇷🇺',
     direction: 'ltr',
+  },
+  ar: {
+    name: 'Arabic',
+    nativeName: 'العربية',
+    flag: '🇸🇦',
+    direction: 'rtl',
+  },
+  he: {
+    name: 'Hebrew',
+    nativeName: 'עברית',
+    flag: '🇮🇱',
+    direction: 'rtl',
   },
 };
 

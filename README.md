@@ -43,6 +43,7 @@ SpendGuard is a smart contract system that enables secure fund management throug
 - Multi-Language Support → [I18N_DOCUMENTATION.md](I18N_DOCUMENTATION.md)
 - Time Locks → [TIME_LOCKS_SPEC.md](TIME_LOCKS_SPEC.md)
 - Emergency Freeze → [EMERGENCY_FREEZE_SPEC.md](EMERGENCY_FREEZE_SPEC.md)
+- USDC & Token Deposits → [USDC_DEPOSIT_INTEGRATION.md](USDC_DEPOSIT_INTEGRATION.md)
 - Recovery System → [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md)
 
 ---
@@ -62,6 +63,7 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Internationalization (i18n) | [I18N_DOCUMENTATION.md](I18N_DOCUMENTATION.md) |
 | Batch Withdrawal Docs | [BATCH_WITHDRAWAL_MANAGER.md](BATCH_WITHDRAWAL_MANAGER.md) |
 | Guardian Risk Docs | [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md) |
+| USDC & Token Deposits | [USDC_DEPOSIT_INTEGRATION.md](USDC_DEPOSIT_INTEGRATION.md) |
 | Vault Recovery System | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
 | Custom Features (Messages & Roles) | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
 | Enhanced Withdrawal Messages | [ENHANCED_WITHDRAWAL_MESSAGES.md](ENHANCED_WITHDRAWAL_MESSAGES.md) |
@@ -87,6 +89,7 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Vault Recovery System | ✅ Complete | 100% | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
 | Enhanced Settings Page | ✅ Complete | 100% | [ENHANCED_SETTINGS_DOCUMENTATION.md](ENHANCED_SETTINGS_DOCUMENTATION.md) |
 | Activity Logging & Analytics | ✅ Complete | 100% | [ACTIVITY_LOGS_AND_TEMPLATES.md](ACTIVITY_LOGS_AND_TEMPLATES.md) |
+| USDC & Multi-Token Deposits | ✅ Complete | 100% | [USDC_DEPOSIT_INTEGRATION.md](USDC_DEPOSIT_INTEGRATION.md) |
 | **Future Features** | 🔄 Proposed | — | [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md) |
 | Guardian Reputation System | 🔄 Proposed | — | [#1](https://github.com/cryptonique0/spenednsave/issues/1) |
 | Multi-Token Batching | 🔄 Proposed | — | [#2](https://github.com/cryptonique0/spenednsave/issues/2) |
@@ -137,6 +140,7 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 **Status**: 🎉 **Version 1.0 Complete** - Full feature release with all core functionality and advanced features implemented and tested.
 
 **What's New:**
+- Multi-token support with USDC and ERC-20 deposit integration
 - Complete vault recovery system with guardian consensus
 - Enhanced guardian roles with 4 advanced features (time-based, rotation, delegation, approval thresholds)
 - Custom withdrawal messages with 8 types and 12 template variables
@@ -147,8 +151,9 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 - Full activity logging and analytics
 
 **Key Metrics:**
-- 12+ completed features
+- 13+ completed features
 - 8 supported languages
+- Multi-token support (ETH + ERC-20 tokens)
 - 1000+ contract lines (solidity)
 - 2000+ frontend code (React/TypeScript)
 - 0 TypeScript errors
@@ -158,6 +163,16 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 ---
 
 ### Previous Updates
+
+- **2026-01-17**: USDC & Multi-Token Deposit Integration:
+  - **Multi-Token Support**: ETH and ERC-20 token (USDC) deposits integrated
+  - **Unified Deposit Form**: Single component handles both ETH and USDC with token selector
+  - **ERC-20 Approval Flow**: Automatic detection and handling of token approvals
+  - **5 Smart Hooks**: useApproveUSDC, useDepositUSDC, useUSDCBalance, useVaultUSDCBalance, useUSDCAllowance
+  - **Real-Time Balance Display**: Shows user and vault balances with auto-refresh
+  - **Type-Safe Implementation**: Full TypeScript support, zero errors
+  - **Dashboard Integration**: Seamless integration into saver view
+  - **Complete Documentation**: [USDC_DEPOSIT_INTEGRATION.md](USDC_DEPOSIT_INTEGRATION.md), [USDC_DEPOSIT_QUICKSTART.md](USDC_DEPOSIT_QUICKSTART.md), [USDC_DEPOSIT_IMPLEMENTATION.md](USDC_DEPOSIT_IMPLEMENTATION.md)
 
 - **2026-01-18**: Enhanced Guardian Role Customization with 4 New Features:
   - **Time-Based Role Assignments** (🕐): Guardian roles active only on specific days (Mon-Fri business hours, etc.)
@@ -431,6 +446,44 @@ SpendGuard now supports 8 languages with a lightweight, custom internationalizat
   - Native language names for clarity
 
 **Learn More:** [I18N_DOCUMENTATION.md](I18N_DOCUMENTATION.md) - Complete guide to translations, adding new languages, and best practices.
+
+### 🪙 USDC & Multi-Token Deposit Support
+
+SpendGuard now supports multi-token deposits including USDC and other ERC-20 tokens with a streamlined deposit experience:
+
+- **Token Selection**: Unified deposit interface with easy toggle between ETH and USDC/ERC-20 tokens
+- **Approval Flow**: Automatic ERC20 approval detection and handling before deposits
+- **Real-Time Balances**: 
+  - Display your current USDC/token balance
+  - Show vault's current balance for each token
+  - Auto-refresh after successful deposits
+- **One-Step ETH Deposits**: Direct ETH deposits without approval
+- **Two-Step USDC/ERC20 Deposits**: 
+  1. Click "Approve" to authorize the vault to spend your tokens
+  2. Click "Deposit" to transfer tokens to the vault
+- **Smart Hooks**: 5 powerful React hooks for token operations
+  - `useApproveUSDC()` - Manage token approvals
+  - `useDepositUSDC()` - Deposit tokens to vault
+  - `useUSDCBalance()` - Get user's token balance
+  - `useVaultUSDCBalance()` - Get vault's token balance
+  - `useUSDCAllowance()` - Check current approvals
+- **Error Handling**: Robust validation, clear error messages, and transaction recovery options
+- **Type-Safe Implementation**: Fully typed with TypeScript, zero errors
+
+**Supported Networks:**
+- Base Sepolia (testnet)
+- Base Mainnet
+- Easy extensibility for additional tokens
+
+**Features:**
+- Max button for quick full amount deposits
+- Decimal handling for USDC (6 decimals) and ETH (18 decimals)
+- Status indicators (loading, success, error states)
+- Automatic UI disabling during transactions
+- Mobile responsive design
+- Dark mode support
+
+**Learn More:** [USDC_DEPOSIT_INTEGRATION.md](USDC_DEPOSIT_INTEGRATION.md) | [Quick Start](USDC_DEPOSIT_QUICKSTART.md) | [Implementation](USDC_DEPOSIT_IMPLEMENTATION.md)
 
 ---
 

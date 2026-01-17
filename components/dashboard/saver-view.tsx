@@ -242,7 +242,7 @@ export function DashboardSaverView() {
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-surface-dark border border-surface-border rounded-2xl overflow-hidden divide-y divide-surface-border">
+                        <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl overflow-hidden divide-y divide-gray-200 dark:divide-surface-border">
                             {activities.map((activity, i) => {
                                 const isDeposit = activity.type === 'deposit';
                                 const isGuardianAdded = activity.type === 'guardian_added';
@@ -303,8 +303,8 @@ export function DashboardSaverView() {
 
                 {/* Quick Actions / Guardians */}
                 <section className="flex flex-col gap-6">
-                    <div className="bg-surface-dark border border-surface-border rounded-2xl p-6">
-                        <h3 className="text-white text-xl font-bold mb-6">Guardians</h3>
+                    <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl p-6">
+                        <h3 className="text-slate-900 dark:text-white text-xl font-bold mb-6">Guardians</h3>
                         <div className="flex items-center justify-center mb-6">
                             <div className="size-16 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                                 <Users size={32} />
@@ -349,10 +349,10 @@ export function DashboardSaverView() {
             {/* Deposit Modal */}
             {showDepositModal && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={() => setShowDepositModal(false)}>
-                    <div className="bg-surface-dark border border-surface-border rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                    <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-white text-xl font-bold">Deposit ETH</h3>
-                            <button onClick={() => setShowDepositModal(false)} className="text-slate-400 hover:text-white">
+                            <h3 className="text-slate-900 dark:text-white text-xl font-bold">Deposit ETH</h3>
+                            <button onClick={() => setShowDepositModal(false)} className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                                 <span className="material-symbols-outlined">close</span>
                             </button>
                         </div>

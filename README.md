@@ -42,6 +42,8 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Internationalization (i18n) | [I18N_DOCUMENTATION.md](I18N_DOCUMENTATION.md) |
 | Batch Withdrawal Docs | [BATCH_WITHDRAWAL_MANAGER.md](BATCH_WITHDRAWAL_MANAGER.md) |
 | Guardian Risk Docs | [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md) |
+| Vault Recovery System | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
+| Custom Features (Messages & Roles) | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
 | Issues | [GitHub Issues](https://github.com/cryptonique0/spenednsave/issues) |
 | Feature Requests | [Discussions](https://github.com/cryptonique0/spenednsave/discussions) |
 
@@ -58,10 +60,12 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Batch Withdrawal Manager | ✅ Complete | 1,300 | [BATCH_WITHDRAWAL_MANAGER.md](BATCH_WITHDRAWAL_MANAGER.md) |
 | Email Notifications | ✅ Complete | 400 | [lib/services/email-notifications.ts](lib/services/email-notifications.ts) |
 | Multi-Language Support (i18n) | ✅ Complete | 2,000+ | [I18N_DOCUMENTATION.md](I18N_DOCUMENTATION.md) |
+| Custom Withdrawal Messages | ✅ Complete | 353 | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
+| Guardian Role Customization | ✅ Complete | 408 | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
+| Vault Recovery System | ✅ Complete | 2,200+ | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
 | Guardian Reputation System | 🔄 Proposed | — | [#1](https://github.com/cryptonique0/spenednsave/issues/1) |
 | Multi-Token Batching | 🔄 Proposed | — | [#2](https://github.com/cryptonique0/spenednsave/issues/2) |
 | Guardian Delegation | 🔄 Proposed | — | [#3](https://github.com/cryptonique0/spenednsave/issues/3) |
-| Vault Recovery | 🔄 Proposed | — | [#4](https://github.com/cryptonique0/spenednsave/issues/4) |
 
 ---
 
@@ -93,6 +97,12 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 ## 📝 Changelog
 
+- **2026-01-18**: Launched Custom Withdrawal Messages & Guardian Role Customization:
+  - **Custom Withdrawal Messages**: Create personalized messages for 4 withdrawal types (Standard, Emergency, Scheduled, Batch) with 7 dynamic template variables (amount, date, time, recipient, guardianName, vaultName, count)
+  - **Guardian Role Customization**: Define custom guardian roles with granular permission control (8 permissions), custom approval requirements (1-3 guardians), and role management
+  - Both features fully integrated into Community page with 3-tab interface
+  - Complete with sample data, dark mode, and mobile responsiveness
+  - 600+ lines of production-ready code with 0 TypeScript errors
 - **2026-01-18**: Complete Multi-Language (i18n) Implementation:
   - Full support for 8 languages: English, Spanish, French, German, Chinese, Japanese, Portuguese, and Russian
   - 2,000+ translated strings covering all UI sections
@@ -122,6 +132,62 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 - **2025-12-20**: Initial v1.0 launch with core vault, guardian voting, and email notifications
 
 ## ✨ Features
+
+### 🎁 Custom Withdrawal Messages
+
+Create personalized messages that display during vault withdrawals with dynamic content:
+
+- **Message Types**: Support for 4 withdrawal types (Standard, Emergency, Scheduled, Batch)
+- **Template Variables**: 7 available variables for dynamic content:
+  - `{{amount}}` - Withdrawal amount (e.g., "$1,250.00")
+  - `{{date}}` - Withdrawal date (e.g., "January 17, 2026")
+  - `{{time}}` - Withdrawal time (e.g., "2:30 PM")
+  - `{{recipient}}` - Recipient address (e.g., "0x742d...3E8Db")
+  - `{{guardianName}}` - Guardian name (e.g., "Sarah Johnson")
+  - `{{vaultName}}` - Vault name (e.g., "Emergency Fund")
+  - `{{count}}` - Withdrawal count (e.g., "5 of 10")
+- **Message Management**: Create, edit, delete, and toggle messages active/inactive
+- **Live Preview**: See how messages will appear with sample data
+- **Copy to Clipboard**: Easy message sharing and backup
+
+**Features:**
+- Automatic variable extraction from templates
+- Status toggling (active/inactive)
+- Message copy functionality
+- Dark mode and mobile-responsive design
+- 3 pre-configured sample messages
+
+**Learn More:** [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md)
+
+### 👥 Guardian Role Customization
+
+Define custom guardian roles with specific permissions and approval requirements:
+
+- **3 Default Roles**: Primary Guardian, Secondary Guardian, Tertiary Guardian (read-only reference)
+- **Custom Role Creation**: Create unlimited custom roles with unique names and descriptions
+- **8 Granular Permissions**:
+  - Approve Withdrawals
+  - Emergency Access
+  - Modify Emergency Contacts
+  - Manage Guardians
+  - Update Withdrawal Limits
+  - View History
+  - Approve Settings Changes
+  - Revoke Access
+- **Approval Requirements**: Flexible settings (1 of 3, 2 of 3, or 3 of 3 guardians required)
+- **Role Management**: Edit and delete custom roles, view member counts
+
+**Features:**
+- Visual permission checklist with descriptions
+- Color-coded role cards for visual hierarchy
+- Approval requirement progress indicators
+- Member tracking per role
+- Role-specific descriptions for clarity
+- Default roles protected from modification
+- Dark mode and mobile-responsive design
+- 4 pre-configured sample roles (3 default + 1 custom)
+
+**Learn More:** [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md)
 
 ### ⚙️ Enhanced Settings Page
 

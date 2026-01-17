@@ -52,7 +52,7 @@ export default function CommunityPage() {
               </div>
               <h3 className="font-bold text-slate-900 dark:text-white mb-2">Share Your Story</h3>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Have a great experience with SpendGuard? We'd love to hear and feature your story in our community.
+                Have a great experience with SpendGuard? We&apos;d love to hear and feature your story in our community.
               </p>
             </div>
 

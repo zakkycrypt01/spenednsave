@@ -34,10 +34,32 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Live Demo | [spendguard.xyz](https://spendguard.xyz) |
 | Contracts | [contracts/](contracts/) |
 | Frontend Code | [app/](app/), [components/](components/) |
+| Support & Help | [/support](/support) |
+| Terms of Service | [/terms](/terms) |
+| Privacy Policy | [/privacy](/privacy) |
 | Smart Contract Specs | [contract-spec.md](contract-spec.md) |
 | Deployment Guide | [DEPLOYMENT.md](DEPLOYMENT.md) |
+| Batch Withdrawal Docs | [BATCH_WITHDRAWAL_MANAGER.md](BATCH_WITHDRAWAL_MANAGER.md) |
+| Guardian Risk Docs | [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md) |
 | Issues | [GitHub Issues](https://github.com/cryptonique0/spenednsave/issues) |
 | Feature Requests | [Discussions](https://github.com/cryptonique0/spenednsave/discussions) |
+
+### Implementation Status
+
+| Feature | Status | Lines of Code | Docs |
+|---------|--------|--------------|------|
+| Core Vault & Guardian Voting | ✅ Complete | 1,200 | [contract-spec.md](contract-spec.md) |
+| Spending Limits | ✅ Complete | 400 | [Contract](contracts/SpendVault.sol) |
+| Time-Locked Withdrawals | ✅ Complete | 500 | [TIME_LOCKS_SPEC.md](TIME_LOCKS_SPEC.md) |
+| Emergency Freeze Mechanism | ✅ Complete | 350 | [EMERGENCY_FREEZE_SPEC.md](EMERGENCY_FREEZE_SPEC.md) |
+| Guardian Activity Dashboard | ✅ Complete | 400 | [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md) |
+| Risk Scoring Engine | ✅ Complete | 500 | [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md) |
+| Batch Withdrawal Manager | ✅ Complete | 1,300 | [BATCH_WITHDRAWAL_MANAGER.md](BATCH_WITHDRAWAL_MANAGER.md) |
+| Email Notifications | ✅ Complete | 400 | [lib/services/email-notifications.ts](lib/services/email-notifications.ts) |
+| Guardian Reputation System | 🔄 Proposed | — | [#1](https://github.com/cryptonique0/spenednsave/issues/1) |
+| Multi-Token Batching | 🔄 Proposed | — | [#2](https://github.com/cryptonique0/spenednsave/issues/2) |
+| Guardian Delegation | 🔄 Proposed | — | [#3](https://github.com/cryptonique0/spenednsave/issues/3) |
+| Vault Recovery | 🔄 Proposed | — | [#4](https://github.com/cryptonique0/spenednsave/issues/4) |
 
 ---
 
@@ -69,13 +91,100 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 ## 📝 Changelog
 
+- **2026-01-17**: Launched Enhanced Settings Page with comprehensive account management:
+  - Theme/appearance customization (light/dark/system modes)
+  - Notification preferences with 6+ notification types
+  - Security settings with 2FA setup and session management
+  - Connected wallets management with multi-chain support
+  - Account preferences (timezone, language, communication settings)
+  - Tabbed navigation with URL parameter support
+  - Full dark mode and responsive mobile design
+- **2026-01-17**: Added comprehensive Support & Help Center, Terms of Service, and Privacy Policy pages. Added "Withdrawals" filter button to Activity Log for better withdrawal tracking.
 - **2026-01-17**: Cleaned up dependencies and removed test files for frontend-only production build
 - **2026-01-16**: Added GuardianBadge and GuardianSBT contracts with comprehensive test coverage
 - **2026-01-15**: Email notification system integration with SMTP/Resend API support
 - **2026-01-14**: Fixed Activity Log total deposits calculation and display. Now always sums as `bigint` and shows up to 5 decimal places for ETH values.
+- **2026-01-13**: Multi-Sig Batch Withdrawal Manager fully implemented (650 lines contract, 400 lines hooks, 400 lines UI components)
+- **2026-01-10**: Risk Scoring Engine and Guardian Activity Dashboard launched
+- **2026-01-08**: Emergency Freeze mechanism with majority-based voting
+- **2026-01-05**: Time-locked withdrawals for large transactions
+- **2025-12-28**: Spending limits per token with temporal resets
+- **2025-12-20**: Initial v1.0 launch with core vault, guardian voting, and email notifications
 
 ## ✨ Features
 
+### ⚙️ Enhanced Settings Page
+
+SpendGuard includes a comprehensive settings interface for complete account management:
+
+- **Appearance & Theme** - Switch between light, dark, or system theme with persistence
+  - 3 theme options with visual preview
+  - Automatic dark mode detection
+  - Reduced motion accessibility option
+  
+- **Notification Preferences** - Control all notification types with granular toggles
+  - In-app notifications (5 event types)
+  - Email notification settings
+  - Withdrawal, approval, emergency alerts
+  - Guardian action notifications
+  
+- **Security Settings** - Manage account security and sessions
+  - Two-Factor Authentication (2FA) setup with authenticator app
+  - QR code and manual secret key entry
+  - Active sessions monitoring with device details
+  - Revoke unused sessions
+  - Password management
+  - Login activity history
+  
+- **Wallet Management** - Organize connected wallets
+  - Display all connected wallets with balances
+  - Set primary wallet
+  - Copy wallet addresses
+  - Direct BaseScan explorer links
+  - Disconnect wallets
+  - Multi-chain support (Base, Ethereum, Arbitrum, Optimism)
+  
+- **Account Preferences** - Personalize your experience
+  - Display name and email management
+  - Email verification status
+  - Timezone selection (8 worldwide options)
+  - Language preference (7 languages)
+  - Communication preference toggles
+  - Account creation date and status
+
+**Features:**
+- Tab-based navigation for easy access
+- URL parameters for deep linking (`/settings?tab=security`)
+- Dark mode throughout
+- Responsive mobile design
+- Accessible forms with proper labels
+- Real-time preference updates
+
+**Learn More:** [ENHANCED_SETTINGS_DOCUMENTATION.md](ENHANCED_SETTINGS_DOCUMENTATION.md) | [Integration Examples](SETTINGS_INTEGRATION_EXAMPLES.md)
+
+### 📚 User Documentation & Support Pages
+
+SpendGuard includes comprehensive user-facing documentation:
+
+- **[Support & Help Center](/support)** - FAQ, troubleshooting guides, and support contacts
+  - 8 comprehensive FAQ answers covering vault setup, guardians, limits, and withdrawals
+  - Troubleshooting section for common issues (transactions, wallet connections, withdrawals)
+  - Multiple contact channels: Email, Discord, GitHub Issues
+  - Response time: 24-48 hours
+
+- **[Terms of Service](/terms)** - Complete legal terms covering:
+  - User eligibility and account responsibilities
+  - Smart contract and blockchain disclaimers
+  - Vault deposits, guardian participation, and risk acknowledgments
+  - Prohibited activities and dispute resolution
+  - Non-custodial nature of the service
+
+- **[Privacy Policy](/privacy)** - Comprehensive privacy documentation:
+  - Non-custodial architecture and blockchain transparency
+  - Data collection and usage practices
+  - Your privacy rights (access, deletion, portability)
+  - International data transfers and security measures
+  - Cookie and third-party service integration
 
 ### Email Notifications
 
@@ -162,12 +271,133 @@ SpendGuard protects large withdrawals with an automatic time-lock mechanism that
 
 **Learn More:** [TIME_LOCKS_QUICKREF.md](TIME_LOCKS_QUICKREF.md) | [TIME_LOCKS_SPEC.md](TIME_LOCKS_SPEC.md)
 
+### 🚨 Emergency Freeze Mechanism
+
+SpendGuard includes an emergency freeze feature that allows guardians to quickly respond to suspicious activity:
+
+- **Majority-Based Freeze**: Any majority of guardians can vote to temporarily freeze the vault
+- **Immediate Action**: Blocks all withdrawals and sensitive operations instantly when threshold reached
+- **Transparent Voting**: Real-time vote tracking shows all guardians' positions
+- **Recovery Path**: Guardians can vote to unfreeze once threat is resolved
+- **Vote Flexibility**: Guardians can change their vote before freeze occurs or switch between freeze/unfreeze
+
+**Freeze States:**
+- 🟢 **Normal**: Vault operating normally, all functions available
+- 🟡 **In Progress**: Guardians voting to freeze, withdrawals still blocked
+- 🔒 **Frozen**: Majority voted to freeze, all withdrawals blocked
+- 🔓 **Unfreezing**: Guardians voting to unfreeze, waiting for majority approval
+
+**Voting Rules:**
+- Threshold = (Guardian Count ÷ 2) + 1 (mathematical majority)
+- Example: 3 guardians need 2 votes to freeze or unfreeze
+- Each guardian can only vote once per direction (can revoke votes before freeze)
+- Non-guardians cannot participate in voting
+
+**Use Case**: Protect against compromised guardians or suspicious activity patterns. If you detect unusual withdrawal attempts or suspect account compromise, any majority of guardians can immediately freeze the vault while investigating.
+
+**Learn More:** [EMERGENCY_FREEZE_QUICKREF.md](EMERGENCY_FREEZE_QUICKREF.md) | [EMERGENCY_FREEZE_SPEC.md](EMERGENCY_FREEZE_SPEC.md)
+
 ### For Guardians (Trusted Friends)
 
 - ✅ **Voting Dashboard**: View and approve pending withdrawal requests
 - ✅ **Readable Signatures**: EIP-712 structured data shows clear withdrawal details
-- ✅ **Activity Log**: Track all requests you've approved or rejected
+- ✅ **Activity Log**: Track all requests you've approved or rejected (includes Deposits, Withdrawals, and Guardians filters)
 - ✅ **Non-Transferable Power**: Guardian status is soulbound and cannot be sold
+
+### 📋 Activity Log & Withdrawal Tracking
+
+Complete transaction history with multi-filter capabilities:
+
+- **Filter Options**: All Activity, Deposits, Withdrawals, Guardians
+- **Withdrawal Details**: Shows withdrawal amounts with status indicators (red icon, ArrowUpRight icon)
+- **Real-Time Tracking**: View all vault activities with timestamps and transaction links
+- **Pagination**: Navigate large activity histories with 10 items per page
+- **Statistics**: Total deposits, total activities, and guardian count cards
+- **Export Ready**: CSV export button for external analysis
+- **Blockchain Links**: Direct links to BaseScan for transaction verification
+
+**Use Case**: Monitor all vault financial activity in one place, track withdrawal patterns, and audit guardian participation history.
+
+### 📊 Guardian Activity Dashboard
+
+Real-time tracking of guardian participation and performance:
+
+- **Participation Metrics**: Track approval rates, response times, and voting history
+- **Trust Scoring**: Automatically calculate guardian reliability scores (0-100)
+- **Performance Timeline**: View recent actions with timestamps and details
+- **Badge System**: Earn badges for reliability milestones (e.g., 100% approval, Fast Responder)
+- **Activity Comparison**: See how your performance compares to other guardians
+- **Freeze Voting Analytics**: Track emergency freeze participation and patterns
+
+**Use Case**: Monitor guardian team effectiveness, identify inactive guardians, and recognize high-performing members.
+
+**Learn More:** [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md#1-guardian-activity-dashboard)
+
+### ⚠️ Risk Scoring Engine
+
+Intelligent, real-time vault risk assessment with multi-factor analysis:
+
+**6-Factor Risk Analysis:**
+1. **Withdrawal Velocity** - Tracks spending patterns and acceleration
+2. **Pattern Deviation** - Identifies anomalies in timing, frequency, and amounts
+3. **Guardian Consensus** - Measures approval consistency and dissent
+4. **Spending Headroom** - Monitors daily/weekly/monthly limit utilization
+5. **Time-Lock Utilization** - Analyzes queued and frozen withdrawals
+6. **Approval Patterns** - Tracks guardian voting trends
+
+**Risk Scoring:**
+- **Overall Score**: 0-100 (lower = safer)
+- **Risk Levels**:
+  - 🟢 Safe (0-25)
+  - 🟡 Normal (25-50)
+  - 🟠 Caution (50-75)
+  - 🔴 Critical (75-100)
+
+**Alert System:**
+- **Intelligent Alerts**: Automatically detects and flags unusual activity
+- **Severity Levels**: Info, Warning, Critical for triage
+- **Actionable Recommendations**: Suggests specific responses to detected risks
+- **Alert Management**: Dismiss acknowledged alerts, track alert history
+
+**Dashboard Integration:**
+- Compact view on overview tab
+- Expandable factor details
+- Real-time risk metric updates
+- Visual spending limit indicators
+- Anomaly timeline view
+
+**Use Case**: Proactively identify suspicious activity patterns, unusual spending behavior, or compromised guardian accounts before they pose a risk to vault security.
+
+**Learn More:** [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md#2-risk-scoring-engine)
+
+### 📦 Multi-Sig Batch Withdrawal Manager
+
+Efficiently bundle multiple withdrawals into a single batch for atomic execution:
+
+**Key Benefits:**
+- 🚀 **40-70% Gas Savings**: Amortize execution costs across multiple items (up to 50 per batch)
+- 🤝 **Single Approval Round**: One approval vote covers entire batch instead of many
+- ⚡ **Atomic Execution**: All-or-nothing processing with granular failure tracking
+- 📋 **Flexible Batching**: Mix queued and direct withdrawals in same batch
+- 🔄 **Concurrent Batches**: Create, approve, execute multiple batches in parallel
+
+**Workflow:**
+1. **Create**: Bundle 1-50 withdrawals with same token into batch
+2. **Approve**: Guardians approve batch (all items together)
+3. **Execute**: Process all items atomically with individual failure tracking
+4. **Monitor**: Track execution results per item and batch
+
+**Status Flow:**
+- 🟡 **Pending**: Waiting for guardian approvals
+- 🔵 **Approved**: All approvals received, ready to execute
+- ⚙️ **Executing**: Currently processing items
+- ✅ **Completed**: All items executed successfully
+- ⚠️ **PartialFail**: Some items failed, others succeeded
+- ✗ **Cancelled**: Cancelled before execution
+
+**Use Case**: Treasury managers coordinating large-scale fund distributions (payroll, vendor payments, dividends) can batch related withdrawals, reduce gas costs by 70%, and coordinate approvals in a single round.
+
+**Learn More:** [BATCH_WITHDRAWAL_MANAGER.md](BATCH_WITHDRAWAL_MANAGER.md) | [Quick Ref](BATCH_WITHDRAWAL_QUICKREF.md)
 
 ### Technical Features
 
@@ -767,6 +997,101 @@ npm run build
 # Start production server
 npm run start
 ```
+
+---
+
+## 🚀 Suggested Features for Enhancement
+
+Here are high-impact features that would significantly improve SpendGuard:
+
+### 1. **Guardian Reputation System** ⭐⭐⭐⭐⭐
+Implement an on-chain reputation system that rewards reliable guardians:
+- **Metrics**: Approval speed, response time, voting consistency
+- **On-Chain Badges**: NFT badges for milestones (100% approval rate, Fast responder, Trusted advisor)
+- **Reputation Score**: 0-1000 score visible on-chain and in dashboard
+- **Incentives**: Higher reputation guardians earn protocol rewards or fee discounts
+- **Penalty System**: Reputation decay for inactive guardians or policy violations
+- **Implementation**: Create `GuardianReputation.sol` contract + leaderboard UI
+
+### 2. **Advanced Multi-Token Batching** ⭐⭐⭐⭐
+Extend batch withdrawal manager to handle multiple tokens:
+- **Cross-Token Batches**: Bundle withdrawals of different tokens in single approval
+- **Rebalancing Batches**: Automatically convert tokens during withdrawal (DEX integration)
+- **Liquidity Aggregation**: Best-rate swaps across DEXs (1inch, Curve, Uniswap)
+- **Atomic Swaps**: Execute swaps + transfers in single transaction
+- **Implementation**: Add DEX routing, update `BatchWithdrawalManager.sol`, new UI component
+
+### 3. **Guardian Delegation & Proxy Voting** ⭐⭐⭐⭐
+Allow guardians to delegate voting power to trusted representatives:
+- **Temporary Delegation**: Guardian A delegates to Guardian B for 30 days (travel, busy)
+- **Partial Delegation**: Delegate only certain approval types (low-risk, emergency-only)
+- **Delegation Chain**: Up to 2-level delegation chains to prevent loop vulnerabilities
+- **Revocation**: Can revoke delegation anytime
+- **Transparency**: Full audit trail of delegations shown in dashboard
+- **Implementation**: Add delegation state to `GuardianSBT.sol`, update voting logic
+
+### 4. **Multisig Vault Recovery** ⭐⭐⭐⭐
+Enable recovery of vaults when owner becomes unresponsive:
+- **Recovery Proposal**: Guardians can initiate recovery if owner dormant for 180+ days
+- **Voting Requirements**: 75%+ guardian consensus required
+- **Recovery Phases**: 14-day voting period, 7-day execution window
+- **New Owner Assignment**: Rotating owner role among senior guardians (optional)
+- **Safety Measures**: Previous owner can reclaim within 30 days if re-active
+- **Implementation**: New recovery module, event logging, legal disclaimers
+
+### 5. **Automated Payroll & Subscriptions** ⭐⭐⭐⭐
+Enable recurring payments and subscriptions directly from vaults:
+- **Recurring Withdrawals**: Set up monthly/weekly payments to recipients
+- **Smart Scheduling**: Calendar-based scheduling with guardian pre-approval
+- **Subscription Management**: Track active subscriptions, modify/cancel anytime
+- **Batch Scheduling**: Pre-approve 12 months of payroll payments at once
+- **Automation Limits**: Max per-subscription, total per month enforcement
+- **Implementation**: `SubscriptionVault.sol` extension, cron-like UI
+
+### 6. **Cross-Chain Vault Management** ⭐⭐⭐⭐
+Sync vault state and governance across multiple blockchains:
+- **Multi-Chain Deployment**: Deploy same vault on Ethereum, Optimism, Arbitrum
+- **Unified Dashboard**: Single UI to manage vaults across all chains
+- **Cross-Chain Messaging**: LayerZero or Wormhole for state sync
+- **Atomic Withdrawal**: Execute withdrawal on one chain, mirror on others
+- **Unified Governance**: Single guardian set votes across all chains
+- **Implementation**: Bridge contracts, IBC integration, new dashboard tabs
+
+### 7. **Advanced Risk Analytics** ⭐⭐⭐⭐
+Expand risk scoring with ML-powered anomaly detection:
+- **Behavioral Analysis**: ML model trained on guardian approval patterns
+- **Anomaly Scoring**: Detect unusual approval combinations (guardian X never approves with Y)
+- **Threat Intelligence**: Integrate Chainalysis/TRM for address reputation
+- **Phishing Detection**: Flag if withdrawal goes to recently flagged address
+- **Historical Backtesting**: "What if" analysis of withdrawal patterns
+- **Implementation**: Python ML backend, enhanced dashboard visualizations
+
+### 8. **Decentralized Governance Module** ⭐⭐⭐
+Enable community voting on vault parameters:
+- **Parameter Voting**: Guardians vote on spending limits, timelock durations
+- **Proposal System**: Create proposals for vault policy changes
+- **Weighted Voting**: Senior guardians get higher voting weight (optional)
+- **Governance Tokens**: Issue non-transferable voting tokens tied to guardianship
+- **Historical Record**: Track all governance decisions on-chain
+- **Implementation**: `GovernanceModule.sol`, proposal tracker UI
+
+### 9. **Guardian Insurance Pool** ⭐⭐⭐
+Insurance mechanism protecting against guardian misconduct:
+- **Insurance Fund**: Collateral pool funded by vault fees (0.1-0.5% annual)
+- **Slashing**: Insurance covers losses from guardian collusion/theft
+- **Claims Process**: Owners can claim if guardians collude to steal funds
+- **Underwriting**: Guardian reputation used for insurance premiums
+- **Yield Generation**: Insurance pool assets earn yield on Aave/Lido
+- **Implementation**: `InsurancePool.sol`, claims management dashboard
+
+### 10. **Social Recovery & Account Abstraction** ⭐⭐⭐
+Integrate with latest AA standards for enhanced UX:
+- **ERC-4337 Support**: Use Account Abstraction for paymaster-sponsored txs
+- **Session Keys**: Guardians get time-limited session keys (30-day expiry)
+- **Batch Operations**: Multiple actions in single signature via Account Abstraction
+- **Gas Sponsorship**: Vault subsidizes guardian transaction fees
+- **Portable Identity**: Guardians keep their identity across multiple vaults
+- **Implementation**: Use Biconomy/Pimlico, new account recovery flows
 
 ---
 

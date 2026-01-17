@@ -48,7 +48,7 @@ export function GuardianActions({
     query: { enabled: !!userAddress }
   });
 
-  const hasGuardianToken = isGuardian && isGuardian > 0n;
+  const hasGuardianToken = isGuardian && typeof isGuardian === 'bigint' && isGuardian > 0n;
 
   /**
    * Handle freeze action
@@ -197,7 +197,7 @@ export function GuardianActions({
         )}
 
         {/* Cancel button always available unless frozen/executed/cancelled */}
-        {withdrawalStatus !== 'frozen' && withdrawalStatus !== 'executed' && withdrawalStatus !== 'cancelled' && (
+        {withdrawalStatus === 'pending' && (
           <Button
             size="sm"
             variant="ghost"

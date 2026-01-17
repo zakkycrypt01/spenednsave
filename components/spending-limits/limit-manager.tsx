@@ -225,7 +225,7 @@ export function SpendingLimitManager({
               type="number"
               placeholder="0.00"
               value={limits.daily}
-              onChange={(e) => setLimits(prev => ({ ...prev, daily: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimits(prev => ({ ...prev, daily: e.target.value }))}
               step="0.01"
               min="0"
               className="pr-12"
@@ -255,7 +255,7 @@ export function SpendingLimitManager({
               type="number"
               placeholder="0.00"
               value={limits.weekly}
-              onChange={(e) => setLimits(prev => ({ ...prev, weekly: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimits(prev => ({ ...prev, weekly: e.target.value }))}
               step="0.01"
               min="0"
               className="pr-12"
@@ -285,7 +285,7 @@ export function SpendingLimitManager({
               type="number"
               placeholder="0.00"
               value={limits.monthly}
-              onChange={(e) => setLimits(prev => ({ ...prev, monthly: e.target.value }))}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setLimits(prev => ({ ...prev, monthly: e.target.value }))}
               step="0.01"
               min="0"
               className="pr-12"

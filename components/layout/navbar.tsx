@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"; // We need to create this utility
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { Shield, X, Menu } from "lucide-react"; // Using Lucide for the logo icon for now, or SVG
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 
 export function Navbar() {
     const pathname = usePathname();
@@ -53,6 +54,7 @@ export function Navbar() {
                     <div className="hidden md:flex items-center gap-1 p-1 bg-surface-light dark:bg-surface-border rounded-full border border-surface-border dark:border-gray-700/50 shadow-sm" role="menubar" aria-label="Primary">
                         {[
                             { name: "Dashboard", href: "/dashboard" },
+                            { name: "Analytics", href: "/analytics" },
                             { name: "Guardians", href: "/guardians" },
                             { name: "Voting", href: "/voting" },
                             { name: "Activity", href: "/activity" },
@@ -81,6 +83,7 @@ export function Navbar() {
                     </div>
 
                     <div className="flex items-center gap-4">
+                        <NotificationBell />
                         <ConnectButton
                             accountStatus={{
                                 smallScreen: 'avatar',

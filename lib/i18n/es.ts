@@ -272,7 +272,7 @@ export const es = {
   },
   community: {
     title: 'Comunidad',
-    highlights: 'Destaca de la Comunidad',
+    highlights: '★★★ SPANISH TRANSLATION - Destaca de la Comunidad ★★★',
     featuredStories: 'Historias Destacadas',
     featuredStoriesDesc: 'Lee historias reales de usuarios y testimonios sobre cómo SpendGuard transformó su gestión de fondos.',
     shareYourStory: 'Comparte Tu Historia',

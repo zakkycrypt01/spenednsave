@@ -1,7 +1,7 @@
 'use client';
 
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { TrendingUp, Users, DollarSign, Target, Calendar } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { TrendingUp, Users, DollarSign, Target } from 'lucide-react';
 import { useState } from 'react';
 
 interface ReferralStats {
@@ -80,7 +80,7 @@ const CHANNEL_DISTRIBUTION = [
 ];
 
 export function ReferralStatistics({ timeRange = 'month' }: ReferralStatisticsProps) {
-  const [selectedRange] = useState(timeRange);
+  // timeRange prop reserved for future time period filtering
 
   // Calculate statistics
   const stats: ReferralStats = {

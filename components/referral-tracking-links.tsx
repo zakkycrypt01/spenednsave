@@ -15,10 +15,6 @@ interface ReferralLink {
   isActive: boolean;
 }
 
-interface ReferralTrackingLinksProps {
-  userCode?: string;
-}
-
 const SAMPLE_LINKS: ReferralLink[] = [
   {
     id: '1',
@@ -66,10 +62,9 @@ const SAMPLE_LINKS: ReferralLink[] = [
   }
 ];
 
-export function ReferralTrackingLinks({ userCode = 'REF_USER001' }: ReferralTrackingLinksProps) {
+export function ReferralTrackingLinks(): JSX.Element {
   const [links, setLinks] = useState<ReferralLink[]>(SAMPLE_LINKS);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showUrls, setShowUrls] = useState<Record<string, boolean>>({});
   const [newLinkLabel, setNewLinkLabel] = useState('');
 
   const handleCopyLink = (link: ReferralLink) => {
@@ -107,10 +102,6 @@ export function ReferralTrackingLinks({ userCode = 'REF_USER001' }: ReferralTrac
   const conversionRate = (link: ReferralLink) => {
     if (link.clicks === 0) return '0%';
     return ((link.signups / link.clicks) * 100).toFixed(1) + '%';
-  };
-
-  const ctr = (link: ReferralLink) => {
-    return link.clicks > 0 ? (link.signups / link.clicks).toFixed(3) : '0';
   };
 
   const totalMetrics = {

@@ -22,10 +22,6 @@ interface RewardsStats {
   redeemedTotal: number;
 }
 
-interface RewardsDashboardProps {
-  userId?: string;
-}
-
 const SAMPLE_REWARDS: Reward[] = [
   {
     id: '1',
@@ -99,7 +95,7 @@ const SAMPLE_REWARDS: Reward[] = [
   }
 ];
 
-export function RewardsDashboard({ userId }: RewardsDashboardProps) {
+export function RewardsDashboard(): JSX.Element {
   const [rewards] = useState<Reward[]>(SAMPLE_REWARDS);
   const [filterType, setFilterType] = useState<'all' | 'pending' | 'credited' | 'redeemed'>('all');
 

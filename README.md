@@ -195,6 +195,58 @@ SpendGuard includes an emergency freeze feature that allows guardians to quickly
 - ✅ **Activity Log**: Track all requests you've approved or rejected
 - ✅ **Non-Transferable Power**: Guardian status is soulbound and cannot be sold
 
+### 📊 Guardian Activity Dashboard
+
+Real-time tracking of guardian participation and performance:
+
+- **Participation Metrics**: Track approval rates, response times, and voting history
+- **Trust Scoring**: Automatically calculate guardian reliability scores (0-100)
+- **Performance Timeline**: View recent actions with timestamps and details
+- **Badge System**: Earn badges for reliability milestones (e.g., 100% approval, Fast Responder)
+- **Activity Comparison**: See how your performance compares to other guardians
+- **Freeze Voting Analytics**: Track emergency freeze participation and patterns
+
+**Use Case**: Monitor guardian team effectiveness, identify inactive guardians, and recognize high-performing members.
+
+**Learn More:** [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md#1-guardian-activity-dashboard)
+
+### ⚠️ Risk Scoring Engine
+
+Intelligent, real-time vault risk assessment with multi-factor analysis:
+
+**6-Factor Risk Analysis:**
+1. **Withdrawal Velocity** - Tracks spending patterns and acceleration
+2. **Pattern Deviation** - Identifies anomalies in timing, frequency, and amounts
+3. **Guardian Consensus** - Measures approval consistency and dissent
+4. **Spending Headroom** - Monitors daily/weekly/monthly limit utilization
+5. **Time-Lock Utilization** - Analyzes queued and frozen withdrawals
+6. **Approval Patterns** - Tracks guardian voting trends
+
+**Risk Scoring:**
+- **Overall Score**: 0-100 (lower = safer)
+- **Risk Levels**:
+  - 🟢 Safe (0-25)
+  - 🟡 Normal (25-50)
+  - 🟠 Caution (50-75)
+  - 🔴 Critical (75-100)
+
+**Alert System:**
+- **Intelligent Alerts**: Automatically detects and flags unusual activity
+- **Severity Levels**: Info, Warning, Critical for triage
+- **Actionable Recommendations**: Suggests specific responses to detected risks
+- **Alert Management**: Dismiss acknowledged alerts, track alert history
+
+**Dashboard Integration:**
+- Compact view on overview tab
+- Expandable factor details
+- Real-time risk metric updates
+- Visual spending limit indicators
+- Anomaly timeline view
+
+**Use Case**: Proactively identify suspicious activity patterns, unusual spending behavior, or compromised guardian accounts before they pose a risk to vault security.
+
+**Learn More:** [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md#2-risk-scoring-engine)
+
 ### Technical Features
 
 - 🔒 **EIP-712 Signatures**: Human-readable transaction data in wallet prompts

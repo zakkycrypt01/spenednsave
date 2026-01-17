@@ -3,9 +3,15 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Users, Share, Heart } from "lucide-react";
+import { useState } from "react";
 import { CommunityHighlights } from "@/components/community/community-highlights";
+import { CustomWithdrawalMessages } from "@/components/custom-withdrawal-messages";
+import { GuardianRoleCustomization } from "@/components/guardian-role-customization";
+
+type CommunityTab = 'highlights' | 'withdrawal-messages' | 'guardian-roles';
 
 export default function CommunityPage() {
+  const [activeTab, setActiveTab] = useState<CommunityTab>('highlights');
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
@@ -61,9 +67,47 @@ export default function CommunityPage() {
             </div>
           </div>
 
-          {/* Community Highlights Component */}
+          {/* Tabs */}
+          <div className="mb-8 border-b border-gray-200 dark:border-surface-border">
+            <div className="flex gap-2 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('highlights')}
+                className={`px-6 py-3 font-semibold transition-colors whitespace-nowrap ${
+                  activeTab === 'highlights'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Community Highlights
+              </button>
+              <button
+                onClick={() => setActiveTab('withdrawal-messages')}
+                className={`px-6 py-3 font-semibold transition-colors whitespace-nowrap ${
+                  activeTab === 'withdrawal-messages'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Withdrawal Messages
+              </button>
+              <button
+                onClick={() => setActiveTab('guardian-roles')}
+                className={`px-6 py-3 font-semibold transition-colors whitespace-nowrap ${
+                  activeTab === 'guardian-roles'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                Guardian Roles
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
           <div className="mb-16">
-            <CommunityHighlights />
+            {activeTab === 'highlights' && <CommunityHighlights />}
+            {activeTab === 'withdrawal-messages' && <CustomWithdrawalMessages />}
+            {activeTab === 'guardian-roles' && <GuardianRoleCustomization />}
           </div>
 
           {/* Community Guidelines */}
@@ -87,7 +131,7 @@ export default function CommunityPage() {
               <div>
                 <h3 className="font-semibold text-slate-900 dark:text-white mb-3">Be Constructive</h3>
                 <p className="text-slate-600 dark:text-slate-400 text-sm">
-                  Provide feedback that helps improve SpendGuard. Critical feedback is welcome when it's constructive.
+                  Provide feedback that helps improve SpendGuard. Critical feedback is welcome when it&apos;s constructive.
                 </p>
               </div>
               <div>

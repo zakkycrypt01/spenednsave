@@ -162,6 +162,32 @@ SpendGuard protects large withdrawals with an automatic time-lock mechanism that
 
 **Learn More:** [TIME_LOCKS_QUICKREF.md](TIME_LOCKS_QUICKREF.md) | [TIME_LOCKS_SPEC.md](TIME_LOCKS_SPEC.md)
 
+### 🚨 Emergency Freeze Mechanism
+
+SpendGuard includes an emergency freeze feature that allows guardians to quickly respond to suspicious activity:
+
+- **Majority-Based Freeze**: Any majority of guardians can vote to temporarily freeze the vault
+- **Immediate Action**: Blocks all withdrawals and sensitive operations instantly when threshold reached
+- **Transparent Voting**: Real-time vote tracking shows all guardians' positions
+- **Recovery Path**: Guardians can vote to unfreeze once threat is resolved
+- **Vote Flexibility**: Guardians can change their vote before freeze occurs or switch between freeze/unfreeze
+
+**Freeze States:**
+- 🟢 **Normal**: Vault operating normally, all functions available
+- 🟡 **In Progress**: Guardians voting to freeze, withdrawals still blocked
+- 🔒 **Frozen**: Majority voted to freeze, all withdrawals blocked
+- 🔓 **Unfreezing**: Guardians voting to unfreeze, waiting for majority approval
+
+**Voting Rules:**
+- Threshold = (Guardian Count ÷ 2) + 1 (mathematical majority)
+- Example: 3 guardians need 2 votes to freeze or unfreeze
+- Each guardian can only vote once per direction (can revoke votes before freeze)
+- Non-guardians cannot participate in voting
+
+**Use Case**: Protect against compromised guardians or suspicious activity patterns. If you detect unusual withdrawal attempts or suspect account compromise, any majority of guardians can immediately freeze the vault while investigating.
+
+**Learn More:** [EMERGENCY_FREEZE_QUICKREF.md](EMERGENCY_FREEZE_QUICKREF.md) | [EMERGENCY_FREEZE_SPEC.md](EMERGENCY_FREEZE_SPEC.md)
+
 ### For Guardians (Trusted Friends)
 
 - ✅ **Voting Dashboard**: View and approve pending withdrawal requests

@@ -96,12 +96,17 @@ export function Navbar() {
                               onChange={(e) => setLanguage(e.target.value as any)}
                               className="appearance-none px-3 py-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-md text-sm text-slate-700 dark:text-slate-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary transition-colors hover:bg-slate-50 dark:hover:bg-surface-dark/80" 
                               aria-label="Language selection"
+                              title={`Available languages: ${Object.keys(languages || {}).join(', ')}`}
                             >
-                                {Object.entries(languages).map(([code, info]) => (
-                                  <option key={code} value={code}>
-                                    {info.flag} {info.nativeName}
-                                  </option>
-                                ))}
+                                {Object.entries(languages || {}).length === 0 ? (
+                                  <option>No languages available</option>
+                                ) : (
+                                  Object.entries(languages).map(([code, info]) => (
+                                    <option key={code} value={code}>
+                                      {info.flag} {info.nativeName}
+                                    </option>
+                                  ))
+                                )}
                             </select>
                             <Globe className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 dark:text-slate-400 pointer-events-none" />
                         </div>

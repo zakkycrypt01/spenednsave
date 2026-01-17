@@ -3,7 +3,7 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Users, Share, Heart } from "lucide-react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { CommunityHighlights } from "@/components/community/community-highlights";
 import { CustomWithdrawalMessages } from "@/components/custom-withdrawal-messages";
@@ -15,12 +15,6 @@ type CommunityTab = 'highlights' | 'withdrawal-messages' | 'guardian-roles';
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<CommunityTab>('highlights');
   const { t, language } = useI18n();
-  
-  // Debug: Log translations
-  useEffect(() => {
-    console.log('Community page - Current language:', language);
-    console.log('Translation test:', t('community.highlights'));
-  }, [language, t]);
   
   // Force re-render when language changes
   const memoizedLanguage = useMemo(() => language, [language]);

@@ -317,7 +317,7 @@ export function DashboardSaverView() {
                     </div>
 
                     <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-2xl p-6">
-                        <PolicyConfig vaultAddress={vaultAddress as any} />
+                        <PolicyConfig vaultAddress={vaultAddress} />
                     </div>
                 </section>
             </div>

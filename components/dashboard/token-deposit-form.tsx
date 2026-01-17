@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { formatUnits, parseUnits, type Address } from "viem";
-import { useDepositETH, useDepositUSDC, useApproveUSDC, useUSDCBalance, useUSDCAllowance, useVaultETHBalance, useVaultUSDCBalance } from "@/lib/hooks/useContracts";
+import { useDepositETH, useDepositUSDC, useApproveUSDC, useUSDCAllowance, useVaultETHBalance, useVaultUSDCBalance } from "@/lib/hooks/useContracts";
 import { getContractAddresses } from "@/lib/contracts";
 import { AlertCircle, CheckCircle2, Loader } from "lucide-react";
 import { useChainId } from "wagmi";
@@ -22,7 +22,15 @@ export function TokenDepositForm({ vaultAddress, onDepositSuccess }: TokenDeposi
     const [approvalStatus, setApprovalStatus] = useState<"idle" | "pending" | "approved">("idle");
 
     // Get USDC address from contract config
-    const usdcAddress = chain ? (getContractAddresses(chainId) as any).USDC as Address : undefined;
+    const usdcAddress = useMemo(() => {
+        if (!chain) return undefined;
+        try {
+            const addresses = getContractAddresses(chainId) as Record<string, Address>;
+            return addresses.USDC as Address;
+        } catch {
+            return undefined;
+        }
+    }, [chain, chainId]);
 
     // ETH Deposit Hook
     const { deposit: depositETH, isPending: ethDepositPending, isSuccess: ethDepositSuccess } = useDepositETH(vaultAddress);
@@ -32,18 +40,22 @@ export function TokenDepositForm({ vaultAddress, onDepositSuccess }: TokenDeposi
     const { deposit: depositUSDC, isPending: usdcDepositPending, isSuccess: usdcDepositSuccess } = useDepositUSDC(usdcAddress, vaultAddress);
 
     // Balance Hooks
-    const { data: userUSDCBalance } = useUSDCBalance(usdcAddress, userAddress);
     const { data: vaultETHBalance } = useVaultETHBalance(vaultAddress);
     const { data: vaultUSDCBalance } = useVaultUSDCBalance(usdcAddress, vaultAddress);
     const { data: allowance } = useUSDCAllowance(usdcAddress, userAddress, vaultAddress);
 
-    // Check if approval is needed
-    useEffect(() => {
+    // Check if approval is needed using useMemo to avoid setState in effect
+    const approvalNeeded = useMemo(() => {
         if (selectedToken === "USDC" && depositAmount && allowance !== undefined) {
             const amountInWei = parseUnits(depositAmount, 6);
-            setRequiresApproval(BigInt(allowance.toString()) < amountInWei);
+            return BigInt(allowance.toString()) < amountInWei;
         }
+        return false;
     }, [selectedToken, depositAmount, allowance]);
+
+    useEffect(() => {
+        setRequiresApproval(approvalNeeded);
+    }, [approvalNeeded]);
 
     // Handle approval success
     useEffect(() => {
@@ -55,9 +67,12 @@ export function TokenDepositForm({ vaultAddress, onDepositSuccess }: TokenDeposi
     // Handle deposit success
     useEffect(() => {
         if (ethDepositSuccess || usdcDepositSuccess) {
-            setDepositAmount("");
-            setApprovalStatus("idle");
-            onDepositSuccess?.();
+            // Use microtask to avoid cascade
+            queueMicrotask(() => {
+                setDepositAmount("");
+                setApprovalStatus("idle");
+                onDepositSuccess?.();
+            });
         }
     }, [ethDepositSuccess, usdcDepositSuccess, onDepositSuccess]);
 
@@ -78,9 +93,8 @@ export function TokenDepositForm({ vaultAddress, onDepositSuccess }: TokenDeposi
     };
 
     const isLoading = selectedToken === "ETH" ? ethDepositPending : usdcDepositPending || approvePending;
-    const formattedVaultETHBalance = vaultETHBalance ? formatUnits(vaultETHBalance as any, 18) : "0";
-    const formattedVaultUSDCBalance = vaultUSDCBalance ? formatUnits(vaultUSDCBalance as any, 6) : "0";
-    const formattedUserUSDCBalance = userUSDCBalance ? formatUnits(userUSDCBalance as any, 6) : "0";
+    const formattedVaultETHBalance = vaultETHBalance ? formatUnits(vaultETHBalance as bigint, 18) : "0";
+    const formattedVaultUSDCBalance = vaultUSDCBalance ? formatUnits(vaultUSDCBalance as bigint, 6) : "0";
 
     return (
         <div className="bg-white dark:bg-surface-dark border border-gray-200 dark:border-surface-border rounded-xl p-6">

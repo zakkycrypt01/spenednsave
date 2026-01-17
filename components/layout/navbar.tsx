@@ -90,30 +90,18 @@ export function Navbar() {
 
                     <div className="flex items-center gap-4">
                         <NotificationBell />
-                        <div className="relative z-40">
-                            <button
-                              onClick={() => alert(`Languages available: ${Object.keys(languages).join(', ')}`)}
-                              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg transition-colors"
-                            >
-                              🌐 {language.toUpperCase()}
-                            </button>
-                            <select 
-                              value={language}
-                              onChange={(e) => setLanguage(e.target.value as Language)}
-                              className="absolute opacity-0 w-full h-full cursor-pointer" 
-                              aria-label="Language selection"
-                            >
-                                {Object.entries(languages || {}).length === 0 ? (
-                                  <option>No languages available</option>
-                                ) : (
-                                  Object.entries(languages).map(([code, info]) => (
-                                    <option key={code} value={code}>
-                                      {info.flag} {info.nativeName}
-                                    </option>
-                                  ))
-                                )}
-                            </select>
-                        </div>
+                        <select
+                          value={language}
+                          onChange={(e) => setLanguage(e.target.value as Language)}
+                          className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300 transition-colors text-sm"
+                          aria-label="Language selection"
+                        >
+                          {Object.entries(languages || {}).map(([code, info]) => (
+                            <option key={code} value={code} className="bg-slate-900 text-white">
+                              {info.flag} {info.nativeName}
+                            </option>
+                          ))}
+                        </select>
                         <ConnectButton
                             accountStatus={{
                                 smallScreen: 'avatar',

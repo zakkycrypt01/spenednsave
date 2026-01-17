@@ -148,6 +148,6 @@ export function useTranslation() {
  * Hook to get current language
  */
 export function useLanguage() {
-  const { language, setLanguage } = useI18n();
-  return { language, setLanguage };
+  const { language, setLanguage, languages, currentLanguageInfo } = useI18n();
+  return { language, setLanguage, languages, currentLanguageInfo };
 }

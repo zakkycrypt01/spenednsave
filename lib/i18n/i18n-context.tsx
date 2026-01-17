@@ -44,7 +44,7 @@ interface I18nContextType {
 /**
  * Create context with undefined default
  */
-const I18nContext = createContext<I18nContextType | undefined>(undefined);
+export const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 /**
  * Get translation value from nested object

@@ -44,6 +44,7 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Guardian Risk Docs | [GUARDIAN_RISK_IMPLEMENTATION.md](GUARDIAN_RISK_IMPLEMENTATION.md) |
 | Vault Recovery System | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
 | Custom Features (Messages & Roles) | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
+| Enhanced Withdrawal Messages | [ENHANCED_WITHDRAWAL_MESSAGES.md](ENHANCED_WITHDRAWAL_MESSAGES.md) |
 | Issues | [GitHub Issues](https://github.com/cryptonique0/spenednsave/issues) |
 | Feature Requests | [Discussions](https://github.com/cryptonique0/spenednsave/discussions) |
 
@@ -60,7 +61,7 @@ SpendGuard is a smart contract system that enables secure fund management throug
 | Batch Withdrawal Manager | ✅ Complete | 1,300 | [BATCH_WITHDRAWAL_MANAGER.md](BATCH_WITHDRAWAL_MANAGER.md) |
 | Email Notifications | ✅ Complete | 400 | [lib/services/email-notifications.ts](lib/services/email-notifications.ts) |
 | Multi-Language Support (i18n) | ✅ Complete | 2,000+ | [I18N_DOCUMENTATION.md](I18N_DOCUMENTATION.md) |
-| Custom Withdrawal Messages | ✅ Complete | 353 | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
+| Custom Withdrawal Messages | ✅ Complete | 530 | [ENHANCED_WITHDRAWAL_MESSAGES.md](ENHANCED_WITHDRAWAL_MESSAGES.md) |
 | Guardian Role Customization | ✅ Complete | 408 | [CUSTOM_FEATURES_IMPLEMENTATION.md](CUSTOM_FEATURES_IMPLEMENTATION.md) |
 | Vault Recovery System | ✅ Complete | 2,200+ | [PHASE_11_COMPLETION_SUMMARY.md](PHASE_11_COMPLETION_SUMMARY.md) |
 | Guardian Reputation System | 🔄 Proposed | — | [#1](https://github.com/cryptonique0/spenednsave/issues/1) |
@@ -97,8 +98,17 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 ## 📝 Changelog
 
+- **2026-01-18**: Enhanced Custom Withdrawal Messages with 4 New Types:
+  - **Recurring Withdrawals** (🔄): Automatic payments at set intervals (weekly, monthly, quarterly, annually)
+  - **Conditional Withdrawals** (❓): Triggered by specific conditions (balance thresholds, market prices, custom events)
+  - **Bulk Approval Templates** (✅): Batch transactions requiring multi-guardian consensus (1-of-3, 2-of-3, 3-of-3 flexibility)
+  - **Multi-Recipient Withdrawals** (👥): Distribute funds across 2-100 recipient addresses simultaneously
+  - Total withdrawal types expanded from 4 to 8, template variables from 7 to 12
+  - Type-specific form fields and visual badges for quick identification
+  - Enhanced documentation with use cases and best practices: [ENHANCED_WITHDRAWAL_MESSAGES.md](ENHANCED_WITHDRAWAL_MESSAGES.md)
+  - 530+ lines of code, fully type-safe, 0 errors
 - **2026-01-18**: Launched Custom Withdrawal Messages & Guardian Role Customization:
-  - **Custom Withdrawal Messages**: Create personalized messages for 4 withdrawal types (Standard, Emergency, Scheduled, Batch) with 7 dynamic template variables (amount, date, time, recipient, guardianName, vaultName, count)
+  - **Custom Withdrawal Messages**: Create personalized messages for 8 withdrawal types with 12 dynamic template variables
   - **Guardian Role Customization**: Define custom guardian roles with granular permission control (8 permissions), custom approval requirements (1-3 guardians), and role management
   - Both features fully integrated into Community page with 3-tab interface
   - Complete with sample data, dark mode, and mobile responsiveness
@@ -137,18 +147,27 @@ SpendGuard combines the security of multi-signature wallets with the simplicity 
 
 Create personalized messages that display during vault withdrawals with dynamic content:
 
-- **Message Types**: Support for 4 withdrawal types (Standard, Emergency, Scheduled, Batch)
-- **Template Variables**: 7 available variables for dynamic content:
-  - `{{amount}}` - Withdrawal amount (e.g., "$1,250.00")
-  - `{{date}}` - Withdrawal date (e.g., "January 17, 2026")
-  - `{{time}}` - Withdrawal time (e.g., "2:30 PM")
-  - `{{recipient}}` - Recipient address (e.g., "0x742d...3E8Db")
-  - `{{guardianName}}` - Guardian name (e.g., "Sarah Johnson")
-  - `{{vaultName}}` - Vault name (e.g., "Emergency Fund")
-  - `{{count}}` - Withdrawal count (e.g., "5 of 10")
+- **Message Types**: Support for **8 withdrawal types**:
+  - Standard, Emergency, Scheduled, Batch (original 4)
+  - **Recurring** (automatic interval-based withdrawals)
+  - **Conditional** (triggered by balance/market conditions)
+  - **Bulk Approval** (multi-guardian batch consensus)
+  - **Multi-Recipient** (distribute to 2-100 addresses)
+
+- **Template Variables**: **12 available variables** for dynamic content:
+  - Core: `{{amount}}`, `{{date}}`, `{{time}}`, `{{recipient}}`, `{{guardianName}}`, `{{vaultName}}`, `{{count}}`
+  - Advanced: `{{frequency}}`, `{{condition}}`, `{{totalAmount}}`, `{{recipientCount}}`, `{{nextOccurrence}}`
+
+- **Type-Specific Configuration**:
+  - Recurring: Set frequency (weekly/monthly/quarterly/annually)
+  - Conditional: Define trigger condition (balance thresholds, market prices)
+  - Bulk Approval: Set guardian threshold (1 of 3, 2 of 3, 3 of 3)
+  - Multi-Recipient: Specify recipient count (2-100)
+
 - **Message Management**: Create, edit, delete, and toggle messages active/inactive
 - **Live Preview**: See how messages will appear with sample data
 - **Copy to Clipboard**: Easy message sharing and backup
+- **Type Badges**: Visual indicators for frequency, conditions, approvals, and recipients
 
 **Features:**
 - Automatic variable extraction from templates

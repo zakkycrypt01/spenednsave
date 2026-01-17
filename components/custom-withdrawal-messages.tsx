@@ -6,18 +6,26 @@ import { MessageSquare, Plus, Trash2, Copy, Check, Eye } from 'lucide-react';
 interface WithdrawalMessage {
   id: string;
   name: string;
-  withdrawalType: 'standard' | 'emergency' | 'scheduled' | 'batch';
+  withdrawalType: 'standard' | 'emergency' | 'scheduled' | 'batch' | 'recurring' | 'conditional' | 'bulk-approval' | 'multi-recipient';
   message: string;
   variables: string[];
   isActive: boolean;
   createdAt: string;
+  frequency?: string;
+  conditions?: string;
+  approvalThreshold?: number;
+  recipients?: number;
 }
 
 const WITHDRAWAL_TYPES = [
   { id: 'standard', label: 'Standard Withdrawal', icon: '💳' },
   { id: 'emergency', label: 'Emergency Withdrawal', icon: '🚨' },
   { id: 'scheduled', label: 'Scheduled Withdrawal', icon: '⏰' },
-  { id: 'batch', label: 'Batch Withdrawal', icon: '📦' }
+  { id: 'batch', label: 'Batch Withdrawal', icon: '📦' },
+  { id: 'recurring', label: 'Recurring Withdrawal', icon: '🔄' },
+  { id: 'conditional', label: 'Conditional Withdrawal', icon: '❓' },
+  { id: 'bulk-approval', label: 'Bulk Approval Template', icon: '✅' },
+  { id: 'multi-recipient', label: 'Multi-Recipient Withdrawal', icon: '👥' }
 ];
 
 const AVAILABLE_VARIABLES = [
@@ -27,7 +35,12 @@ const AVAILABLE_VARIABLES = [
   { name: 'recipient', label: 'Recipient Address', example: '0x742d...3E8Db' },
   { name: 'guardianName', label: 'Guardian Name', example: 'Sarah Johnson' },
   { name: 'vaultName', label: 'Vault Name', example: 'Emergency Fund' },
-  { name: 'count', label: 'Withdrawal Count', example: '5 of 10' }
+  { name: 'count', label: 'Withdrawal Count', example: '5 of 10' },
+  { name: 'frequency', label: 'Recurrence Frequency', example: 'Monthly' },
+  { name: 'condition', label: 'Trigger Condition', example: 'Balance > $10,000' },
+  { name: 'totalAmount', label: 'Total Bulk Amount', example: '$50,000.00' },
+  { name: 'recipientCount', label: 'Number of Recipients', example: '5 accounts' },
+  { name: 'nextOccurrence', label: 'Next Occurrence Date', example: 'February 17, 2026' }
 ];
 
 const SAMPLE_MESSAGES: WithdrawalMessage[] = [
@@ -57,6 +70,46 @@ const SAMPLE_MESSAGES: WithdrawalMessage[] = [
     variables: ['amount', 'date', 'recipient', 'count'],
     isActive: false,
     createdAt: '2026-01-08'
+  },
+  {
+    id: '4',
+    name: 'Monthly Recurring Payment',
+    withdrawalType: 'recurring',
+    message: 'Recurring withdrawal of {{amount}} scheduled {{frequency}} from {{vaultName}}. Next occurrence: {{nextOccurrence}}. Recipient: {{recipient}}.',
+    variables: ['amount', 'frequency', 'vaultName', 'nextOccurrence', 'recipient'],
+    isActive: true,
+    createdAt: '2026-01-14',
+    frequency: 'Monthly'
+  },
+  {
+    id: '5',
+    name: 'Balance Threshold Alert',
+    withdrawalType: 'conditional',
+    message: 'Condition triggered: {{condition}}. Automatic withdrawal of {{amount}} initiated from {{vaultName}} at {{time}}. This withdrawal was conditional on the specified trigger.',
+    variables: ['condition', 'amount', 'vaultName', 'time'],
+    isActive: true,
+    createdAt: '2026-01-13',
+    conditions: 'Balance exceeds $50,000'
+  },
+  {
+    id: '6',
+    name: 'Bulk Approval Batch',
+    withdrawalType: 'bulk-approval',
+    message: 'Bulk approval required: {{totalAmount}} across {{recipientCount}} recipients. Total transactions in batch: {{count}}. All withdrawals require {{guardianName}} approval.',
+    variables: ['totalAmount', 'recipientCount', 'count', 'guardianName'],
+    isActive: true,
+    createdAt: '2026-01-15',
+    approvalThreshold: 2
+  },
+  {
+    id: '7',
+    name: 'Multi-Recipient Distribution',
+    withdrawalType: 'multi-recipient',
+    message: 'Distributing {{totalAmount}} across {{recipientCount}} recipients. First recipient: {{recipient}}. Distribution initiated by {{guardianName}} on {{date}}.',
+    variables: ['totalAmount', 'recipientCount', 'recipient', 'guardianName', 'date'],
+    isActive: true,
+    createdAt: '2026-01-16',
+    recipients: 5
   }
 ];
 
@@ -70,7 +123,11 @@ export function CustomWithdrawalMessages() {
     name: '',
     withdrawalType: 'standard',
     message: '',
-    variables: [] as string[]
+    variables: [] as string[],
+    frequency: '',
+    conditions: '',
+    approvalThreshold: 1,
+    recipients: 1
   });
 
   const getWithdrawalTypeLabel = (typeId: string) => {
@@ -87,14 +144,18 @@ export function CustomWithdrawalMessages() {
       const newMessage: WithdrawalMessage = {
         id: generateId(),
         name: formData.name,
-        withdrawalType: formData.withdrawalType as 'standard' | 'emergency' | 'scheduled' | 'batch',
+        withdrawalType: formData.withdrawalType as 'standard' | 'emergency' | 'scheduled' | 'batch' | 'recurring' | 'conditional' | 'bulk-approval' | 'multi-recipient',
         message: formData.message,
         variables: extractVariables(formData.message),
         isActive: true,
-        createdAt: new Date().toISOString().split('T')[0]
+        createdAt: new Date().toISOString().split('T')[0],
+        frequency: formData.frequency || undefined,
+        conditions: formData.conditions || undefined,
+        approvalThreshold: formData.approvalThreshold > 1 ? formData.approvalThreshold : undefined,
+        recipients: formData.recipients > 1 ? formData.recipients : undefined
       };
       setMessages([newMessage, ...messages]);
-      setFormData({ name: '', withdrawalType: 'standard', message: '', variables: [] });
+      setFormData({ name: '', withdrawalType: 'standard', message: '', variables: [], frequency: '', conditions: '', approvalThreshold: 1, recipients: 1 });
       setShowForm(false);
     }
   };
@@ -118,7 +179,12 @@ export function CustomWithdrawalMessages() {
       recipient: '0x742d35Cc6634C0532925a3b844Bc8e7595f3E8Db',
       guardianName: 'Michael Chen',
       vaultName: 'Savings Vault',
-      count: '3 of 5'
+      count: '3 of 5',
+      frequency: 'Monthly',
+      condition: 'Balance exceeds $50,000',
+      totalAmount: '$50,000.00',
+      recipientCount: '5 accounts',
+      nextOccurrence: 'February 17, 2026'
     };
     
     Object.entries(examples).forEach(([key, value]) => {
@@ -164,16 +230,28 @@ export function CustomWithdrawalMessages() {
       </div>
 
       {/* Available Variables Info */}
-      <div className="bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4">
-        <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">Available Template Variables:</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {AVAILABLE_VARIABLES.map(v => (
-            <div key={v.name} className="text-xs text-blue-800 dark:text-blue-200">
-              <code className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">{`{{${v.name}}}`}</code>
-              <span className="ml-2">{v.label}</span>
-              <span className="text-blue-600 dark:text-blue-400 ml-1">({v.example})</span>
-            </div>
-          ))}
+      <div className="bg-blue-50 dark:bg-blue-500/5 border border-blue-200 dark:border-blue-500/20 rounded-lg p-4 space-y-3">
+        <div>
+          <p className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-3">Available Template Variables:</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {AVAILABLE_VARIABLES.map(v => (
+              <div key={v.name} className="text-xs text-blue-800 dark:text-blue-200">
+                <code className="bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded">{`{{${v.name}}}`}</code>
+                <span className="ml-2">{v.label}</span>
+                <span className="text-blue-600 dark:text-blue-400 ml-1">({v.example})</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        <div className="border-t border-blue-200 dark:border-blue-500/20 pt-3 mt-3">
+          <p className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2">Withdrawal Type Descriptions:</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-800 dark:text-blue-200">
+            <div><strong>Recurring:</strong> Automatic withdrawals at set intervals (weekly, monthly, etc.)</div>
+            <div><strong>Conditional:</strong> Triggered by specific conditions (balance threshold, price action, etc.)</div>
+            <div><strong>Bulk Approval:</strong> Multiple transactions requiring guardian consensus</div>
+            <div><strong>Multi-Recipient:</strong> Distributes funds across multiple recipient addresses</div>
+          </div>
         </div>
       </div>
 
@@ -234,6 +312,76 @@ export function CustomWithdrawalMessages() {
             />
           </div>
 
+          {/* Type-specific fields */}
+          {formData.withdrawalType === 'recurring' && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2">
+                Recurrence Frequency
+              </label>
+              <select
+                value={formData.frequency}
+                onChange={(e) => setFormData({ ...formData, frequency: e.target.value })}
+                className="w-full px-4 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded-lg text-slate-900 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <option value="">Select frequency</option>
+                <option value="Weekly">Weekly</option>
+                <option value="Bi-weekly">Bi-weekly</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Annually">Annually</option>
+              </select>
+            </div>
+          )}
+
+          {formData.withdrawalType === 'conditional' && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2">
+                Trigger Condition
+              </label>
+              <input
+                type="text"
+                value={formData.conditions}
+                onChange={(e) => setFormData({ ...formData, conditions: e.target.value })}
+                placeholder="e.g., Balance exceeds $50,000 or Market cap rises above $1B"
+                className="w-full px-4 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded-lg text-slate-900 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </div>
+          )}
+
+          {formData.withdrawalType === 'bulk-approval' && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2">
+                Approval Threshold (Guardians Required)
+              </label>
+              <select
+                value={formData.approvalThreshold}
+                onChange={(e) => setFormData({ ...formData, approvalThreshold: Number(e.target.value) })}
+                className="w-full px-4 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded-lg text-slate-900 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <option value="1">1 of 3 Guardians</option>
+                <option value="2">2 of 3 Guardians</option>
+                <option value="3">3 of 3 Guardians (All Required)</option>
+              </select>
+            </div>
+          )}
+
+          {formData.withdrawalType === 'multi-recipient' && (
+            <div>
+              <label className="block text-sm font-semibold text-slate-900 dark:text-white mb-2">
+                Number of Recipients
+              </label>
+              <input
+                type="number"
+                min="2"
+                max="100"
+                value={formData.recipients}
+                onChange={(e) => setFormData({ ...formData, recipients: Number(e.target.value) })}
+                placeholder="How many recipients will receive funds?"
+                className="w-full px-4 py-2 bg-white dark:bg-surface-dark border border-surface-border dark:border-gray-700 rounded-lg text-slate-900 dark:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              />
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button
               onClick={handleAddMessage}
@@ -287,6 +435,31 @@ export function CustomWithdrawalMessages() {
                         {`{{${v}}}`}
                       </span>
                     ))}
+                  </div>
+                )}
+                {/* Type-specific attributes */}
+                {(msg.frequency || msg.conditions || msg.approvalThreshold || msg.recipients) && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {msg.frequency && (
+                      <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2 py-1 rounded">
+                        {msg.frequency}
+                      </span>
+                    )}
+                    {msg.conditions && (
+                      <span className="text-xs bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 px-2 py-1 rounded">
+                        Condition: {msg.conditions.substring(0, 30)}...
+                      </span>
+                    )}
+                    {msg.approvalThreshold && (
+                      <span className="text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded">
+                        {msg.approvalThreshold} Guardian{msg.approvalThreshold > 1 ? 's' : ''} Required
+                      </span>
+                    )}
+                    {msg.recipients && (
+                      <span className="text-xs bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 px-2 py-1 rounded">
+                        {msg.recipients} Recipients
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

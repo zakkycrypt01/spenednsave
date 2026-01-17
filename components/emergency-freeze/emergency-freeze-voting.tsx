@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { usePublicClient, useWalletClient, useContractRead } from 'wagmi';
+import { usePublicClient, useWalletClient, useReadContract, useAccount } from 'wagmi';
 import { type Address } from 'viem';
 import { SpendVaultABI } from '@/lib/abis/SpendVault';
 import { GuardianSBTABI } from '@/lib/abis/GuardianSBT';
@@ -41,32 +41,35 @@ export function GuardianEmergencyFreezeVoting({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const publicClient = usePublicClient();
   const { data: walletClient } = useWalletClient();
+  const { address: connectedAddress } = useAccount();
+
+  // Use connected address if userAddress not provided
+  const activeUserAddress = userAddress || connectedAddress;
 
   /**
    * Check if user is a guardian
    */
-  const { data: isGuardian } = useContractRead({
-    account: userAddress,
+  const { data: isGuardian } = useReadContract({
     address: guardianSBTAddress,
     abi: GuardianSBTABI,
     functionName: 'balanceOf',
-    args: [userAddress || '0x0'],
-    query: { enabled: !!userAddress }
+    args: [activeUserAddress || '0x0'],
+    query: { enabled: !!activeUserAddress }
   });
 
-  const hasGuardianToken = isGuardian && isGuardian > 0n;
+  const hasGuardianToken = Boolean(isGuardian && (isGuardian as bigint) > 0n);
 
   /**
    * Check if current user has voted
    */
-  const hasVotedFreeze = userAddress && freezeVoters.includes(userAddress);
-  const hasVotedUnfreeze = userAddress && unfreezeVoters.includes(userAddress);
+  const hasVotedFreeze = activeUserAddress && freezeVoters.includes(activeUserAddress);
+  const hasVotedUnfreeze = activeUserAddress && unfreezeVoters.includes(activeUserAddress);
 
   /**
    * Handle emergency freeze vote
    */
   const handleVoteFreeze = async () => {
-    if (!walletClient || !publicClient || !userAddress) return;
+    if (!walletClient || !publicClient || !activeUserAddress) return;
 
     try {
       setIsLoading(true);
@@ -74,7 +77,7 @@ export function GuardianEmergencyFreezeVoting({
       setSuccessMessage(null);
 
       const hash = await walletClient.writeContract({
-        account: userAddress,
+        account: activeUserAddress,
         address: vaultAddress,
         abi: SpendVaultABI,
         functionName: 'voteEmergencyFreeze',
@@ -102,7 +105,7 @@ export function GuardianEmergencyFreezeVoting({
    * Handle emergency unfreeze vote
    */
   const handleVoteUnfreeze = async () => {
-    if (!walletClient || !publicClient || !userAddress) return;
+    if (!walletClient || !publicClient || !activeUserAddress) return;
 
     try {
       setIsLoading(true);
@@ -110,7 +113,7 @@ export function GuardianEmergencyFreezeVoting({
       setSuccessMessage(null);
 
       const hash = await walletClient.writeContract({
-        account: userAddress,
+        account: activeUserAddress,
         address: vaultAddress,
         abi: SpendVaultABI,
         functionName: 'voteEmergencyUnfreeze',
@@ -279,7 +282,7 @@ export function GuardianEmergencyFreezeVoting({
                   <span
                     key={voter}
                     className={`rounded px-2 py-1 font-mono ${
-                      voter === userAddress
+                      voter === activeUserAddress
                         ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                         : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                     }`}
@@ -301,7 +304,7 @@ export function GuardianEmergencyFreezeVoting({
                   <span
                     key={voter}
                     className={`rounded px-2 py-1 font-mono ${
-                      voter === userAddress
+                      voter === activeUserAddress
                         ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
                         : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                     }`}

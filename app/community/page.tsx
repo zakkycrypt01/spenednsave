@@ -7,6 +7,7 @@ import { useState } from "react";
 import { CommunityHighlights } from "@/components/community/community-highlights";
 import { CustomWithdrawalMessages } from "@/components/custom-withdrawal-messages";
 import { GuardianRoleCustomization } from "@/components/guardian-role-customization";
+import { CommunityChatAssistant } from "@/components/community/community-chat-assistant";
 
 type CommunityTab = 'highlights' | 'withdrawal-messages' | 'guardian-roles';
 
@@ -15,6 +16,7 @@ export default function CommunityPage() {
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
+      <CommunityChatAssistant />
       <main className="flex-grow flex flex-col justify-start px-6 py-8 md:px-8 md:py-12">
         <div className="max-w-7xl mx-auto w-full">
           {/* Header */}

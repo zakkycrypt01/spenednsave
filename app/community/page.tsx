@@ -2,15 +2,17 @@
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Users, Share, Heart } from "lucide-react";
+import { Users, Share, Heart, Gavel } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useI18n } from "@/lib/i18n";
 import { CommunityHighlights } from "@/components/community/community-highlights";
 import { CustomWithdrawalMessages } from "@/components/custom-withdrawal-messages";
 import { GuardianRoleCustomization } from "@/components/guardian-role-customization";
 import { CommunityChatAssistant } from "@/components/community/community-chat-assistant";
+import { GovDaoDashboard } from "@/components/community/govdao-dashboard";
+import { VotingPowerBreakdown } from "@/components/community/voting-power-breakdown";
 
-type CommunityTab = 'highlights' | 'withdrawal-messages' | 'guardian-roles';
+type CommunityTab = 'highlights' | 'withdrawal-messages' | 'guardian-roles' | 'governance';
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<CommunityTab>('highlights');
@@ -108,6 +110,16 @@ export default function CommunityPage() {
               >
                 {t('community.guardianRoles', 'Guardian Roles')}
               </button>
+              <button
+                onClick={() => setActiveTab('governance')}
+                className={`px-6 py-3 font-semibold transition-colors whitespace-nowrap ${
+                  activeTab === 'governance'
+                    ? 'text-primary border-b-2 border-primary'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                {'GovDao Governance'}
+              </button>
             </div>
           </div>
 
@@ -116,6 +128,12 @@ export default function CommunityPage() {
             {activeTab === 'highlights' && <CommunityHighlights />}
             {activeTab === 'withdrawal-messages' && <CustomWithdrawalMessages />}
             {activeTab === 'guardian-roles' && <GuardianRoleCustomization />}
+            {activeTab === 'governance' && (
+              <div className="space-y-8">
+                <VotingPowerBreakdown />
+                <GovDaoDashboard />
+              </div>
+            )}
           </div>
 
           {/* Community Guidelines */}

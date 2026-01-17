@@ -15,7 +15,7 @@ export function useGuardianBadges(guardianBadgeAddress: string | undefined, guar
     const provider = new BrowserProvider(window.ethereum as any);
     const contract = new Contract(
       guardianBadgeAddress,
-      GuardianBadgeABI.default ?? GuardianBadgeABI,
+      GuardianBadgeABI as any,
       provider
     );
     (async () => {

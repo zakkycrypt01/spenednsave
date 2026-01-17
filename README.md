@@ -561,6 +561,68 @@ SpendGuard now supports 6 major tokens with real-time USD price feeds from Chain
 
 **Learn More:** [MULTI_TOKEN_EXPANSION.md](MULTI_TOKEN_EXPANSION.md) - Complete guide to token registry, price feeds, and custom token management.
 
+### 🏛️ GovDao - Community Governance System
+
+SpendGuard includes a sophisticated governance DAO where users gain voting power based on their vault activity and engagement:
+
+**Voting Power Metrics (Weighted):**
+- 📊 **Vault Balance** (30%) - ETH deposited in vault (1 ETH = 0.1 power, min 1)
+- 👥 **Guardian Count** (20%) - Number of guardians (quadratic scaling: n×(n+1)/2)
+- ⚡ **Activity Count** (20%) - Number of transactions (txns × 0.5, min 1)
+- 📅 **Vault Age** (15%) - Days vault is active (days ÷ 100, min 1)
+- 🪙 **Token Diversity** (15%) - Different tokens held (1-2:2, 3-4:5, 5-6:10 power)
+
+**Voting Tiers (6 Levels):**
+- 🥇 **Founder** (1000+ power) - Maximum influence, create proposals, voting rewards
+- 🥈 **Lead Governor** (500+) - High influence, create proposals, voting rewards
+- 🥉 **Senior Member** (250+) - Standard influence, create proposals, voting rewards
+- ⭐ **Active Member** (100+) - Can vote and create proposals
+- 👥 **Member** (10+) - Can vote on proposals
+- 🔵 **Participant** (0+) - View-only access, earn voting power
+
+**Proposal System:**
+- 8 proposal types: Feature Requests, Bug Reports, Risk Parameters, Vault Policies, Guardian Policies, Protocol Upgrades, Budget Allocation, Community Initiatives
+- 7-day voting windows per proposal
+- Quorum requirement: 25% of active members must participate
+- Voting threshold: 50% of votes required to pass
+- Vote types: For, Against, Abstain (weighted by voting power)
+- Voting rewards: 0.1% of power base, with multipliers up to 2.0x for critical proposals
+
+**Dashboard Features:**
+- **Voting Power Summary**: Display personal voting power and tier with breakdown
+- **Voting Power Breakdown**: Expandable visualization showing contribution from each metric
+- **Proposals List**: Browse all proposals with status filtering (Active, Passed, Rejected, Closed)
+- **Proposal Cards**: See voting progress, quorum status, and proposal details at a glance
+- **Create Proposal**: Form for eligible users (10+ power) to submit governance proposals
+- **Governance Statistics**: Display total proposals, active proposals, total voters, and voting power distribution
+
+**User Participation:**
+- View detailed voting power breakdown with tips for improvement
+- Vote on active proposals with your full voting power
+- Create new proposals if you have 10+ voting power
+- Track your voting history and earned rewards
+- See governance statistics and participation rates
+
+**Security & Fairness:**
+- Weighted voting prevents whale dominance
+- Quorum requirements prevent low-participation decisions
+- Double-vote prevention (one vote per user per proposal)
+- Input validation and address verification
+- Time-locked execution for all governance decisions
+
+**Access:**
+- **User Access**: Navigate to `/community` tab → Click "GovDao Governance"
+- **Developer API**: 8 React hooks for easy integration, 6 API endpoints documented
+
+**Technical Implementation:**
+- 22+ exported functions and hooks for governance
+- 100% TypeScript type safety
+- Full dark mode and mobile responsive design
+- Comprehensive error handling
+- Real-time governance metrics
+
+**Learn More:** [GOVDAO_DOCUMENTATION.md](GOVDAO_DOCUMENTATION.md) - Complete voting system documentation | [GOVDAO_QUICKREF.md](GOVDAO_QUICKREF.md) - Quick reference for developers | [GOVDAO_INTEGRATION_GUIDE.md](GOVDAO_INTEGRATION_GUIDE.md) - Backend integration guide
+
 ---
 
 - ✅ **Create Vault**: Deploy your own SpendVault contract with custom quorum settings

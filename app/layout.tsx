@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "@/components/providers";
 import { AuthGuard } from "@/components/auth-guard";
 import { SimulationDemo } from "@/components/simulation/SimulationDemo";
+import { AIHelpAssistant } from "@/components/ai-help-assistant";
+import { FAQChatbot } from "@/components/faq-chatbot";
 import Toaster from "@/components/ui/toaster";
 import "@rainbow-me/rainbowkit/styles.css";
 
@@ -39,6 +41,8 @@ export default function RootLayout({
             <AuthGuard>
               {children}
               <SimulationDemo />
+              <AIHelpAssistant />
+              <FAQChatbot />
               <Toaster />
             </AuthGuard>
           </Providers>

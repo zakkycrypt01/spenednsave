@@ -1361,6 +1361,123 @@ vault.activateGuardian(pendingId);
 
 ---
 
+## Feature #18: Safe Mode Emergency Lockdown
+
+### Overview
+
+**Safe Mode** is an emergency security feature that enables vault owners to instantly restrict all withdrawals to the owner address only. When activated, guardian signatures are completely bypassed and non-owner withdrawals are blocked, providing critical protection during security incidents.
+
+### Purpose
+
+When enabled, Safe Mode:
+- ✅ Restricts all withdrawals to owner address only
+- ✅ Bypasses all guardian signatures (cannot be overridden)
+- ✅ Blocks non-owner withdrawals instantly
+- ✅ Maintains complete audit trail of all toggles
+- ✅ Allows owner emergency fund access
+- ✅ Can be disabled to restore normal operations
+
+### Contracts
+
+#### 1. SafeModeController.sol
+**Purpose**: Central service managing safe mode state across all vaults
+
+**Functions**:
+- `registerVault(vault, owner)` - Register vault for safe mode management
+- `enableSafeMode(vault, reason)` - Activate emergency lockdown
+- `disableSafeMode(vault, reason)` - Restore normal operations
+- `isSafeModeEnabled(vault)` - Check current status
+- `getSafeModeConfig(vault)` - Get configuration details
+- `getSafeModeDuration(vault)` - Get active duration
+- `getSafeModeHistory(vault)` - Get all toggle events
+
+#### 2. SpendVaultWithSafeMode.sol
+**Purpose**: Multi-sig vault with safe mode capability
+
+**Functions**:
+- `safeModeWithdraw(token, amount)` - Emergency owner withdrawal
+- `withdraw(token, amount, recipient, reason, signatures)` - Normal multi-sig
+- Guardian management functions (addGuardian, removeGuardian, setQuorum)
+
+#### 3. VaultFactoryWithSafeMode.sol
+**Purpose**: Factory for deploying safe mode-enabled vaults
+
+**Functions**:
+- `deployVault(quorum)` - Create new vault with safe mode support
+- `getStatistics()` - Factory-wide statistics
+- Registry and query functions
+
+### Safe Mode States
+
+#### DISABLED (Normal Operations)
+- Multi-signature withdrawals required
+- Guardian signatures enforced
+- Any recipient allowed
+
+#### ENABLED (Emergency Lockdown)
+- Only owner can withdraw
+- Guardian signatures ignored
+- Non-owner withdrawals blocked
+
+### Use Cases
+
+1. **Emergency Incident Response** - Malicious guardian detected
+2. **Guardian Key Rotation** - Rotating guardian keys for security
+3. **Maintenance Window** - Safe pause during upgrades
+4. **Market Instability** - Prevent emotional decisions
+5. **Compromised Guardian** - Investigate suspicious activity
+
+### Security Benefits
+
+✅ **Instant Lockdown** - No delay, effective immediately
+✅ **Owner Supreme** - Owner retains ultimate control
+✅ **Non-Bypassable** - Hardcoded in withdrawal logic
+✅ **Audit Trail** - Complete history of all toggles
+✅ **Reversible** - Can toggle multiple times
+✅ **Emergency Access** - Owner maintains fund access
+
+### Quick Start
+
+```solidity
+// 1. Deploy factory
+VaultFactoryWithSafeMode factory = new VaultFactoryWithSafeMode(
+    guardianToken,
+    vaultImplementation
+);
+
+// 2. Deploy vault
+address vault = factory.deployVault(2);
+
+// 3. Enable safe mode (emergency)
+controller.enableSafeMode(vault, "Incident detected");
+
+// 4. Owner withdraws
+vault.safeModeWithdraw(token, amount);
+
+// 5. Disable safe mode (resolved)
+controller.disableSafeMode(vault, "Issue resolved");
+```
+
+### Complete Documentation
+
+- **Full Guide**: See `FEATURE_18_SAFE_MODE.md` (1,050+ lines)
+- **Quick Reference**: See `FEATURE_18_SAFE_MODE_QUICKREF.md` (700+ lines)
+- **API Reference**: See `FEATURE_18_SAFE_MODE_INDEX.md` (850+ lines)
+- **Delivery Summary**: See `FEATURE_18_DELIVERY_SUMMARY.md` (300+ lines)
+
+### Key Takeaways
+
+✅ **Owner-Only Withdrawals** during safe mode
+✅ **Instant Activation** - no delays
+✅ **Non-Bypassable** - enforced at contract level
+✅ **Audit Trail** - complete history logged
+✅ **Reversible** - can be toggled multiple times
+✅ **Backward Compatible** - works with Features #1-17
+✅ **Gas Efficient** - ~35,000 gas for toggles
+✅ **Production-Ready** - comprehensive error handling
+
+---
+
 ## License
 
 MIT

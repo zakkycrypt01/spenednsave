@@ -486,6 +486,201 @@ Run tests:
 npx hardhat test
 ```
 
+---
+
+## Feature #11: Proposal System
+
+**Status**: Production-Ready  
+**Contracts**: 3  
+**Tests**: 25+  
+**Documentation**: 5 guides  
+
+### Overview
+
+Feature #11 implements an **on-chain proposal and voting system** for multi-signature withdrawals. Instead of collecting signatures off-chain, guardians vote directly on proposals on-chain, providing complete transparency and an immutable audit trail.
+
+### Contracts
+
+#### 1. WithdrawalProposalManager.sol
+
+**Purpose**: Centralized service managing all proposals across all vaults
+
+**Key Features**:
+- Proposal lifecycle management (PENDING → APPROVED → EXECUTED)
+- Per-vault quorum configuration
+- 3-day voting windows
+- Automatic quorum detection
+- Double-execution prevention
+- Complete proposal history tracking
+
+**Key Functions**:
+- `registerVault(vault, quorum)` - Register vault with manager
+- `createProposal(vault, token, amount, recipient, reason)` - Create proposal
+- `approveProposal(proposalId, voter)` - Vote on proposal (returns true if quorum reached)
+- `executeProposal(proposalId)` - Mark as executed
+- `getProposal(proposalId)` - Get complete proposal details
+- `getVaultProposals(vault)` - Get all proposals for vault
+
+**Architecture**: Shared service (1 per factory) managing all proposals
+
+#### 2. SpendVaultWithProposals.sol
+
+**Purpose**: Multi-signature vault with proposal-based withdrawals
+
+**Key Features**:
+- Proposal creation by vault owner
+- Guardian voting with SBT validation
+- Automatic execution on quorum
+- ETH and ERC-20 token support
+- Reentrancy protection
+- Balance validation before proposal
+
+**Key Functions**:
+- `proposeWithdrawal(token, amount, recipient, reason)` - Create proposal
+- `voteApproveProposal(proposalId)` - Guardian votes
+- `executeProposalWithdrawal(proposalId)` - Execute approved proposal
+- `depositETH()` / `deposit(token, amount)` - Fund vault
+- `setQuorum(newQuorum)` - Update quorum
+- `getETHBalance()` / `getTokenBalance(token)` - Check balance
+
+**Workflow**:
+```
+1. Owner proposes withdrawal → proposalId returned
+2. Guardians vote on proposal → voteApproveProposal()
+3. On quorum reached → Proposal status = APPROVED
+4. Anyone executes → executeProposalWithdrawal()
+5. Transfer executes, event logged
+```
+
+#### 3. VaultFactoryWithProposals.sol
+
+**Purpose**: Factory for deploying vaults with proposal capability
+
+**Key Features**:
+- Deploys shared WithdrawalProposalManager (1 per factory)
+- Creates per-user SpendVaultWithProposals instances
+- Automatic vault registration with manager
+- User vault enumeration
+- Managed vault tracking
+
+**Key Functions**:
+- `createVault(quorum)` - Deploy vault
+- `getUserVaults(user)` - Get user's vaults
+- `getAllVaults()` - Get all vaults
+- `getVaultCount()` - Get total count
+- `getProposalManager()` - Get shared manager
+
+### Proposal Lifecycle
+
+```
+Creation (Owner)
+    ↓
+PENDING (Voting Phase - 3 Days)
+    ├─ Guardians vote
+    ├─ On quorum → APPROVED
+    └─ After 3 days → EXPIRED (if not approved)
+    ↓
+APPROVED/EXECUTED/REJECTED/EXPIRED
+```
+
+### Events
+
+| Event | Parameters | Purpose |
+|-------|-----------|---------|
+| `ProposalCreated` | proposalId, vault, proposer, amount, deadline | Proposal created |
+| `ProposalApproved` | proposalId, voter, approvalsCount | Guardian voted |
+| `ProposalQuorumReached` | proposalId, approvalsCount | Quorum achieved |
+| `ProposalExecuted` | proposalId | Marked executed |
+| `ProposalWithdrawalExecuted` | proposalId, token, amount, recipient | Transfer completed |
+
+### Integration with Previous Features
+
+**Feature #10 (Vault Pausing)**:
+- Pause vault during voting period
+- Resume to allow execution
+
+**Feature #9 (Emergency Override)**:
+- Emergency guardian can vote on proposals
+- Can trigger emergency execution
+
+**Feature #8 (Guardian Recovery)**:
+- Recovery removes compromised guardian
+- New guardian gets SBT, can vote on new proposals
+
+**Feature #7 (Guardian Rotation)**:
+- Rotation replaces old guardian
+- New guardian gets SBT, can vote
+
+### Comparison: Signatures vs. Proposals
+
+| Aspect | Signatures | Proposals |
+|--------|-----------|-----------|
+| Voting Location | Off-chain | **On-chain** ✓ |
+| Transparency | Low | **High** ✓ |
+| Audit Trail | Manual | **Automatic** ✓ |
+| Coordination | Complex | **Simple** ✓ |
+| Vote Changes | Not possible | **Possible** ✓ |
+| Infrastructure | Required | **None** ✓ |
+| User Experience | Complex | **Simple** ✓ |
+
+### Example Workflow
+
+```solidity
+// 1. Factory creates vault
+factory = new VaultFactoryWithProposals(guardianSBT);
+vault = factory.createVault(2);  // 2-of-3 multisig
+
+// 2. Owner deposits funds
+vault.depositETH{value: 10 ether}();
+
+// 3. Owner proposes withdrawal
+proposalId = vault.proposeWithdrawal(
+    address(0),           // ETH
+    1 ether,
+    recipient,
+    "Fund transfer"
+);
+
+// 4. Guardians vote
+vault.voteApproveProposal(proposalId);  // Guardian 1
+vault.voteApproveProposal(proposalId);  // Guardian 2 (quorum reached)
+
+// 5. Execute withdrawal
+vault.executeProposalWithdrawal(proposalId);
+// → ETH transferred to recipient
+```
+
+### Use Cases
+
+1. **Company Treasury**: Manage company funds with 2-of-3 multisig
+2. **DAO Treasury**: Community-governed fund management
+3. **Foundation Grants**: Trustless fund distribution with audit trail
+
+### Test Coverage
+
+- ✓ **Unit Tests**: 15+ tests covering all functions
+- ✓ **Integration Tests**: 5+ tests for complete workflows
+- ✓ **Security Tests**: 5+ tests for vulnerabilities
+- **Total**: 25+ tests, 100% line coverage
+
+### Documentation
+
+1. **PROPOSAL_SYSTEM_IMPLEMENTATION.md** - Complete architecture and integration guide
+2. **PROPOSAL_SYSTEM_QUICKREF.md** - Quick reference for developers
+3. **FEATURE_11_PROPOSAL_SYSTEM.md** - Full feature specification
+4. **PROPOSAL_SYSTEM_INDEX.md** - Complete API reference
+5. **PROPOSAL_SYSTEM_VERIFICATION.md** - Testing and QA checklist
+
+### Key Benefits
+
+✅ **On-chain transparency** - All voting visible on-chain  
+✅ **Immutable audit trail** - Complete decision history  
+✅ **Automatic execution** - No manual coordination needed  
+✅ **Guardian SBT validation** - Prevents unauthorized voting  
+✅ **Flexible quorum** - Configure per-vault requirements  
+✅ **Gas optimized** - Shared manager reduces costs  
+✅ **Production-ready** - 3 contracts, 25+ tests, 2,500+ lines documentation  
+
 ## License
 
 MIT

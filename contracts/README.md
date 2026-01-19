@@ -108,6 +108,74 @@ This directory contains the Solidity smart contracts for the SpendGuard applicat
 - `getUserContracts(address user)`: Get vault contracts
 - `getGuardianRotation()`: Get shared rotation contract address
 
+### 7. GuardianEmergencyOverride.sol
+**Purpose**: Manages special emergency guardian set for immediate emergency withdrawals
+
+**Key Features**:
+- Designates trusted inner circle (1-3 emergency guardians)
+- Independent from regular guardians and recovery guardians
+- Configurable emergency quorum (must reach consensus)
+- Emergency ID tracking prevents vote mixing
+- Integrates with vault for immediate withdrawal execution
+- Fallback 30-day timelock still available if needed
+
+**Functions**:
+- `addEmergencyGuardian(address vault, address guardian)`: Add emergency guardian
+- `removeEmergencyGuardian(address vault, address guardian)`: Remove emergency guardian
+- `isEmergencyGuardian(address vault, address guardian)`: Check guardian status
+- `approveEmergencyUnlock(address vault, uint256 emergencyId)`: Cast approval vote
+- `setEmergencyQuorum(address vault, uint256 quorum)`: Configure votes needed
+- `isEmergencyApproved(address vault, uint256 emergencyId)`: Check if quorum reached
+- `activateEmergencyOverride(address vault)`: Start new emergency (called by vault)
+- `getEmergencyApprovalCount(address vault, uint256 emergencyId)`: Get current votes
+- `getApprovalsNeeded(address vault, uint256 emergencyId)`: Get votes still needed
+- `getEmergencyGuardians(address vault)`: List all emergency guardians
+
+**Events**:
+- `EmergencyGuardianAdded(vault, guardian, timestamp)`
+- `EmergencyApprovalReceived(vault, emergencyId, guardian, approvalCount, timestamp)`
+- `EmergencyApprovalQuorumReached(vault, emergencyId, approvalCount, timestamp)`
+- `EmergencyOverrideActivated(vault, emergencyId, timestamp, timestamp)`
+
+### 8. SpendVaultWithEmergencyOverride.sol
+**Purpose**: Vault with emergency guardian override for immediate withdrawals
+
+**Key Features**:
+- Requests emergency unlock via `requestEmergencyUnlock()`
+- Emergency guardians approve via `approveEmergencyUnlock()`
+- Immediate withdrawal upon quorum: `executeEmergencyWithdrawalViaApproval()`
+- Fallback 30-day timelock: `executeEmergencyUnlockViaTimelock()`
+- Separate from regular withdrawal flow
+- Audit trail via events
+
+**Functions**:
+- `requestEmergencyUnlock()`: Start emergency process
+- `approveEmergencyUnlock(uint256 emergencyId)`: Guardian approves
+- `executeEmergencyWithdrawalViaApproval(token, amount, recipient, reason, emergencyId)`: Withdraw after approval
+- `executeEmergencyUnlockViaTimelock(token, amount, recipient)`: Withdraw after 30 days
+- `addEmergencyGuardian(address guardian)`: Add emergency guardian (setup)
+- `setEmergencyGuardianQuorum(uint256 quorum)`: Set emergency quorum (setup)
+- `getEmergencyApprovalsCount()`: Get current approvals
+- `getEmergencyGuardianQuorum()`: Get required quorum
+- `getEmergencyUnlockTimeRemaining()`: Get seconds until 30-day timeout
+- `isEmergencyUnlockActive()`: Check if emergency currently active
+
+### 9. VaultFactoryWithEmergencyOverride.sol
+**Purpose**: Factory for deploying complete system with emergency guardian override
+
+**Key Features**:
+- Creates GuardianSBT (per user)
+- Deploys SpendVaultWithEmergencyOverride (per user)
+- Manages shared GuardianEmergencyOverride (one per network)
+- Single factory deployment provides everything
+
+**Functions**:
+- `createVault(uint256 quorum, uint256 emergencyQuorum)`: Deploy complete system
+- `getUserContracts(address user)`: Get user's vault contracts
+- `getEmergencyOverride()`: Get shared emergency override address
+- `hasVault(address user)`: Check if user has vault
+- `getTotalVaults()`: Get total vaults created
+
 **SpendVault Core Functions**:
 
 **Management**:

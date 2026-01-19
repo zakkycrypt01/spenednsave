@@ -41,6 +41,10 @@ contract VaultFactory {
         require(userVaults[msg.sender] == address(0), "Vault already exists for this user");
         require(_quorum > 0, "Quorum must be greater than 0");
 
+          // Add validation for name and tags here:
+         require(bytes(_name).length > 0 && bytes(_name).length <= 64, "Invalid name length");
+         require(_tags.length <= 10, "Too many tags");
+
         // Deploy GuardianSBT for this user
         GuardianSBT guardianSBT = new GuardianSBT();
         guardianToken = address(guardianSBT);

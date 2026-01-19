@@ -48,7 +48,67 @@ This directory contains the Solidity smart contracts for the SpendGuard applicat
 - Emergency timelock withdrawal (30-day delay)
 - Replay attack protection via nonce
 
+### 4. GuardianRotation.sol
+**Purpose**: Manages guardian expiry dates and automatic invalidation of inactive guardians
+
+**Key Features**:
+- Guardian expiry date tracking per vault
+- Automatic invalidation of expired guardians
+- Configurable default expiry period (default: 365 days)
+- Vault-specific expiry period overrides
+- Guardian renewal mechanism
+- Active/expired guardian filtering
+- Gas-efficient cleanup function
+
 **Functions**:
+- `addGuardian(address guardian, address vault, uint256 expiryDate)`: Add guardian with expiry
+- `removeGuardian(address guardian, address vault)`: Remove guardian
+- `isActiveGuardian(address guardian, address vault)`: Check if guardian is active/not expired
+- `getExpiryDate(address guardian, address vault)`: Get expiry timestamp
+- `renewGuardian(address guardian, address vault, uint256 newExpiryDate)`: Extend guardian access
+- `getActiveGuardians(address vault)`: Get all active guardians
+- `getExpiredGuardianCount(address vault)`: Count expired guardians
+- `setDefaultExpiryPeriod(uint256 newPeriod)`: Update default expiry period
+- `setVaultExpiryPeriod(address vault, uint256 newPeriod)`: Set vault-specific period
+- `cleanupExpiredGuardians(address vault)`: Remove expired guardians from tracking
+
+**Events**:
+- `GuardianAdded(guardian, vault, expiryDate)`
+- `GuardianExpired(guardian, vault)`
+- `GuardianRenewed(guardian, vault, newExpiryDate)`
+- `GuardianRemoved(guardian, vault)`
+
+### 5. SpendVaultWithGuardianRotation.sol
+**Purpose**: Enhanced vault with automatic guardian expiry validation
+
+**Key Features**:
+- Inherits from SpendVault functionality
+- Integrates GuardianRotation for expiry checking
+- Validates guardians are active (not expired) during signature verification
+- Tracks active guardian count for quorum validation
+- Automatic expiry-based guardian invalidation
+
+**Functions**:
+- All SpendVault functions plus:
+- `isActiveGuardian(address guardian)`: Check if guardian is both holding SBT and not expired
+- `getActiveGuardianCount()`: Get count of non-expired guardians
+- `updateGuardianRotation(address _newAddress)`: Update rotation contract address
+
+### 6. VaultFactoryWithGuardianRotation.sol
+**Purpose**: Factory for deploying vaults with guardian rotation
+
+**Key Features**:
+- Creates GuardianSBT + SpendVaultWithGuardianRotation + shared GuardianRotation
+- Single shared GuardianRotation instance for all vaults
+- Tracks all created vaults
+- User vault enumeration support
+
+**Functions**:
+- `createVault(uint256 quorum)`: Deploy vault with guardian rotation
+- `getUserContracts(address user)`: Get vault contracts
+- `getGuardianRotation()`: Get shared rotation contract address
+
+**SpendVault Core Functions**:
 
 **Management**:
 - `setQuorum(uint256 _newQuorum)`: Update required signature count
@@ -82,12 +142,61 @@ npm install @openzeppelin/contracts
 
 ### Deployment Steps
 
-1. **Recommended: Deploy VaultFactory (once per network)**
+1. **Recommended: Deploy VaultFactoryWithGuardianRotation (once per network)**
+```javascript
+const VaultFactoryWithRotation = await ethers.getContractFactory("VaultFactoryWithGuardianRotation");
+const factory = await VaultFactoryWithRotation.deploy();
+await factory.waitForDeployment();
+const factoryAddress = await factory.getAddress();
+
+// For a user to create their vault + guardian token + guardian rotation
+const tx = await factory.createVault(2); // quorum = 2
+await tx.wait();
+const [guardianTokenAddress, vaultAddress] = await factory.getUserContracts(userAddress);
+const rotationAddress = await factory.getGuardianRotation();
+```
+
+2. **Add Guardians with Expiry**:
+```javascript
+const GuardianRotation = await ethers.getContractFactory("GuardianRotation");
+const rotation = GuardianRotation.attach(rotationAddress);
+
+// Add guardian with custom expiry date (30 days from now)
+const expiryTime = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+await rotation.addGuardian(guardianAddress1, vaultAddress, expiryTime);
+await rotation.addGuardian(guardianAddress2, vaultAddress, expiryTime);
+```
+
+3. **Check Guardian Status**:
+```javascript
+// Check if guardian is active (not expired)
+const isActive = await rotation.isActiveGuardian(guardianAddress1, vaultAddress);
+
+// Get seconds remaining before expiry
+const secondsRemaining = await rotation.getSecondsUntilExpiry(guardianAddress1, vaultAddress);
+
+// Get active guardian count
+const activeCount = await rotation.getActiveGuardianCount(vaultAddress);
+```
+
+4. **Renew Guardian Access**:
+```javascript
+// Extend guardian's expiry by another 30 days
+const newExpiry = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
+await rotation.renewGuardian(guardianAddress1, vaultAddress, newExpiry);
+```
+
+### Legacy Deployment (without Guardian Rotation)
+
+If you need to deploy without guardian rotation features:
+
+1. **Deploy VaultFactory (once per network)**
 ```javascript
 const VaultFactory = await ethers.getContractFactory("VaultFactory");
 const factory = await VaultFactory.deploy();
 await factory.waitForDeployment();
 const factoryAddress = await factory.getAddress();
+````
 
 // For a user to create their vault + guardian token
 const tx = await factory.createVault(2); // quorum = 2
